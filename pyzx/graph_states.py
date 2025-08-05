@@ -15,6 +15,7 @@ from .d3 import draw_d3
 from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
 from .extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
+import itertools
 
 class GraphState(Generic[VT, ET]):
     """
@@ -43,28 +44,82 @@ class GraphState(Generic[VT, ET]):
             if len(bounds) == 1:
                 self._bound[v] = bounds[0]
 
-    def validate(self) -> bool:
+    def validate(self, quiet : bool = True) -> bool:
         """
+        Checks if a ZX-diagram is graph-state: 
+        only contains Z-spiders which are connected by Hadamard edges.
+        Also checks that each boundary vertex is connected to a Z-spider,
+        and that each Z-spider is connected to at most one boundary. There are no interiore vertexes
         Validate if this is a proper graph state.
         
         Returns:
             True if valid graph state, False otherwise
+        
         """
-        if not is_graph_like(self._graph, strict=True):
-            return False
-        
-        
+
+        g = self._graph
+
+        if not quiet: draw_d3(self._graph, labels=True, scale=65)
+
+        # checks that all spiders are Z-spiders
+        for v in self.get_states():
+            if g.type(v) not in [VertexType.Z, VertexType.BOUNDARY]:
+                if not quiet:
+                    print(f"Vertex {v} is not a Z-spider or boundary vertex, type: {g.type(v)}")
+                return False
+
+        for v1, v2 in itertools.combinations(self.get_states(), 2):
+            if not g.connected(v1, v2):
+                continue
+
+            # Z-spiders are only connected via Hadamard edges
+            if g.type(v1) == VertexType.Z and g.type(v2) == VertexType.Z \
+            and g.edge_type(g.edge(v1, v2)) != EdgeType.HADAMARD:
+                if not quiet:
+                    print(f"Z-spiders {v1} and {v2} are not connected by a Hadamard edge")
+                return False
+
+            g.num_edges(v1, v2) == 1  # no parallel edges
+
+        # no self-loops
+        for v in self.get_states():
+            if g.connected(v, v):
+                if not quiet:
+                    print(f"Vertex {v} has a self-loop")
+                return False
+
+  
+        # every I/O is connected to a spider
+        bs = [v for v in g.vertices() if g.type(v) == VertexType.BOUNDARY]
+        for b in bs:
+            if g.vertex_degree(b) != 1 :
+                if not quiet:
+                    print(f"Boundary vertex {b} is not connected to a spider")
+                return False
+
+        # every Z-spider is connected to at most and at least one I/O
+        for z in self.get_states():
+            b_neighbors = [n for n in g.neighbors(z) if n not in self.get_states()]
+            if len(b_neighbors) != 1:
+                if not quiet:
+                    print(f"Z-spider {z} is not connected to exactly one boundary vertex, found: {len(b_neighbors)}")
+                return False
+
+        # Only clifford spiders
         for v in self._states:
             a = self._graph.phase(v) 
             if type(a) == Poly:
+                if not quiet:
+                    print(f"Vertex {v} has a non-clifford phase: {a}")
                 return False
             else:
                 a = cast(Fraction, a) 
             if a % Fraction(1, 2) != 0:
+                if not quiet:
+                    print(f"Vertex {v} has a non-clifford phase: {a}")
                 return False
         
-        for v in self._states:
-            self.get_bound(v)
+        print("Graph state is valid")
 
         return True
     
@@ -174,7 +229,7 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
 
-    def pivot(self, x: VT, y: VT) -> None:
+    def pivot(self, x: VT, y: VT, quiet : bool = True) -> None:
         """
         Perform a pivot operation between vertices x and y in the graph state.
         
@@ -185,7 +240,7 @@ class GraphState(Generic[VT, ET]):
         Raises:
             ValueError: If the graph is not in a valid state for pivoting
         """
-        if not self.validate():
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
         
         A = [neighbor for neighbor in self._graph.neighbors(x) if neighbor in self._states] + [x]
@@ -284,14 +339,14 @@ class GraphState(Generic[VT, ET]):
             spider_simp(self._graph, matchf=lambda x: x not in self._states)
             id_simp(self._graph, matchf=lambda x: x not in self._states)
 
-    def normalize(self) -> None:
+    def normalize_graph_state(self, quiet = True) -> None:
         """
         Normalize the graph state by setting proper qubit and row assignments.
         
         Raises:
             ValueError: If the graph is not a valid graph state
         """
-        if not self.validate():
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
         for i in range(len(self._states)):
@@ -351,7 +406,7 @@ class GraphState(Generic[VT, ET]):
         
         return True
 
-    def to_circuit(self) -> None:
+    def state_to_circuit(self) -> None:
         """
         Convert graph state to circuit representation by setting qubit and row positions.
         """
@@ -432,7 +487,7 @@ class GraphState(Generic[VT, ET]):
                     neigh = [x for x in self._graph.neighbors(v) if x in self._states]
                     for x in neigh:
                         if x < v:
-                            self.pivot(v, x)
+                            self.pivot(v, x, quiet = quiet)
                             if self._graph.phase(x) == Fraction(1, 2): 
                                 self.local_comp_SH(x)
                                 self.conjugate_out_paulis()
