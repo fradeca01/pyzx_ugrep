@@ -34,19 +34,26 @@ class GraphState(Generic[VT, ET]):
         """
         self._graph = graph
         self._states = states
-        self._bound: Dict[VT, VT] = {}
-        self._update_bounds()
+
+    def pretty_print(self, draw : bool = False) -> None:
+        """
+        Print the graph state in a human-readable format.
+        """
+
+        print("Graph State:")
+        print(f"States: {self._states}")
+        print(f"Graph: {self._graph}")
+        for i in self.get_states():
+            print(f"State {i}: Phase = {self._graph.phase(i)}, Type = {self._graph.type(i)}")
+            bound = self.get_bound(i)
+            print(f"  Bound: {bound}, Type: {self._graph.type(bound)}, Phase: {self._graph.phase(bound)}")
+
+        if draw:
+            draw_d3(self._graph, labels=True, scale=65)
 
     def __getattr__(self, name):
         """Redirect all other method calls to the underlying graph."""
         return getattr(self._graph, name)
-
-    def _update_bounds(self) -> None:
-        """Update the mapping from state vertices to their boundary vertices."""
-        for v in self._states:
-            bounds = [x for x in self._graph.neighbors(v) if x not in self._states]
-            if len(bounds) == 1:
-                self._bound[v] = bounds[0]
 
     def validate(self, quiet : bool = True) -> bool:
         """
@@ -136,6 +143,15 @@ class GraphState(Generic[VT, ET]):
         """
         return self._states
     
+    def get_graph(self) -> BaseGraph[VT, ET]:
+        """
+        Get the underlying graph.
+        
+        Returns:
+            The underlying graph
+        """
+        return self._graph
+
     def get_bound(self, s: VT) -> VT:
         """
         Get the boundary vertex connected to state vertex s.
@@ -149,14 +165,11 @@ class GraphState(Generic[VT, ET]):
         Raises:
             ValueError: If the vertex doesn't have exactly one boundary vertex
         """
-        if s in self._bound:
-            return self._bound[s]
         
-        bounds = [x for x in self._graph.neighbors(s) if x not in self._states]
+        bounds = [x for x in self.get_graph().neighbors(s) if x not in self._states]
         if len(bounds) != 1:
             raise ValueError(f"Vertex {s} has {len(bounds)} boundary vertices: {bounds}, expected exactly 1")
         
-        self._bound[s] = bounds[0]
         return bounds[0]
     
 
@@ -310,7 +323,6 @@ class GraphState(Generic[VT, ET]):
                         self._graph.add_edge((new, v), EdgeType.HADAMARD)
                     self._graph.remove_edge(self._graph.edge(bound[i], v))
         
-        self._update_bounds()
 
     def conjugate_out_paulis(self) -> None:
         """
@@ -353,49 +365,53 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
-        for i in range(len(self._states)):
-            self._graph.set_qubit(self._states[i], i)
-            self._graph.set_row(self._states[i], (i % 2) * 4)
+        for i in range(len(self.get_states())):
+            self.get_graph().set_qubit(self._states[i], i)
+            self.get_graph().set_row(self._states[i], (i % 2) * 4)
             bound = self.get_bound(self._states[i])
-            self._graph.set_qubit(bound, i)
-            self._graph.set_row(bound, 10)
+            self.get_graph().set_qubit(bound, i)
+            self.get_graph().set_row(bound, 10)
 
-    def conjugate_in_paulis(self) -> None:
+    def conjugate_in_paulis(self, quiet = True) -> None:
         """
         Conjugate in Pauli operators to the graph state.
         
         Raises:
             ValueError: If a non-Pauli vertex is encountered that should be conjugated in
         """
+
+        states = self.get_states()
+        g = self.get_graph()
+
         go_on = True
         while go_on:
             go_on = False
-            for v in self._states:
+            for v in states:
                 bound = self.get_bound(v)
-                bound_type = self._graph.types()[bound]
+                bound_type = g.type(bound)
                 if bound_type != VertexType.BOUNDARY:
                     go_on = True
-                    a = self._graph.phase(bound)
+                    a = g.phase(bound)
+                    if not quiet:
+                        print(f"Conjugating in vertex {bound} with phase {a} and type {bound_type} for state {v}")
                     if a != 1:
                         raise ValueError(f"Vertex {bound} must be Pauli (phase=1) to conjugate in, but has phase={a}")
                     
-                    edge_type = self._graph.edge_type(self._graph.edge(v, bound))
+                    edge_type = g.edge_type(g.edge(v, bound))
                     if (edge_type == EdgeType.HADAMARD and bound_type == VertexType.X or 
                         edge_type == EdgeType.SIMPLE and bound_type == VertexType.Z):
-                        self._graph.add_to_phase(v, 1)
+                        g.add_to_phase(v, 1)
                     elif (edge_type == EdgeType.HADAMARD and bound_type == VertexType.Z or 
                           edge_type == EdgeType.SIMPLE and bound_type == VertexType.X):
                         for x in self._graph.neighbors(v):
                             if x in self._states:
-                                self._graph.add_to_phase(x, 1)
+                                g.add_to_phase(x, 1)
 
                     new_bound = self.get_bound(bound)
-                    self._graph.remove_vertex(bound)
-                    self._graph.add_edge((v, new_bound), edge_type)
+                    g.remove_vertex(bound)
+                    g.add_edge((v, new_bound), edge_type)
                     break
         
-        self._update_bounds()
-
     def assert_intermediate(self) -> bool:
         """
         Check that after local complementing there is only one LC gate H or S on each state.
@@ -421,14 +437,14 @@ class GraphState(Generic[VT, ET]):
             self._graph.set_qubit(ins[i], i)
             self._graph.set_row(ins[i], 0)
 
-        outs = self._graph.outputs()
+        outs = self.get_graph().outputs()
         for i in range(len(outs)):
             self._graph.set_qubit(outs[i], i)
             self._graph.set_row(outs[i], 8)
 
-        for x in self._states:
+        for x in self.get_states():
             bound = self.get_bound(x)
-            self._graph.set_qubit(x, self._graph.qubit(bound))
+            self.get_graph().set_qubit(x, self._graph.qubit(bound))
             if bound in ins:
                 self._graph.set_row(x, 3)
             else: 
@@ -512,7 +528,7 @@ class GraphState(Generic[VT, ET]):
         while go_on:
             go_on = False
             for v in pivots:
-                if self._graph.phase(v) != 0:
+                if self.get_graph().phase(v) != 0:
                     vin = [x for x in self._graph.neighbors(v) if x in self._states]
                     if not vin:
                         raise ValueError(f"Pivot vertex {v} has no neighbors in states")
