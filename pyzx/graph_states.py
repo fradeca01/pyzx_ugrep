@@ -33,7 +33,10 @@ class GraphState(Generic[VT, ET]):
             states: List of state vertices
         """
         self._graph = graph
+        states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
+
+        self.validate()
 
     def pretty_print(self, draw : bool = False) -> None:
         """
@@ -44,9 +47,8 @@ class GraphState(Generic[VT, ET]):
         print(f"States: {self._states}")
         print(f"Graph: {self._graph}")
         for i in self.get_states():
-            print(f"State {i}: Phase = {self._graph.phase(i)}, Type = {self._graph.type(i)}")
             bound = self.get_bound(i)
-            print(f"  Bound: {bound}, Type: {self._graph.type(bound)}, Phase: {self._graph.phase(bound)}")
+            print(f"State {i}: Phase = {self._graph.phase(i)}, Type = {self._graph.type(i)}, Bound: {bound}, Type: {self._graph.type(bound)}, Phase: {self._graph.phase(bound)}")
 
         if draw:
             draw_d3(self._graph, labels=True, scale=65)
@@ -173,7 +175,7 @@ class GraphState(Generic[VT, ET]):
         return bounds[0]
     
 
-    def local_comp_SH(self, v: VT) -> None:
+    def local_comp_SH(self, v: VT, quiet : bool = True) -> None:
         """
         Perform a local complementation with SH ending on vertex v.
 
@@ -183,13 +185,17 @@ class GraphState(Generic[VT, ET]):
         Raises:
             ValueError: If the graph is not a valid graph state or LC conditions not met
         """
-        if not self.validate():
-            raise ValueError("Graph is not a valid graph state")
 
+        if not quiet:
+            print(f"Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
+
+        if not self.validate(quiet=quiet):
+            raise ValueError("Graph is not a valid graph state")
+            
         bound = self.get_bound(v)
         neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
 
-        a = self._graph.phase(v)
+        a = self.get_graph().phase(v)
 
         if not (a == 0 and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
             raise ValueError("This LC must be applied with a SH ending")
@@ -207,7 +213,7 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
 
-    def local_comp_HS(self, v: VT) -> None:
+    def local_comp_HS(self, v: VT, quiet: bool = True) -> None:
         """
         Perform a local complementation with HS ending on vertex v.
 
@@ -217,8 +223,12 @@ class GraphState(Generic[VT, ET]):
         Raises:
             ValueError: If the graph is not a valid graph state or LC conditions not met
         """
-        if not self.validate():
+        if not quiet:
+            print(f"Performing local complementation HS on vertex {v} with bound {bound} and neighbors {neighbors}")
+
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
+        
 
         bound = self.get_bound(v)
         neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
@@ -257,6 +267,10 @@ class GraphState(Generic[VT, ET]):
         Raises:
             ValueError: If the graph is not in a valid state for pivoting
         """
+
+        if not quiet:
+            print(f"Pivoting between vertices {x} and {y}")
+
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
         
@@ -285,7 +299,7 @@ class GraphState(Generic[VT, ET]):
         self._graph.set_phase(x, self._graph.phase(x) + 1)
         self._graph.set_phase(y, self._graph.phase(y) + 1)
 
-        self.conjugate_out_paulis()
+        self.conjugate_out_paulis(quiet=quiet)
         
         # Add/remove edges between A and B sets
         for i in range(len(A)):
@@ -324,11 +338,18 @@ class GraphState(Generic[VT, ET]):
                     self._graph.remove_edge(self._graph.edge(bound[i], v))
         
 
-    def conjugate_out_paulis(self) -> None:
+    def conjugate_out_paulis(self, quiet : bool = True) -> None:
         """
         Conjugate out Pauli operators from the graph state.
         """
+
+
+        if not self.validate(quiet=quiet):
+            raise ValueError("Graph is not a valid graph state")
+
         for v in self._states:
+            if not quiet:
+                print(f"Conjugating out Pauli operators for vertex {v}")
             bound = self.get_bound(v)
             a = self._graph.phase(v)
             row = self._graph.row(bound) - 1
@@ -352,10 +373,10 @@ class GraphState(Generic[VT, ET]):
                     self._graph.remove_edge(self._graph.edge(bound, v))
                     self._graph.set_phase(v, a - 1)
 
-            spider_simp(self._graph, matchf=lambda x: x not in self._states)
-            id_simp(self._graph, matchf=lambda x: x not in self._states)
+            spider_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
+            id_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
 
-    def normalize_graph_state(self, quiet = True) -> None:
+    def normalize_graph_state(self, quiet : bool = True) -> None:
         """
         Normalize the graph state by setting proper qubit and row assignments.
         
@@ -372,7 +393,7 @@ class GraphState(Generic[VT, ET]):
             self.get_graph().set_qubit(bound, i)
             self.get_graph().set_row(bound, 10)
 
-    def conjugate_in_paulis(self, quiet = True) -> None:
+    def conjugate_in_paulis(self, quiet : bool = True) -> None:
         """
         Conjugate in Pauli operators to the graph state.
         
@@ -380,6 +401,9 @@ class GraphState(Generic[VT, ET]):
             ValueError: If a non-Pauli vertex is encountered that should be conjugated in
         """
 
+        if not self.validate(quiet=quiet):
+            raise ValueError("Graph is not a valid graph state")     
+          
         states = self.get_states()
         g = self.get_graph()
 
@@ -412,13 +436,17 @@ class GraphState(Generic[VT, ET]):
                     g.add_edge((v, new_bound), edge_type)
                     break
         
-    def assert_intermediate(self) -> bool:
+    def assert_intermediate(self, quiet : bool = True) -> bool:
         """
         Check that after local complementing there is only one LC gate H or S on each state.
         
         Returns:
             True if the intermediate condition is satisfied, False otherwise
         """
+
+        if not self.validate(quiet=quiet):
+            raise ValueError("Graph is not a valid graph state")
+
         for v in self._states:
             edge = self._graph.edge(v, self.get_bound(v))
             if self._graph.phase(v) != 0 and self._graph.edge_type(edge) == EdgeType.HADAMARD:
