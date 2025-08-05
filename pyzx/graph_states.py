@@ -37,6 +37,10 @@ class GraphState(Generic[VT, ET]):
         self._bound: Dict[VT, VT] = {}
         self._update_bounds()
 
+    def __getattr__(self, name):
+        """Redirect all other method calls to the underlying graph."""
+        return getattr(self._graph, name)
+
     def _update_bounds(self) -> None:
         """Update the mapping from state vertices to their boundary vertices."""
         for v in self._states:
