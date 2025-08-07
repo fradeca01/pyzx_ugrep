@@ -24,7 +24,7 @@ class GraphState(Generic[VT, ET]):
     It is a wrapper for BaseGraph and provides additional functionality for graph state operations.
     """
 
-    def __init__(self, graph: BaseGraph[VT, ET], states: List[VT]):
+    def __init__(self, graph: BaseGraph[VT, ET]):
         """
         Initialize a GraphState.
         
@@ -255,6 +255,7 @@ class GraphState(Generic[VT, ET]):
                     self._graph.add_edge(edge_pair=(x, y), edgetype=EdgeType.HADAMARD)
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
+
 
     def pivot(self, x: VT, y: VT, quiet : bool = True) -> None:
         """
@@ -519,6 +520,7 @@ class GraphState(Generic[VT, ET]):
                         draw_d3(self._graph, labels=True, scale=65)
                     break
 
+
     def to_canonical_form(self, quiet: bool = True) -> None:
         """
         Transform the graph state to a canonical form.
@@ -545,7 +547,7 @@ class GraphState(Generic[VT, ET]):
                             go_on = True
                             break
 
-    def remove_LC_pivot(self, pivots: List[VT]) -> None:
+    def remove_pivot_phases(self, pivots: List[VT], quiet : bool = True) -> None:
         """
         Remove local complementation pivot operations.
         
@@ -557,15 +559,13 @@ class GraphState(Generic[VT, ET]):
             go_on = False
             for v in pivots:
                 if self.get_graph().phase(v) != 0:
-                    vin = [x for x in self._graph.neighbors(v) if x in self._states]
-                    if not vin:
-                        raise ValueError(f"Pivot vertex {v} has no neighbors in states")
-                    vin = vin[0]
-                    self.local_comp_HS(vin)
+                    if not quiet:
+                        print(f"Removing pivot phase for vertex {v} with phase {self.get_graph().phase(v)}")
+                    self.get_graph().set_phase(v, 0)
                     go_on = True
                     break
 
-    def to_RRREF(self) -> List[VT]:
+    def to_RRREF(self, quiet : bool = True) -> List[VT]:
         """
         Transform the graph state to a reduced row echelon form.
         
@@ -578,7 +578,9 @@ class GraphState(Generic[VT, ET]):
         mat = bi_adj(self._graph, ins, outs)
         mat = mat.transpose()
 
-        print(mat)
+        if not quiet:
+            print("Initial bi-adjacency matrix:")
+            print(mat)
 
         mat.gauss(full_reduce=True)
         pivots = []
@@ -592,10 +594,14 @@ class GraphState(Generic[VT, ET]):
         mat = mat.transpose()
 
         connectivity_from_biadj(self._graph, mat, ins, outs)
+
+        if not quiet:
+            print("Reduced bi-adjacency matrix:")
+            draw_d3(self.get_graph(), labels=True, scale=65)
       
         return pivots
 
-    def remove_pivot_edges(self, pivots: List[VT]) -> None:
+    def remove_pivot_edges(self, pivots: List[VT], quiet : bool = True) -> None:
         """
         Remove edges between pivot vertices.
         
@@ -605,4 +611,6 @@ class GraphState(Generic[VT, ET]):
         for x in pivots:
             for y in pivots:
                 if x != y and self._graph.connected(x, y):
-                    self._graph.remove_edge(self._graph.edge(x, y))
+                    if not quiet:
+                        print(f"Removing edge between pivot vertices {x} and {y}")
+                    self.get_graph().remove_edge(self.get_graph().edge(x, y))
