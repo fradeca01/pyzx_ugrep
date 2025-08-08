@@ -72,7 +72,7 @@ class GraphState(Generic[VT, ET]):
 
         g = self._graph
 
-        if not quiet: draw_d3(self._graph, labels=True, scale=65)
+        # if not quiet: draw_d3(self._graph, labels=True, scale=65)
 
         # checks that all spiders are Z-spiders
         for v in self.get_states():
@@ -132,7 +132,7 @@ class GraphState(Generic[VT, ET]):
                     print(f"Vertex {v} has a non-clifford phase: {a}")
                 return False
         
-        print("Graph state is valid")
+        # print("Graph state is valid")
 
         return True
     
@@ -186,18 +186,19 @@ class GraphState(Generic[VT, ET]):
             ValueError: If the graph is not a valid graph state or LC conditions not met
         """
 
+        bound = self.get_bound(v)
+        neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
+
         if not quiet:
             print(f"Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
 
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
             
-        bound = self.get_bound(v)
-        neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
 
         a = self.get_graph().phase(v)
 
-        if not (a == 0 and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
+        if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
             raise ValueError("This LC must be applied with a SH ending")
 
         for x in neighbors:
@@ -212,6 +213,9 @@ class GraphState(Generic[VT, ET]):
                     self._graph.add_edge(edge_pair=(x, y), edgetype=EdgeType.HADAMARD)
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
+        
+        if not quiet:
+            draw_d3(self.get_graph(), labels=True, scale=65)
 
     def local_comp_HS(self, v: VT, quiet: bool = True) -> None:
         """
@@ -274,7 +278,7 @@ class GraphState(Generic[VT, ET]):
 
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
-        
+    
         A = [neighbor for neighbor in self._graph.neighbors(x) if neighbor in self._states] + [x]
         B = [neighbor for neighbor in self._graph.neighbors(y) if neighbor in self._states] + [y]
 
@@ -300,9 +304,16 @@ class GraphState(Generic[VT, ET]):
         self._graph.set_phase(x, self._graph.phase(x) + 1)
         self._graph.set_phase(y, self._graph.phase(y) + 1)
 
+        if not quiet:
+            draw_d3(self.get_graph(), labels=True, scale=65)
+
+        if not quiet:
+            print("Finalizing pivoting conjugating out:....")
+
         self.conjugate_out_paulis(quiet=quiet)
+
         
-        # Add/remove edges between A and B sets
+                # Add/remove edges between A and B sets
         for i in range(len(A)):
             for j in range(len(B)):
                 if A[i] == B[j]:
@@ -344,6 +355,8 @@ class GraphState(Generic[VT, ET]):
         Conjugate out Pauli operators from the graph state.
         """
 
+        if not quiet:
+            print("Start conjugating out:...")
 
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
@@ -376,6 +389,10 @@ class GraphState(Generic[VT, ET]):
 
             spider_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
             id_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
+
+        if not quiet:
+            draw_d3(self.get_graph(), labels=True, scale=65)
+
 
     def normalize_graph_state(self, quiet : bool = True) -> None:
         """
@@ -531,19 +548,20 @@ class GraphState(Generic[VT, ET]):
         go_on = True
         while go_on:
             go_on = False
-            for v in self._states:
-                edge = self._graph.edge(v, self.get_bound(v))
-                if self._graph.edge_type(edge) == EdgeType.HADAMARD:
-                    neigh = [x for x in self._graph.neighbors(v) if x in self._states]
-                    for x in neigh:
-                        if x < v:
-                            self.pivot(v, x, quiet = quiet)
-                            if self._graph.phase(x) == Fraction(1, 2): 
-                                self.local_comp_SH(x)
-                                self.conjugate_out_paulis()
+            for x in self._states:
+                edge = self.get_graph().edge(x, self.get_bound(x))
+                if self.get_graph().edge_type(edge) == EdgeType.HADAMARD:
+                    neigh = [v for v in self._graph.neighbors(x) if v in self.get_states()]
+                    for y in neigh:
+                        if y < x:
                             if not quiet:
-                                print("Pivoted on:", v, x)
+                                print("Switching H between:", y, x)
                                 draw_d3(self._graph, labels=True, scale=65)
+                            self.pivot(y, x, quiet = quiet)
+                            edge = self.get_graph().edge(y, self.get_bound(y))
+                            if self.get_graph().phase(y) == Fraction(1, 2) and self.get_graph().edge_type(edge) == EdgeType.HADAMARD: 
+                                self.local_comp_SH(y, quiet= quiet)
+                                self.conjugate_out_paulis()
                             go_on = True
                             break
 
@@ -597,6 +615,7 @@ class GraphState(Generic[VT, ET]):
 
         if not quiet:
             print("Reduced bi-adjacency matrix:")
+            print(mat)
             draw_d3(self.get_graph(), labels=True, scale=65)
       
         return pivots
