@@ -9,13 +9,15 @@ __all__ = [
 
 
 from pyzx.symbolic import Poly
-from .simplify import is_graph_like, spider_simp, id_simp
+
+from .simplify import is_graph_like, spider_simp, id_simp, clifford_simp
 from fractions import Fraction
 from .d3 import draw_d3
 from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
 from .extract import connectivity_from_biadj, bi_adj
-from typing import List, Tuple, Dict, Generic, cast
+from typing import List, Tuple, Dict, Generic, cast, Self
 import itertools
+from .circuit import Circuit
 
 class GraphState(Generic[VT, ET]):
     """
@@ -24,7 +26,7 @@ class GraphState(Generic[VT, ET]):
     It is a wrapper for BaseGraph and provides additional functionality for graph state operations.
     """
 
-    def __init__(self, graph: BaseGraph[VT, ET]):
+    def __init__(self, graph: BaseGraph[VT, ET] = None):
         """
         Initialize a GraphState.
         
@@ -37,6 +39,40 @@ class GraphState(Generic[VT, ET]):
         self._states = states
 
         self.validate()
+
+    @classmethod
+    def from_circuit(cls, circ : Circuit, k : int) -> Self:
+        """, 
+        Create a GraphState from a Circuit.
+        
+        Args:
+            circ: The circuit to convert to a graph state
+        
+        Returns:
+            A GraphState object
+        """
+
+        g = circ.to_graph()
+        for i in range(len(g.inputs())-k):
+            q = g.inputs()[i]
+            g.set_type(q, VertexType.Z)
+            neigh = [x for x in g.neighbors(q)]
+            neigh = neigh[0]
+            e = g.edge(q, neigh)
+            if g.edge_type(e) == EdgeType.HADAMARD:
+                g.set_edge_type(e, EdgeType.SIMPLE)
+            else:
+                g.set_edge_type(e, EdgeType.HADAMARD)
+
+        g.auto_detect_io()
+        # to_graph_like(g) 
+        clifford_simp(g, quiet=False) # O(n)
+        g.normalize()
+
+        return cls(g)
+
+
+
 
     def pretty_print(self, draw : bool = False) -> None:
         """
@@ -323,7 +359,7 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(A[i], B[j]))
 
-    def fix_input_output(self) -> None:
+    def fix_input_output(self, quiet : bool = True) -> None:
         """
         Fix input/output connections by ensuring each state vertex has exactly one boundary connection.
         
@@ -538,7 +574,7 @@ class GraphState(Generic[VT, ET]):
                     break
 
 
-    def to_canonical_form(self, quiet: bool = True) -> None:
+    def reorder_H(self, quiet: bool = True) -> None:
         """
         Transform the graph state to a canonical form.
         
@@ -633,3 +669,34 @@ class GraphState(Generic[VT, ET]):
                     if not quiet:
                         print(f"Removing edge between pivot vertices {x} and {y}")
                     self.get_graph().remove_edge(self.get_graph().edge(x, y))
+
+
+    def to_canonical_form(self, quiet : bool = True):
+
+        
+        self.fix_input_output(quiet=quiet) 
+
+        self.normalize_graph_state(quiet = quiet)
+        self.conjugate_out_paulis(quiet=quiet) # O(n)
+
+
+        # The length of each LC is at most 2 and SH is not possible.
+        self.remove_HS()
+
+        assert(self.assert_intermediate())
+
+        self.reorder_H(quiet = quiet)
+        self.conjugate_in_paulis(quiet= quiet)
+
+
+        self.state_to_circuit()
+        self.remove_unitaries_input()
+
+        pivots = self.to_RRREF()
+
+        #Just remove the pivot phases
+        self.remove_pivot_phases(pivots)
+
+        # Just remove the pivot edges
+        self.remove_pivot_edges(pivots)
+
