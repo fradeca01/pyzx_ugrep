@@ -15,7 +15,7 @@ from fractions import Fraction
 from .d3 import draw_d3
 from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
 from .extract import connectivity_from_biadj, bi_adj
-from typing import List, Tuple, Dict, Generic, cast, Self
+from typing import List, Tuple, Dict, Generic, cast
 import itertools
 from .circuit import Circuit
 
@@ -41,7 +41,7 @@ class GraphState(Generic[VT, ET]):
         self.validate()
 
     @classmethod
-    def from_circuit(cls, circ : Circuit, k : int) -> Self:
+    def from_circuit(cls, circ : Circuit, k : int) -> "GraphState":
         """, 
         Create a GraphState from a Circuit.
         
