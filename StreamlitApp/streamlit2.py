@@ -1,9 +1,14 @@
-from pyzx import *
 import stim
+import os, sys
 import networkx as nx
 from pyvis.network import Network
 import streamlit as st
 import tempfile
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from pyzx import *
+
 
 def tableau_to_graph(list, quiet = True):
     n = len(list[0])
