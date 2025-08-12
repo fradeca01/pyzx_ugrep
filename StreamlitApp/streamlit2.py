@@ -5,7 +5,7 @@ from pyvis.network import Network
 import streamlit as st
 import tempfile
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from pyzx import *
 
@@ -64,7 +64,6 @@ def load_example(example):
         example_stabilizers = ["XZZXI","IXZZX","XIXZZ","ZXIXZ"]
     else:
         example_stabilizers = []
-        return
     
     # Clear existing stabilizer inputs
     for i in range(20):  # Clear up to 20 possible stabilizers
@@ -74,6 +73,8 @@ def load_example(example):
     # Set the new stabilizers
     for i, s in enumerate(example_stabilizers):
         st.session_state[f"stab_{i}"] = s
+    
+    st.rerun()
 
 
 lc, rc = st.columns(2)
