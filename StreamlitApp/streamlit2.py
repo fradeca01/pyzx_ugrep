@@ -73,22 +73,17 @@ def load_example(example):
     # Set the new stabilizers
     for i, s in enumerate(example_stabilizers):
         st.session_state[f"stab_{i}"] = s
-    
-    st.rerun()
 
 
 lc, rc = st.columns(2)
 
+
 with st.sidebar:
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        examples = st.selectbox(
+    examples = st.selectbox(
                 "Load example:",
                 ["None", "Steane code", "Shor code", "Five qubit code"],
-                index=0)
-    with col2:
-        st.write("")  # Empty space to align button
-        st.button("Load", on_click=load_example, args=(examples,))
+                index=0)    
+    load_example(examples)
 
     c1, c2 = st.columns(2)
     with c1:
