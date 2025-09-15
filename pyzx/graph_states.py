@@ -31,49 +31,40 @@ class GraphState(Generic[VT, ET]):
         Initialize a GraphState.
         
         Args:
-            graph: The underlying graph
+            graph: A ZX-diagram which is a graph state
             states: List of state vertices
         """
+
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
+        self._pivots = None
 
         self.validate()
 
     @classmethod
-    def from_circuit(cls, circ : Circuit, k : int) -> "GraphState":
+    def from_clifford_diagram(cls, cliffDiagram : BaseGraph) -> "GraphState":
         """, 
-        Create a GraphState from a Circuit.
+        Create a GraphState from a Clifford Circuit.
         
         Args:
-            circ: The circuit to convert to a graph state
+            circ: The clifford circuit to convert to a graph state
         
         Returns:
             A GraphState object
         """
 
-        g = circ.to_graph()
-        for i in range(len(g.inputs())-k):
-            q = g.inputs()[i]
-            g.set_type(q, VertexType.Z)
-            neigh = [x for x in g.neighbors(q)]
-            neigh = neigh[0]
-            e = g.edge(q, neigh)
-            if g.edge_type(e) == EdgeType.HADAMARD:
-                g.set_edge_type(e, EdgeType.SIMPLE)
-            else:
-                g.set_edge_type(e, EdgeType.HADAMARD)
+        #TODO : Check if the diagram is Clifford!!!!
 
-        g.auto_detect_io()
+        cliffDiagram.auto_detect_io()
         # to_graph_like(g) 
-        clifford_simp(g, quiet=False) # O(n)
-        g.normalize()
 
-        return cls(g)
+        #Simplify ZX diagram to be a graph-state
+        clifford_simp(cliffDiagram, quiet=False) # O(n)
+        cliffDiagram.normalize()
 
-
-
-
+        return cls(cliffDiagram)
+    
     def pretty_print(self, draw : bool = False) -> None:
         """
         Print the graph state in a human-readable format.
@@ -94,6 +85,7 @@ class GraphState(Generic[VT, ET]):
         return getattr(self._graph, name)
 
     def validate(self, quiet : bool = True) -> bool:
+        
         """
         Checks if a ZX-diagram is graph-state: 
         only contains Z-spiders which are connected by Hadamard edges.
@@ -222,15 +214,21 @@ class GraphState(Generic[VT, ET]):
             ValueError: If the graph is not a valid graph state or LC conditions not met
         """
 
+
+        ##MANCA QUALCOSA QUI
+
         bound = self.get_bound(v)
         neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
 
         if not quiet:
             print(f"Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
 
+
+        # WHY HERE?
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
-            
+        
+         
 
         a = self.get_graph().phase(v)
 
@@ -278,11 +276,14 @@ class GraphState(Generic[VT, ET]):
         if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
             raise ValueError("This LC must be applied with a HS ending")
 
-        self._graph.add_to_phase(v, 1)
+        self._graph.set_phase(v, -Fraction(1, 2))
         self._graph.set_edge_type(self._graph.edge(bound, v), EdgeType.SIMPLE)
+
+        #Xs
         for x in neighbors:
             self._graph.add_to_phase(x, 1)
-                
+
+        #Ss                
         for x in neighbors:
             self._graph.add_to_phase(x, Fraction(1, 2))
 
@@ -386,9 +387,10 @@ class GraphState(Generic[VT, ET]):
                     self._graph.remove_edge(self._graph.edge(bound[i], v))
         
 
+
     def conjugate_out_paulis(self, quiet : bool = True) -> None:
         """
-        Conjugate out Pauli operators from the graph state.
+        Conjugate out Pauli operators from the graph state. After this operation, all state vertices will have phase 0 or 1/2.
         """
 
         if not quiet:
@@ -490,6 +492,8 @@ class GraphState(Generic[VT, ET]):
                     g.add_edge((v, new_bound), edge_type)
                     break
         
+
+    # DA RIMUOVERE
     def assert_intermediate(self, quiet : bool = True) -> bool:
         """
         Check that after local complementing there is only one LC gate H or S on each state.
@@ -552,6 +556,7 @@ class GraphState(Generic[VT, ET]):
                 b2 = self.get_bound(w)
                 if b1 in ins and b2 in ins:
                     self._graph.remove_edge(e)
+
 
     def remove_HS(self, quiet: bool = True) -> None:
         """
@@ -671,6 +676,8 @@ class GraphState(Generic[VT, ET]):
                     self.get_graph().remove_edge(self.get_graph().edge(x, y))
 
 
+    #TODO: Vertify Canonical form
+
     def to_canonical_form(self, quiet : bool = True):
 
         
@@ -689,6 +696,7 @@ class GraphState(Generic[VT, ET]):
         self.conjugate_in_paulis(quiet= quiet)
 
 
+        ## Here start steps for the second canonical form
         self.state_to_circuit()
         self.remove_unitaries_input()
 
@@ -699,4 +707,63 @@ class GraphState(Generic[VT, ET]):
 
         # Just remove the pivot edges
         self.remove_pivot_edges(pivots)
+
+    def get_outputs(self) -> List[VT]:
+        """
+        Get the output vertices of the graph state.
+        
+        Returns:
+            List of output vertices
+        """
+        return [v for v in self.get_states() if v.get_bound() in self.get_graph().outputs()]
+    
+    def get_inputs(self) -> List[VT]:
+        """
+        Get the inputs vertices of the graph state.
+        
+        Returns:
+            List of inputs vertices
+        """
+        return [v for v in self.get_states() if v.get_bound() in self.get_graph().inputs()]
+    
+    def get_pivots(self) -> List[VT]:
+        """
+        Get the pivot vertices of the graph state.
+        
+        Returns:
+            List of pivot vertices
+        """
+        if self._pivots is None:
+            raise ValueError("Pivots have not been computed yet. Call to_RRREF() first.")
+        return self._pivots
+
+    def to_stabilizer_tableau (self, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
+        """
+        Convert the graph state to a stabilizer tableau.
+        
+        Returns:
+            A list of stabilizers representing the graph state
+        """
+
+        # CHANGE WITH CORRECT METHOD WHEN IMPLEMENTED
+        if not self.validate():
+            raise ValueError("Graph is not a valid graph state")
+
+        stabilizers = []
+
+        n = len(self.get_outputs())
+        
+        map = {v : i for i, v in enumerate(self.get_outputs())}
+
+        pivots = self.get_pivots()
+        outs_no_pivots = [v for v in self.get_outputs() if v not in pivots]
+        inputs = self.get_inputs()
+
+        for v in outs_no_pivots:
+            s = ["I" for _ in range(n)]
+            s[map[v]] = "X"
+            for x in self.get_graph().neighbors(v):
+                if x in self.get_ouputs():
+                    s[map[x]] = "Z"
+        return stabilizers
 
