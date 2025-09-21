@@ -30,7 +30,12 @@ class GraphState(Generic[VT, ET]):
         1 : "Extracting paulis",
         2 : "Removing HS",
         3 : "Reordering H",
-        4 : "Injecting paulis"
+        4 : "Injecting paulis",
+        5 : "Converting to circuit",
+        6 : "Removing unitaries from inputs",
+        7 : "Transofrm to RREF",
+        8 : "Removing pivot phases",
+        9 : "Removing pivot edges"
     }
 
     def __init__(self, graph: BaseGraph[VT, ET]) -> None:
@@ -434,6 +439,8 @@ class GraphState(Generic[VT, ET]):
         type_y = self._graph.edge_type(edge_y)
 
         # Flip edge types
+
+
         if type_x == EdgeType.SIMPLE:
             type_x = EdgeType.HADAMARD
         else:
@@ -456,7 +463,7 @@ class GraphState(Generic[VT, ET]):
             if v in B:
                 self._graph.add_to_phase(v, 1)
 
-                       # Add/remove edges between A and B sets
+        # Add/remove edges between A and B sets
         for i in range(len(A)):
             for j in range(len(B)):
                 if A[i] == B[j]:
@@ -466,7 +473,8 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(A[i], B[j]))
 
-        self.push_out_paulis(quiet=quiet, step = 3)
+        if step != 9:
+            self.push_out_paulis(quiet=quiet, step = step)
 
         if not self.validate(quiet=True, step = step):
             raise ValueError("Graph is not a valid graph state")
@@ -570,8 +578,11 @@ class GraphState(Generic[VT, ET]):
             raise ValueError("Graph is not a valid graph state")
         
         self.normalize()
+
+        states = self.get_states()
+        states.sort()
         
-        for i in range(len(self.get_states())):
+        for i in range(len(states)):
             self.get_graph().set_qubit(self._states[i], i)
             self.get_graph().set_row(self._states[i], (i % 2) * 4)
             bound = self.get_bound(self._states[i])
@@ -598,7 +609,8 @@ class GraphState(Generic[VT, ET]):
             bound = self.get_bound(v)
             edge = g.edge(v, bound)
             edge_type = g.edge_type(edge)
-            print(f"Step {4}: {self.steps.get(4,'UNKNOWN')} --- Injecting Pauli operators {pauli} for vertex {v}")
+            if not quiet:
+                print(f"Step {4}: {self.steps.get(4,'UNKNOWN')} --- Injecting Pauli operators {pauli} for vertex {v}")
 
             if ((edge_type == EdgeType.HADAMARD) and pauli.b == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.c == 1):  # Z case
                 g.add_to_phase(v, 1)
@@ -609,83 +621,62 @@ class GraphState(Generic[VT, ET]):
         
         if not self.validate(quiet=quiet, step = 4):
             raise ValueError("Graph is not a valid graph state")
-       
-        # go_on = True
-        # while go_on:
-        #     go_on = False
-        #     for v in states:
-        #         bound = self.get_bound(v)
-        #         bound_type = g.type(bound)
-        #         if bound_type != VertexType.BOUNDARY:
-        #             go_on = True
-        #             a = g.phase(bound)
-        #             if not quiet:
-        #                 print(f"Conjugating in vertex {bound} with phase {a} and type {bound_type} for state {v}")
-        #             if a != 1:
-        #                 raise ValueError(f"Vertex {bound} must be Pauli (phase=1) to conjugate in, but has phase={a}")
-                    
-        #             edge_type = g.edge_type(g.edge(v, bound))
-        #             if (edge_type == EdgeType.HADAMARD and bound_type == VertexType.X or 
-        #                 edge_type == EdgeType.SIMPLE and bound_type == VertexType.Z):
-        #                 g.add_to_phase(v, 1)
-        #             elif (edge_type == EdgeType.HADAMARD and bound_type == VertexType.Z or 
-        #                   edge_type == EdgeType.SIMPLE and bound_type == VertexType.X):
-        #                 for x in self._graph.neighbors(v):
-        #                     if x in self._states:
-        #                         g.add_to_phase(x, 1)
 
-        #             new_bound = self.get_bound(bound)
-        #             g.remove_vertex(bound)
-        #             g.add_edge((v, new_bound), edge_type)
-        #             break
-        
         if not self.validate(quiet=quiet, step = 4):
             raise ValueError("Graph is not a valid graph state")     
 
-    # DA RIMUOVERE
-    def assert_intermediate(self, quiet : bool = True) -> bool:
-        """
-        Check that after local complementing there is only one LC gate H or S on each state.
-        
-        Returns:
-            True if the intermediate condition is satisfied, False otherwise
-        """
 
-        if not self.validate(quiet=quiet):
-            raise ValueError("Graph is not a valid graph state")
-
-        for v in self._states:
-            edge = self._graph.edge(v, self.get_bound(v))
-            if self._graph.phase(v) != 0 and self._graph.edge_type(edge) == EdgeType.HADAMARD:
-                return False
-        
-        return True
-
-    def state_to_circuit(self) -> None:
+    def state_to_circuit(self, quiet : bool = True) -> None:
         """
         Convert graph state to circuit representation by setting qubit and row positions.
         """
-        ins = self._graph.inputs()
-        print(ins)
+        ins = list(self._graph.inputs())
 
-        for i in range(len(ins)):
-            self._graph.set_qubit(ins[i], i)
-            self._graph.set_row(ins[i], 0)
+        input_states = self.get_inputs()
+        output_states = self.get_outputs()
 
-        outs = self.get_graph().outputs()
-        for i in range(len(outs)):
-            self._graph.set_qubit(outs[i], i)
-            self._graph.set_row(outs[i], 8)
+        input_states.sort()
+        output_states.sort()
 
-        for x in self.get_states():
-            bound = self.get_bound(x)
-            self.get_graph().set_qubit(x, self._graph.qubit(bound))
-            if bound in ins:
-                self._graph.set_row(x, 3)
-            else: 
-                self._graph.set_row(x, 6)
+        for i in range(len(input_states)):
+            self._graph.set_qubit(input_states[i], i)
+            self._graph.set_row(input_states[i], 3)
 
-    def remove_unitaries_input(self) -> None:
+            bound = self.get_bound(input_states[i])
+            self._graph.set_qubit(bound, i)
+            self._graph.set_row(bound, 0)
+
+        for i in range(len(output_states)):
+            self._graph.set_qubit(output_states[i], i)
+            self._graph.set_row(output_states[i], 6)
+
+            bound = self.get_bound(output_states[i])
+            self._graph.set_qubit(bound, i)
+            self._graph.set_row(bound, 8)
+
+
+
+
+        # for i in range(len(ins)):
+        #     self._graph.set_qubit(ins[i], i)
+        #     self._graph.set_row(ins[i], 0)
+
+        # outs = list(self.get_graph().outputs())
+        # for i in range(len(outs)):
+        #     self._graph.set_qubit(outs[i], i)
+        #     self._graph.set_row(outs[i], 8)
+
+        # for x in self.get_states():
+        #     bound = self.get_bound(x)
+        #     self.get_graph().set_qubit(x, self._graph.qubit(bound))
+        #     if bound in ins:
+        #         self._graph.set_row(x, 3)
+        #     else: 
+        #         self._graph.set_row(x, 6)
+
+        self.validate(quiet=quiet, step=5)
+
+    def remove_unitaries_input(self, quiet : bool = True) -> None:
         """
         Remove unitary operations from input vertices.
         """
@@ -705,6 +696,12 @@ class GraphState(Generic[VT, ET]):
                 b2 = self.get_bound(w)
                 if b1 in ins and b2 in ins:
                     self._graph.remove_edge(e)
+
+        if not quiet:
+            print(f"Step: {self.steps.get(6,'UNKNOWN')} --- Removed unitaries from inputs")
+
+        if not self.validate(quiet=quiet, step = 6):
+            raise ValueError("Graph is not a valid graph state")
 
 
     def remove_HS(self, quiet: bool = True) -> None:
@@ -758,23 +755,36 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet, step = 3):
             raise ValueError("Graph is not a valid graph state")
 
-    def remove_pivot_phases(self, pivots: List[VT], quiet : bool = True) -> None:
+    def remove_pivot_phases(self, quiet : bool = True) -> None:
         """
         Remove local complementation pivot operations.
         
         Args:
             pivots: List of pivot vertices
         """
+
+        pivots = self.get_pivots()
+
+        if not quiet:
+            print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phases for pivots: {pivots}")
+
         go_on = True
         while go_on:
             go_on = False
             for v in pivots:
                 if self.get_graph().phase(v) != 0:
+                    neighbors = [x for x in self.get_graph().neighbors(v) if x in self._states]
                     if not quiet:
-                        print(f"Removing pivot phase for vertex {v} with phase {self.get_graph().phase(v)}")
+                        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phase for vertex {v} with phase {self.get_graph().phase(v)}")
                     self.get_graph().set_phase(v, 0)
+                    for x in neighbors:
+                        self.get_graph().add_to_phase(x, Fraction(1, 2))
+
                     go_on = True
                     break
+        
+        if not self.validate(quiet=quiet, step = 8):
+            raise ValueError("Graph is not a valid graph state")
 
     def to_RRREF(self, quiet : bool = True) -> List[VT]:
         """
@@ -790,8 +800,9 @@ class GraphState(Generic[VT, ET]):
         mat = mat.transpose()
 
         if not quiet:
-            print("Initial bi-adjacency matrix:")
+            print(f"Step {7}: {self.steps.get(7,'UNKNOWN')} --- Reducing the matrix to RREF:")
             print(mat)
+            print(">>>>>>>>>")
 
         mat.gauss(full_reduce=True)
         pivots = []
@@ -802,30 +813,41 @@ class GraphState(Generic[VT, ET]):
                     break
 
         pivots = [outs[j] for j in pivots]
+        if not quiet:
+            print(mat)
         mat = mat.transpose()
 
         connectivity_from_biadj(self._graph, mat, ins, outs)
 
+        self._pivots = pivots
         if not quiet:
-            print("Reduced bi-adjacency matrix:")
-            print(mat)
-            draw_d3(self.get_graph(), labels=True, scale=65)
+            print(f"Step {7}: {self.steps.get(7,'UNKNOWN')} --- PIVOTS: {pivots}")
+
+        if not self.validate(quiet=quiet, step = 7):
+            raise ValueError("Graph is not a valid graph state")
       
         return pivots
 
-    def remove_pivot_edges(self, pivots: List[VT], quiet : bool = True) -> None:
+    def remove_pivot_edges(self, quiet : bool = True) -> None:
         """
         Remove edges between pivot vertices.
         
         Args:
             pivots: List of pivot vertices
         """
+
+        pivots = self.get_pivots()
+
         for x in pivots:
             for y in pivots:
                 if x != y and self._graph.connected(x, y):
                     if not quiet:
-                        print(f"Removing edge between pivot vertices {x} and {y}")
-                    self.get_graph().remove_edge(self.get_graph().edge(x, y))
+                        print(f"Step {9}: {self.steps.get(9,'UNKNOWN')} --- Removing pivot-pivot edges from pivots: {pivots}")
+                    # self.get_graph().remove_edge(self.get_graph().edge(x, y))
+                    self.pivot(x, y, quiet = quiet, step=9)
+
+        if not self.validate(quiet=quiet, step = 9):
+            raise ValueError("Graph is not a valid graph state")
 
 
     #TODO: Vertify Canonical form
@@ -863,10 +885,12 @@ class GraphState(Generic[VT, ET]):
             self.to_canonical_form(quiet = quiet)
 
         self.state_to_circuit(quiet = quiet)
+        self.to_RRREF(quiet = quiet)
+        self.remove_pivot_phases(quiet = quiet)
+        self.remove_pivot_edges(quiet = quiet)
         self.remove_unitaries_input(quiet = quiet)
-        pivots = self.to_RRREF(quiet = quiet)
-        self.remove_pivot_phases(pivots, quiet = quiet)
-        self.remove_pivot_edges(pivots, quiet = quiet)
+
+        return self.get_graph()
 
 
 
