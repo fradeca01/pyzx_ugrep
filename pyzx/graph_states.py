@@ -26,6 +26,12 @@ class GraphState(Generic[VT, ET]):
     It is a wrapper for BaseGraph and provides additional functionality for graph state operations.
     """
 
+    steps = {
+        1 : "Extracting paulis",
+        2 : "Removing HS",
+        3 : "Reordering H",
+    }
+
     def __init__(self, graph: BaseGraph[VT, ET]) -> None:
         """
         Initialize an (extended) GraphState from a Clifford ZX-diagram.
@@ -106,7 +112,7 @@ class GraphState(Generic[VT, ET]):
         """Redirect all other method calls to the underlying graph."""
         return getattr(self._graph, name)
 
-    def validate(self, quiet : bool = True) -> bool:
+    def validate(self, quiet : bool = True, step : int = 0) -> bool:
         
         """
         Checks if a ZX-diagram is extended graph-state: 
@@ -187,7 +193,8 @@ class GraphState(Generic[VT, ET]):
                 return False
         
         if not quiet:
-            print("Graph state is valid")
+            print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Graph state is valid:")
+            draw_d3(self._graph, labels=True, scale=40)
 
         return True
     
@@ -300,9 +307,11 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             draw_d3(self.get_graph(), labels=True, scale=65)
 
-    def local_comp_SH(self, v: VT, quiet : bool = True) -> None:
+    def local_comp_SH(self, v: VT, quiet : bool = True, step : int = 0) -> None:
         """
         Perform a local complementation with SH ending on vertex v.
+
+        Effectively remves the phase on vertex v and adds pi/2 to each neighbor of v.
 
         Args:
             v: The vertex to apply the local complementation to.
@@ -312,14 +321,11 @@ class GraphState(Generic[VT, ET]):
         """
 
 
-        ##MANCA QUALCOSA QUI
-
         bound = self.get_bound(v)
         neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
 
         if not quiet:
-            print(f"Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
-
+            print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
 
         a = self.get_graph().phase(v)
 
@@ -341,12 +347,9 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
         
-        self.push_out_paulis(quiet=quiet)
+        self.push_out_paulis(quiet=quiet, step = 3)
 
-        if not quiet:
-            draw_d3(self.get_graph(), labels=True, scale=65)
-
-        if not self.validate(quiet=quiet):
+        if not self.validate(quiet=True, step = 3):
             raise ValueError("Graph is not a valid graph state")
 
 
@@ -368,19 +371,17 @@ class GraphState(Generic[VT, ET]):
             ValueError: If the graph is not a valid graph state or LC conditions not met
         """
 
-        if not quiet:
-            print(f"Performing local complementation HS on vertex {v} with bound {bound} and neighbors {neighbors}")
-
-        
-
         bound = self.get_bound(v)
         neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
-
         a = self._graph.phase(v)
         edge = self.get_graph().edge(bound, v)
+        
+        if not quiet:
+            print(f"Step {2}: {self.steps.get(2,'UNKNOWN')} --- Performing local complementation HS on vertex {v} with bound {bound} and neighbors {neighbors}")
 
         if not (a % 1 == Fraction(1, 2) and self._graph.edge_type(edge) == EdgeType.HADAMARD):
             raise ValueError("This LC rule must be applied with a HS ending")
+
 
         self._graph.add_to_phase(v, -1)
         self._graph.set_edge_type(self._graph.edge(bound, v), EdgeType.SIMPLE)
@@ -403,14 +404,12 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
 
-        self.push_out_paulis(quiet=quiet)
+        self.push_out_paulis(quiet=quiet, step = 2)
 
-        self.validate(quiet=quiet)
-
-        if not self.validate(quiet=quiet):
+        if not self.validate(quiet=True, step = 2):
             raise ValueError("Graph is not a valid graph state")
 
-    def pivot(self, x: VT, y: VT, quiet : bool = True) -> None:
+    def pivot(self, x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
         """
         Perform a pivot operation between vertices x and y in the graph state.
         
@@ -423,7 +422,7 @@ class GraphState(Generic[VT, ET]):
         """
 
         if not quiet:
-            print(f"Pivoting between vertices {x} and {y}")
+            print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Pivoting between vertices {x} and {y}")
     
         A = [neighbor for neighbor in self._graph.neighbors(x) if neighbor in self._states] + [x]
         B = [neighbor for neighbor in self._graph.neighbors(y) if neighbor in self._states] + [y]
@@ -456,21 +455,7 @@ class GraphState(Generic[VT, ET]):
             if v in B:
                 self._graph.add_to_phase(v, 1)
 
-        self.push_out_paulis(quiet=quiet)
-
-        if not self.validate(quiet=quiet):
-            raise ValueError("Graph is not a valid graph state")
-
-        if not quiet:
-            draw_d3(self.get_graph(), labels=True, scale=65)
-
-        if not quiet:
-            print("Finalizing pivoting conjugating out:....")
-
-        self.push_out_paulis(quiet=quiet)
-
-        
-                # Add/remove edges between A and B sets
+                       # Add/remove edges between A and B sets
         for i in range(len(A)):
             for j in range(len(B)):
                 if A[i] == B[j]:
@@ -479,6 +464,11 @@ class GraphState(Generic[VT, ET]):
                     self._graph.add_edge((A[i], B[j]), edgetype=EdgeType.HADAMARD)
                 else:
                     self._graph.remove_edge(self._graph.edge(A[i], B[j]))
+
+        self.push_out_paulis(quiet=quiet, step = 3)
+
+        if not self.validate(quiet=True, step = step):
+            raise ValueError("Graph is not a valid graph state")
 
     def fix_free_edges(self, quiet : bool = True) -> None:
         """
@@ -522,7 +512,7 @@ class GraphState(Generic[VT, ET]):
             a = (self.a + other.a + 2*s) % 4 # phase
             b = (self.b + other.b) % 2 # X part
             c = (self.c + other.c) % 2 # Z part
-            return self(a,b,c)
+            return GraphState.Pauli(a, b, c)
 
         def __repr__(self):
             phase = [1, 1j, -1, -1j][self.a]
@@ -530,17 +520,7 @@ class GraphState(Generic[VT, ET]):
             return f"{phase}*{label}"
 
 
-    # def add_pauli(self, state, type):
-    #     """
-    #     Add a Pauli operator to the internal Pauli dictionary.
-        
-    #     Args:
-    #         state: The state vertex
-    #         type: The type of the Pauli operator (X or Z)
-    #     """
-
-
-    def push_out_paulis(self, quiet : bool = True) -> None:
+    def push_out_paulis(self, quiet : bool = True, step : int = 0) -> None:
         """
         Conjugate out Pauli operators from the graph state. After this operation, all state vertices will have phase 0 or 1/2.
         """
@@ -549,15 +529,15 @@ class GraphState(Generic[VT, ET]):
             print("Start conjugating out:...")
 
         for v in self._states:
-            if not quiet:
-                print(f"Conjugating out Pauli operators for vertex {v}")
             bound = self.get_bound(v)
             edge = self._graph.edge(bound, v)
             edge_type = self._graph.edge_type(edge)
             a = self._graph.phase(v)
             # row = self._graph.row(bound) - 1
 
-            if a / 1 != 0:
+            if a != 0 and a != Fraction(1, 2):
+                if not quiet:
+                    print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Exctracting Pauli operators for vertex {v}, phase {a}")
                 if self._paulis is None:
                     self._paulis = {}
                 if edge_type == EdgeType.HADAMARD:
@@ -572,32 +552,10 @@ class GraphState(Generic[VT, ET]):
 
                 self.add_to_phase(v, -1)
 
-            # if a > Fraction(1, 2):
-            #     edge_type = self._graph.edge_type(self._graph.edge(bound, v))
-            #     if edge_type == EdgeType.HADAMARD:
-            #         new = self._graph.add_vertex(VertexType.X, phase=1)
-            #         self._graph.set_qubit(new, self._graph.qubit(v))
-            #         self._graph.set_row(new, row)
-            #         self._graph.add_edge((bound, new), EdgeType.SIMPLE)
-            #         self._graph.add_edge((new, v), EdgeType.HADAMARD)
-            #         self._graph.remove_edge(self._graph.edge(bound, v))
-            #         self._graph.set_phase(v, a - 1)
-            #     else:
-            #         new = self._graph.add_vertex(VertexType.Z, phase=1)
-            #         self._graph.set_qubit(new, self._graph.qubit(v))
-            #         self._graph.set_row(new, row)
-            #         self._graph.add_edge((bound, new), EdgeType.SIMPLE)
-            #         self._graph.add_edge((new, v), EdgeType.SIMPLE)
-            #         self._graph.remove_edge(self._graph.edge(bound, v))
-            #         self._graph.set_phase(v, a - 1)
-
-            # spider_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
-            # id_simp(self._graph, matchf=lambda x: x not in self._states, quiet=quiet)
-
         if not quiet:
-            print(self._paulis)
+            print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Paulis: {self._paulis}")
 
-        if not self.validate(quiet=quiet):
+        if not self.validate(quiet=quiet, step = step):
             raise ValueError("Graph is not a valid graph state")
 
     def normalize_graph_state(self, quiet : bool = True) -> None:
@@ -744,21 +702,18 @@ class GraphState(Generic[VT, ET]):
                 edge_type = self._graph.edge_type(edge)
                 
                 if (phase % 1 == Fraction(1, 2) and edge_type == EdgeType.HADAMARD):
-                    self.local_comp_HS(v)
+                    self.local_comp_HS(v, quiet=quiet)
                     go_on = True
-                    if not quiet:
-                        draw_d3(self._graph, labels=True, scale=65)
                     break
 
-        self.validate(quiet=quiet)
+        if not self.validate(quiet=quiet, step=2):
+            raise ValueError("Graph is not a valid graph state")
 
 
     def reorder_H(self, quiet: bool = True) -> None:
         """
         Apply a pivoting strategy to reorder Hadamard edges in the graph state to satisfy the canonical ordering conditions.
-
-        
-        
+     
         Args:
             quiet: If False, display intermediate steps and print pivot operations
         """
@@ -771,16 +726,16 @@ class GraphState(Generic[VT, ET]):
                     neigh = [v for v in self._graph.neighbors(x) if v in self.get_states()]
                     for y in neigh:
                         if y < x:
-                            if not quiet:
-                                print("Switching H between:", y, x)
-                                draw_d3(self._graph, labels=True, scale=65)
-                            self.pivot(y, x, quiet = quiet)
+                            self.pivot(y, x, quiet = quiet, step=3)
                             edge = self.get_graph().edge(y, self.get_bound(y))
                             if self.get_graph().phase(y) == Fraction(1, 2) and self.get_graph().edge_type(edge) == EdgeType.HADAMARD: 
-                                self.local_comp_SH(y, quiet= quiet)
+                                self.local_comp_SH(y, quiet= quiet, step = 3)
                             go_on = True
                             self.push_out_paulis()
                             break
+        
+        if not self.validate(quiet=quiet, step = 3):
+            raise ValueError("Graph is not a valid graph state")
 
     def remove_pivot_phases(self, pivots: List[VT], quiet : bool = True) -> None:
         """
@@ -868,16 +823,16 @@ class GraphState(Generic[VT, ET]):
         # self.normalize_graph_state(quiet = quiet)
 
 
-        self.push_out_paulis(quiet=quiet) # O(n)
+        self.push_out_paulis(quiet=quiet, step = 1) # O(n)
+        self.remove_HS(quiet=quiet)
+        self.reorder_H(quiet = quiet)
+        # self.conjugate_in_paulis(quiet= quiet)
 
 
         # The length of each LC is at most 2 and SH is not possible.
-        self.remove_HS()
 
         # assert(self.assert_intermediate())
 
-        # self.reorder_H(quiet = quiet)
-        # self.conjugate_in_paulis(quiet= quiet)
 
 
 
