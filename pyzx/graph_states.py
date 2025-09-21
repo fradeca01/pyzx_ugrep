@@ -30,6 +30,7 @@ class GraphState(Generic[VT, ET]):
         1 : "Extracting paulis",
         2 : "Removing HS",
         3 : "Reordering H",
+        4 : "Injecting paulis"
     }
 
     def __init__(self, graph: BaseGraph[VT, ET]) -> None:
@@ -585,41 +586,61 @@ class GraphState(Generic[VT, ET]):
             ValueError: If a non-Pauli vertex is encountered that should be conjugated in
         """
 
-        if not self.validate(quiet=quiet):
-            raise ValueError("Graph is not a valid graph state")     
           
         states = self.get_states()
         g = self.get_graph()
 
-        go_on = True
-        while go_on:
-            go_on = False
-            for v in states:
-                bound = self.get_bound(v)
-                bound_type = g.type(bound)
-                if bound_type != VertexType.BOUNDARY:
-                    go_on = True
-                    a = g.phase(bound)
-                    if not quiet:
-                        print(f"Conjugating in vertex {bound} with phase {a} and type {bound_type} for state {v}")
-                    if a != 1:
-                        raise ValueError(f"Vertex {bound} must be Pauli (phase=1) to conjugate in, but has phase={a}")
-                    
-                    edge_type = g.edge_type(g.edge(v, bound))
-                    if (edge_type == EdgeType.HADAMARD and bound_type == VertexType.X or 
-                        edge_type == EdgeType.SIMPLE and bound_type == VertexType.Z):
-                        g.add_to_phase(v, 1)
-                    elif (edge_type == EdgeType.HADAMARD and bound_type == VertexType.Z or 
-                          edge_type == EdgeType.SIMPLE and bound_type == VertexType.X):
-                        for x in self._graph.neighbors(v):
-                            if x in self._states:
-                                g.add_to_phase(x, 1)
+        if not quiet:
+            print("Start conjugating out:...")
 
-                    new_bound = self.get_bound(bound)
-                    g.remove_vertex(bound)
-                    g.add_edge((v, new_bound), edge_type)
-                    break
+        for v in states:
+            pauli = self._paulis.get(v, self.Pauli(0,0,0))
+            bound = self.get_bound(v)
+            edge = g.edge(v, bound)
+            edge_type = g.edge_type(edge)
+            print(f"Step {4}: {self.steps.get(4,'UNKNOWN')} --- Injecting Pauli operators {pauli} for vertex {v}")
+
+            if ((edge_type == EdgeType.HADAMARD) and pauli.b == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.c == 1):  # Z case
+                g.add_to_phase(v, 1)
+            elif ((edge_type == EdgeType.HADAMARD) and pauli.c == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.b == 1): # X case
+                for x in states:
+                    if x in g.neighbors(v):
+                        g.add_to_phase(x, 1)
         
+        if not self.validate(quiet=quiet, step = 4):
+            raise ValueError("Graph is not a valid graph state")
+       
+        # go_on = True
+        # while go_on:
+        #     go_on = False
+        #     for v in states:
+        #         bound = self.get_bound(v)
+        #         bound_type = g.type(bound)
+        #         if bound_type != VertexType.BOUNDARY:
+        #             go_on = True
+        #             a = g.phase(bound)
+        #             if not quiet:
+        #                 print(f"Conjugating in vertex {bound} with phase {a} and type {bound_type} for state {v}")
+        #             if a != 1:
+        #                 raise ValueError(f"Vertex {bound} must be Pauli (phase=1) to conjugate in, but has phase={a}")
+                    
+        #             edge_type = g.edge_type(g.edge(v, bound))
+        #             if (edge_type == EdgeType.HADAMARD and bound_type == VertexType.X or 
+        #                 edge_type == EdgeType.SIMPLE and bound_type == VertexType.Z):
+        #                 g.add_to_phase(v, 1)
+        #             elif (edge_type == EdgeType.HADAMARD and bound_type == VertexType.Z or 
+        #                   edge_type == EdgeType.SIMPLE and bound_type == VertexType.X):
+        #                 for x in self._graph.neighbors(v):
+        #                     if x in self._states:
+        #                         g.add_to_phase(x, 1)
+
+        #             new_bound = self.get_bound(bound)
+        #             g.remove_vertex(bound)
+        #             g.add_edge((v, new_bound), edge_type)
+        #             break
+        
+        if not self.validate(quiet=quiet, step = 4):
+            raise ValueError("Graph is not a valid graph state")     
 
     # DA RIMUOVERE
     def assert_intermediate(self, quiet : bool = True) -> bool:
@@ -809,6 +830,10 @@ class GraphState(Generic[VT, ET]):
 
     #TODO: Vertify Canonical form
 
+
+    def validate_canonical_form(self, quiet : bool = True) -> bool:
+        return True
+
     def to_canonical_form(self, quiet : bool = True):
 
         """
@@ -816,49 +841,32 @@ class GraphState(Generic[VT, ET]):
 
         Args:
             quiet: If False, display intermediate steps and print pivot operations
-        """
-        
-        # self.fix_free_edges(quiet=quiet) 
-
-        # self.normalize_graph_state(quiet = quiet)
-
+        """     
 
         self.push_out_paulis(quiet=quiet, step = 1) # O(n)
         self.remove_HS(quiet=quiet)
         self.reorder_H(quiet = quiet)
-        # self.conjugate_in_paulis(quiet= quiet)
+        self.conjugate_in_paulis(quiet= quiet)
 
-
-        # The length of each LC is at most 2 and SH is not possible.
-
-        # assert(self.assert_intermediate())
-
-
-
-
-
-    def export_universal_circuit(self) -> BaseGraph:
-
-
-
+    def export_universal_circuit(self, quiet : bool = True) -> BaseGraph:
         """        
         Export the graph state to a universal graph representation.
+
         Returns:
             A BaseGrpah object representing the universal circuit
         """
         ## Here start steps for the second canonical form
 
         #TODO Ensure we are in graph state canonical form
-        self.state_to_circuit()
-        self.remove_unitaries_input()
 
-        pivots = self.to_RRREF()
+        if not self.validate_canonical_form(quiet = quiet):
+            self.to_canonical_form(quiet = quiet)
 
-        #Just remove the pivot phases
-        self.remove_pivot_phases(pivots)
-
-        # Just remove the pivot edges
-        self.remove_pivot_edges(pivots)
+        self.state_to_circuit(quiet = quiet)
+        self.remove_unitaries_input(quiet = quiet)
+        pivots = self.to_RRREF(quiet = quiet)
+        self.remove_pivot_phases(pivots, quiet = quiet)
+        self.remove_pivot_edges(pivots, quiet = quiet)
 
 
 
