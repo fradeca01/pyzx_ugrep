@@ -26,44 +26,66 @@ class GraphState(Generic[VT, ET]):
     It is a wrapper for BaseGraph and provides additional functionality for graph state operations.
     """
 
-    def __init__(self, graph: BaseGraph[VT, ET] = None):
+    def __init__(self, graph: BaseGraph[VT, ET]) -> None:
         """
         Initialize a GraphState.
         
         Args:
-            graph: A ZX-diagram which is a graph state
-            states: List of state vertices
+            graph: A Clifford ZX-diagram. 
+            
+        Raises:
+            ValueError: If the input is not a valid Clifford ZX-diagram
         """
+
+        # Check if the diagram is Clifford before processing
+        for v in graph.vertices():
+            if graph.type(v) == VertexType.BOUNDARY:
+                continue
+            phase = graph.phase(v)
+            if isinstance(phase, Poly):
+                raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
+            if phase % Fraction(1, 2) != 0:
+                raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
+s
+        graph.auto_detect_io()
+
+        #Simplify ZX diagram to be a graph-state
+        clifford_simp(graph, quiet=False) # O(n)
+        graph.normalize()
 
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
         self._pivots = None
 
+        # self.fix_input_output(quiet=True)cd
+
+        self.normalize_graph_state(quiet=True)
+
         self.validate()
 
-    @classmethod
-    def from_clifford_diagram(cls, cliffDiagram : BaseGraph) -> "GraphState":
-        """, 
-        Create a GraphState from a Clifford Circuit.
+    # @classmethod
+    # def from_clifford_diagram(cls, cliffDiagram : BaseGraph) -> "GraphState":
+    #     """, 
+    #     Create a GraphState from a Clifford Circuit.
         
-        Args:
-            circ: The clifford circuit to convert to a graph state
+    #     Args:
+    #         circ: The clifford circuit to convert to a graph state
         
-        Returns:
-            A GraphState object
-        """
+    #     Returns:
+    #         A GraphState object
+    #     """
 
-        #TODO : Check if the diagram is Clifford!!!!
+    #     #TODO : Check if the diagram is Clifford!!!!
 
-        cliffDiagram.auto_detect_io()
-        # to_graph_like(g) 
+    #     cliffDiagram.auto_detect_io()
+    #     # to_graph_like(g) 
 
-        #Simplify ZX diagram to be a graph-state
-        clifford_simp(cliffDiagram, quiet=False) # O(n)
-        cliffDiagram.normalize()
+    #     #Simplify ZX diagram to be a graph-state
+    #     clifford_simp(cliffDiagram, quiet=False) # O(n)
+    #     cliffDiagram.normalize()
 
-        return cls(cliffDiagram)
+    #     return cls(cliffDiagram)
     
     def pretty_print(self, draw : bool = False) -> None:
         """
@@ -202,6 +224,47 @@ class GraphState(Generic[VT, ET]):
         
         return bounds[0]
     
+    
+    def local_comp_pivot(self, v: VT, quiet : bool = True) -> None:
+        """
+        Perform a local complementation pivot on vertex v.
+
+        Args:
+            v: The vertex to apply the local complementation to.
+            
+        Raises:
+            ValueError: If the graph is not a valid graph state or LC conditions not met
+        """
+
+        if not quiet:
+            print(f"Performing local complementation pivot on vertex {v} with bound {bound} and neighbors {neighbors}")
+
+        if not self.validate(quiet=quiet):
+            raise ValueError("Graph is not a valid graph state")
+        
+        bound = self.get_bound(v)
+        neighbors = [x for x in self._graph.neighbors(v) if x in self._states]
+
+        a = self.get_graph().phase(v)
+
+        if not (a == 0 and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
+            raise ValueError("This LC must be applied with a pivot ending")
+
+        for x in neighbors:
+            self._graph.add_to_phase(x, 1)
+
+        for x in neighbors:
+            for y in neighbors:
+                if x >= y:
+                    continue
+                connected = self._graph.connected(x, y)
+                if connected == 0:
+                    self._graph.add_edge(edge_pair=(x, y), edgetype=EdgeType.HADAMARD)
+                else:
+                    self._graph.remove_edge(self._graph.edge(x, y))
+        
+        if not quiet:
+            draw_d3(self.get_graph(), labels=True, scale=65)
 
     def local_comp_SH(self, v: VT, quiet : bool = True) -> None:
         """
@@ -227,13 +290,13 @@ class GraphState(Generic[VT, ET]):
         # WHY HERE?
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
-        
-         
 
         a = self.get_graph().phase(v)
 
         if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
             raise ValueError("This LC must be applied with a SH ending")
+        
+        self._graph.set_phase(v, 0)
 
         for x in neighbors:
             self._graph.add_to_phase(x, Fraction(1, 2))
@@ -338,8 +401,14 @@ class GraphState(Generic[VT, ET]):
         self._graph.set_edge_type(edge_x, type_x)
         self._graph.set_edge_type(edge_y, type_y)
 
-        self._graph.set_phase(x, self._graph.phase(x) + 1)
-        self._graph.set_phase(y, self._graph.phase(y) + 1)
+
+        # PROBABLY WRONGG
+        # self._graph.set_phase(x, self._graph.phase(x) + 1)
+        # self._graph.set_phase(y, self._graph.phase(y) + 1)
+
+        for v in A:
+            if v in B:
+                self._graph.add_to_phase(v, 1)
 
         if not quiet:
             draw_d3(self.get_graph(), labels=True, scale=65)
@@ -347,7 +416,7 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print("Finalizing pivoting conjugating out:....")
 
-        self.conjugate_out_paulis(quiet=quiet)
+        self.push_out_paulis(quiet=quiet)
 
         
                 # Add/remove edges between A and B sets
@@ -388,7 +457,7 @@ class GraphState(Generic[VT, ET]):
         
 
 
-    def conjugate_out_paulis(self, quiet : bool = True) -> None:
+    def push_out_paulis(self, quiet : bool = True) -> None:
         """
         Conjugate out Pauli operators from the graph state. After this operation, all state vertices will have phase 0 or 1/2.
         """
@@ -572,7 +641,7 @@ class GraphState(Generic[VT, ET]):
                 if (self._graph.phase(v) == Fraction(1, 2) and 
                     self._graph.edge_type(self._graph.edge(self.get_bound(v), v)) == EdgeType.HADAMARD):
                     self.local_comp_HS(v)
-                    self.conjugate_out_paulis()
+                    self.push_out_paulis()
                     go_on = True
                     if not quiet:
                         draw_d3(self._graph, labels=True, scale=65)
@@ -602,7 +671,7 @@ class GraphState(Generic[VT, ET]):
                             edge = self.get_graph().edge(y, self.get_bound(y))
                             if self.get_graph().phase(y) == Fraction(1, 2) and self.get_graph().edge_type(edge) == EdgeType.HADAMARD: 
                                 self.local_comp_SH(y, quiet= quiet)
-                                self.conjugate_out_paulis()
+                                self.push_out_paulis()
                             go_on = True
                             break
 
@@ -680,11 +749,17 @@ class GraphState(Generic[VT, ET]):
 
     def to_canonical_form(self, quiet : bool = True):
 
+        """
+        Transform the graph state to a canonical form.
+
+        Args:
+            quiet: If False, display intermediate steps and print pivot operations
+        """
         
         self.fix_input_output(quiet=quiet) 
 
         self.normalize_graph_state(quiet = quiet)
-        self.conjugate_out_paulis(quiet=quiet) # O(n)
+        self.push_out_paulis(quiet=quiet) # O(n)
 
 
         # The length of each LC is at most 2 and SH is not possible.
@@ -696,7 +771,20 @@ class GraphState(Generic[VT, ET]):
         self.conjugate_in_paulis(quiet= quiet)
 
 
+
+
+    def export_universal_circuit(self) -> BaseGraph:
+
+
+
+        """        
+        Export the graph state to a universal graph representation.
+        Returns:
+            A BaseGrpah object representing the universal circuit
+        """
         ## Here start steps for the second canonical form
+
+        #TODO Ensure we are in graph state canonical form
         self.state_to_circuit()
         self.remove_unitaries_input()
 
