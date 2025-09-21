@@ -28,7 +28,7 @@ class GraphState(Generic[VT, ET]):
 
     def __init__(self, graph: BaseGraph[VT, ET]) -> None:
         """
-        Initialize a GraphState.
+        Initialize an (extended) GraphState from a Clifford ZX-diagram.
         
         Args:
             graph: A Clifford ZX-diagram. 
@@ -46,20 +46,19 @@ class GraphState(Generic[VT, ET]):
                 raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
             if phase % Fraction(1, 2) != 0:
                 raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
-s
+
         graph.auto_detect_io()
 
         #Simplify ZX diagram to be a graph-state
         clifford_simp(graph, quiet=False) # O(n)
-        graph.normalize()
+        # graph.normalize()
 
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
         self._pivots = None
 
-        # self.fix_input_output(quiet=True)cd
-
+        self.fix_free_edges(quiet=True)
         self.normalize_graph_state(quiet=True)
 
         self.validate()
@@ -109,11 +108,15 @@ s
     def validate(self, quiet : bool = True) -> bool:
         
         """
-        Checks if a ZX-diagram is graph-state: 
-        only contains Z-spiders which are connected by Hadamard edges.
-        Also checks that each boundary vertex is connected to a Z-spider,
-        and that each Z-spider is connected to at most one boundary. There are no interiore vertexes
-        Validate if this is a proper graph state.
+        Checks if a ZX-diagram is extended graph-state: 
+         - only contains Z-spiders which are connected by Hadamard edges.
+         - checks that each boundary vertex is connected to a Z-spider,
+         - There are no interior spiders.
+         - There are no self-loops or parallel edges,
+         - Only Clifford phases (multiples of pi/2),
+         - Each Z-spider is connected to exactly one boundary. 
+
+        Validate if this is a proper extended graph state.
         
         Returns:
             True if valid graph state, False otherwise
@@ -182,7 +185,8 @@ s
                     print(f"Vertex {v} has a non-clifford phase: {a}")
                 return False
         
-        # print("Graph state is valid")
+        if not quiet:
+            print("Graph state is valid")
 
         return True
     
@@ -224,6 +228,35 @@ s
         
         return bounds[0]
     
+
+    def get_outputs(self) -> List[VT]:
+        """
+        Get the output vertices of the graph state.
+        
+        Returns:
+            List of output vertices
+        """
+        return [v for v in self.get_states() if self.get_bound(v) in self.get_graph().outputs()]
+    
+    def get_inputs(self) -> List[VT]:
+        """
+        Get the inputs vertices of the graph state.
+        
+        Returns:
+            List of inputs vertices
+        """
+        return [v for v in self.get_states() if self.get_bound(v) in self.get_graph().inputs()]
+    
+    def get_pivots(self) -> List[VT]:
+        """
+        Get the pivot vertices of the graph state.
+        
+        Returns:
+            List of pivot vertices
+        """
+        if self._pivots is None:
+            raise ValueError("Pivots have not been computed yet. Call to_RRREF() first.")
+        return self._pivots    
     
     def local_comp_pivot(self, v: VT, quiet : bool = True) -> None:
         """
@@ -429,9 +462,9 @@ s
                 else:
                     self._graph.remove_edge(self._graph.edge(A[i], B[j]))
 
-    def fix_input_output(self, quiet : bool = True) -> None:
+    def fix_free_edges(self, quiet : bool = True) -> None:
         """
-        Fix input/output connections by ensuring each state vertex has exactly one boundary connection.
+        Fix input/output connections by ensuring each state vertex has exactly one boundary connection. Add new intermediate state vertices if necessary.
         
         Raises:
             ValueError: If the graph is not graph-like
@@ -449,10 +482,11 @@ s
                     self._states.append(new)
                     if edge_type == EdgeType.HADAMARD:
                         self._graph.add_edge((bound[i], new), EdgeType.SIMPLE)
-                        self._graph.add_edge((new, v), EdgeType.HADAMARD)
+                        # self._graph.add_edge((new, v), EdgeType.HADAMARD)
                     else:
                         self._graph.add_edge((bound[i], new), EdgeType.HADAMARD)
-                        self._graph.add_edge((new, v), EdgeType.HADAMARD)
+
+                    self._graph.add_edge((new, v), EdgeType.HADAMARD)
                     self._graph.remove_edge(self._graph.edge(bound[i], v))
         
 
@@ -510,7 +544,9 @@ s
         """
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
-
+        
+        self.normalize()
+        
         for i in range(len(self.get_states())):
             self.get_graph().set_qubit(self._states[i], i)
             self.get_graph().set_row(self._states[i], (i % 2) * 4)
@@ -750,15 +786,17 @@ s
     def to_canonical_form(self, quiet : bool = True):
 
         """
-        Transform the graph state to a canonical form.
+        Reduce the extended graph state to its canonical form.
 
         Args:
             quiet: If False, display intermediate steps and print pivot operations
         """
         
-        self.fix_input_output(quiet=quiet) 
+        # self.fix_free_edges(quiet=quiet) 
 
-        self.normalize_graph_state(quiet = quiet)
+        # self.normalize_graph_state(quiet = quiet)
+
+        
         self.push_out_paulis(quiet=quiet) # O(n)
 
 
@@ -796,34 +834,7 @@ s
         # Just remove the pivot edges
         self.remove_pivot_edges(pivots)
 
-    def get_outputs(self) -> List[VT]:
-        """
-        Get the output vertices of the graph state.
-        
-        Returns:
-            List of output vertices
-        """
-        return [v for v in self.get_states() if v.get_bound() in self.get_graph().outputs()]
-    
-    def get_inputs(self) -> List[VT]:
-        """
-        Get the inputs vertices of the graph state.
-        
-        Returns:
-            List of inputs vertices
-        """
-        return [v for v in self.get_states() if v.get_bound() in self.get_graph().inputs()]
-    
-    def get_pivots(self) -> List[VT]:
-        """
-        Get the pivot vertices of the graph state.
-        
-        Returns:
-            List of pivot vertices
-        """
-        if self._pivots is None:
-            raise ValueError("Pivots have not been computed yet. Call to_RRREF() first.")
-        return self._pivots
+
 
     def to_stabilizer_tableau (self, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
         """
