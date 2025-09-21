@@ -38,6 +38,28 @@ class GraphState(Generic[VT, ET]):
         9 : "Removing pivot edges"
     }
 
+
+    class Pauli:
+
+        # (a,b,c) represents i^a * X^b * Z^c
+        def __init__ (self, a, b, c):
+            self.a = a % 4
+            self.b = b % 2
+            self.c = c % 2
+
+        def __mul__(self, other):
+            s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
+            a = (self.a + other.a + 2*s) % 4 # phase
+            b = (self.b + other.b) % 2 # X part
+            c = (self.c + other.c) % 2 # Z part
+            return GraphState.Pauli(a, b, c)
+
+        def __repr__(self):
+            phase = [1, 1j, -1, -1j][self.a]
+            label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
+            return f"{phase}*{label}"
+
+
     def __init__(self, graph: BaseGraph[VT, ET]) -> None:
         """
         Initialize an (extended) GraphState from a Clifford ZX-diagram.
@@ -76,29 +98,6 @@ class GraphState(Generic[VT, ET]):
 
         self.validate()
 
-    # @classmethod
-    # def from_clifford_diagram(cls, cliffDiagram : BaseGraph) -> "GraphState":
-    #     """, 
-    #     Create a GraphState from a Clifford Circuit.
-        
-    #     Args:
-    #         circ: The clifford circuit to convert to a graph state
-        
-    #     Returns:
-    #         A GraphState object
-    #     """
-
-    #     #TODO : Check if the diagram is Clifford!!!!
-
-    #     cliffDiagram.auto_detect_io()
-    #     # to_graph_like(g) 
-
-    #     #Simplify ZX diagram to be a graph-state
-    #     clifford_simp(cliffDiagram, quiet=False) # O(n)
-    #     cliffDiagram.normalize()
-
-    #     return cls(cliffDiagram)
-    
     def pretty_print(self, draw : bool = False) -> None:
         """
         Print the graph state in a human-readable format.
@@ -392,10 +391,6 @@ class GraphState(Generic[VT, ET]):
         self._graph.add_to_phase(v, -1)
         self._graph.set_edge_type(self._graph.edge(bound, v), EdgeType.SIMPLE)
 
-        # #Xs
-        # for x in neighbors:
-        #     self._graph.add_to_phase(x, 1)
-
         #Ss                
         for x in neighbors:
             self._graph.add_to_phase(x, -Fraction(1, 2))
@@ -440,7 +435,6 @@ class GraphState(Generic[VT, ET]):
 
         # Flip edge types
 
-
         if type_x == EdgeType.SIMPLE:
             type_x = EdgeType.HADAMARD
         else:
@@ -453,11 +447,6 @@ class GraphState(Generic[VT, ET]):
 
         self._graph.set_edge_type(edge_x, type_x)
         self._graph.set_edge_type(edge_y, type_y)
-
-
-        # PROBABLY WRONGG
-        # self._graph.set_phase(x, self._graph.phase(x) + 1)
-        # self._graph.set_phase(y, self._graph.phase(y) + 1)
 
         for v in A:
             if v in B:
@@ -505,28 +494,6 @@ class GraphState(Generic[VT, ET]):
 
                     self._graph.add_edge((new, v), EdgeType.HADAMARD)
                     self._graph.remove_edge(self._graph.edge(bound[i], v))
-
-
-
-    class Pauli:
-
-        # (a,b,c) represents i^a * X^b * Z^c
-        def __init__ (self, a, b, c):
-            self.a = a % 4
-            self.b = b % 2
-            self.c = c % 2
-
-        def __mul__(self, other):
-            s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
-            a = (self.a + other.a + 2*s) % 4 # phase
-            b = (self.b + other.b) % 2 # X part
-            c = (self.c + other.c) % 2 # Z part
-            return GraphState.Pauli(a, b, c)
-
-        def __repr__(self):
-            phase = [1, 1j, -1, -1j][self.a]
-            label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
-            return f"{phase}*{label}"
 
 
     def push_out_paulis(self, quiet : bool = True, step : int = 0) -> None:
@@ -654,26 +621,6 @@ class GraphState(Generic[VT, ET]):
             self._graph.set_qubit(bound, i)
             self._graph.set_row(bound, 8)
 
-
-
-
-        # for i in range(len(ins)):
-        #     self._graph.set_qubit(ins[i], i)
-        #     self._graph.set_row(ins[i], 0)
-
-        # outs = list(self.get_graph().outputs())
-        # for i in range(len(outs)):
-        #     self._graph.set_qubit(outs[i], i)
-        #     self._graph.set_row(outs[i], 8)
-
-        # for x in self.get_states():
-        #     bound = self.get_bound(x)
-        #     self.get_graph().set_qubit(x, self._graph.qubit(bound))
-        #     if bound in ins:
-        #         self._graph.set_row(x, 3)
-        #     else: 
-        #         self._graph.set_row(x, 6)
-
         self.validate(quiet=quiet, step=5)
 
     def remove_unitaries_input(self, quiet : bool = True) -> None:
@@ -774,10 +721,17 @@ class GraphState(Generic[VT, ET]):
             for v in pivots:
                 if self.get_graph().phase(v) != 0:
                     neighbors = [x for x in self.get_graph().neighbors(v) if x in self._states]
-                    if not quiet:
-                        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phase for vertex {v} with phase {self.get_graph().phase(v)}")
-                    self.get_graph().set_phase(v, 0)
+                    inputs_states = self.get_inputs()
+                    vin = -1
                     for x in neighbors:
+                        if x in inputs_states:
+                            vin = x
+
+                    if not quiet:
+                        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phase for vertex {vin} with phase {self.get_graph().phase(v)}")
+                    # self.get_graph().set_phase(vin, 0)
+                    neighborsin = [x for x in self.get_graph().neighbors(vin) if x in self.get_outputs()]
+                    for x in neighborsin:
                         self.get_graph().add_to_phase(x, Fraction(1, 2))
 
                     go_on = True
@@ -854,7 +808,7 @@ class GraphState(Generic[VT, ET]):
 
 
     def validate_canonical_form(self, quiet : bool = True) -> bool:
-        return True
+        return False
 
     def to_canonical_form(self, quiet : bool = True):
 
@@ -864,10 +818,14 @@ class GraphState(Generic[VT, ET]):
         Args:
             quiet: If False, display intermediate steps and print pivot operations
         """     
-
+        print("Transforming to canonical form...")
+        print(f"Step {1}: {self.steps.get(1,'UNKNOWN')}")
         self.push_out_paulis(quiet=quiet, step = 1) # O(n)
+        print(f"Step {2}: {self.steps.get(2,'UNKNOWN')}")
         self.remove_HS(quiet=quiet)
+        print(f"Step {3}: {self.steps.get(3,'UNKNOWN')}")
         self.reorder_H(quiet = quiet)
+        print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
         self.conjugate_in_paulis(quiet= quiet)
 
     def export_universal_circuit(self, quiet : bool = True) -> BaseGraph:
@@ -884,10 +842,16 @@ class GraphState(Generic[VT, ET]):
         if not self.validate_canonical_form(quiet = quiet):
             self.to_canonical_form(quiet = quiet)
 
+        print("Exporting to universal circuit...")
+        print(f"Step {5}: {self.steps.get(5,'UNKNOWN')}")
         self.state_to_circuit(quiet = quiet)
+        print(f"Step {7}: {self.steps.get(7,'UNKNOWN')}")
         self.to_RRREF(quiet = quiet)
-        self.remove_pivot_phases(quiet = quiet)
-        self.remove_pivot_edges(quiet = quiet)
+        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')}")
+        self.remove_pivot_phases(quiet = True)
+        print(f"Step {9}: {self.steps.get(9,'UNKNOWN')}")
+        self.remove_pivot_edges(quiet = True)
+        print(f"Step {6}: {self.steps.get(6,'UNKNOWN')}")
         self.remove_unitaries_input(quiet = quiet)
 
         return self.get_graph()
