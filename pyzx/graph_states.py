@@ -533,18 +533,21 @@ class GraphState(Generic[VT, ET]):
         print(f"Phases before fixing pivots: x: {phase_x % 1}, y: {phase_y % 1}")
 
         assert phase_x % 1 != Fraction(1,2) or phase_y % 1 != Fraction(1,2), "If everything correct impossible that the two pivots have phase 1/2"
+
+        if phase_x % 1 == Fraction(1,2):
+            self.local_comp_SH(x, quiet=quiet, step = step)
+        elif phase_y % 1 == Fraction(1,2):
+            self.local_comp_SH(y, quiet=quiet, step = step)
             
         def fix_pivot(p, phase_p):
+            print(phase_p)
             print(f"Fixing pivot vertex {p}")
             neigh_p = self.get_neigbbors(p)
             edge_p = self.get_graph().edge(p, self.get_bound(p))
             type_p = self.get_graph().edge_type(edge_p)
             self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
 
-            if phase_p % 1 == Fraction(1, 2):
-                self.local_comp_SH(p, quiet=quiet, step = step)
-            
-            if phase_p > 1:
+            if phase_p >= 1:
                 for a in neigh_p:
                     self.get_graph().add_to_phase(a, 1)
                 
