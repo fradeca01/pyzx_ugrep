@@ -420,7 +420,7 @@ class GraphState(Generic[VT, ET]):
         
         # self.push_out_paulis(quiet=quiet, step = 3)
 
-        if not self.validate(quiet=True, step = 3):
+        if not self.validate(quiet=quiet, step = 3):
             raise ValueError("Graph is not a valid graph state")
 
 
@@ -498,13 +498,15 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Pivoting between vertices {x} and {y}")
     
-        A = self.get_neigbbors(x) 
-        B = self.get_neigbbors(y) 
-
+        A = self.get_neigbbors(x) + [x]
+        print(A)
+        B = self.get_neigbbors(y) + [y]
+        print(B)
         for v in A:
             if v in B:
-                print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Adding phase 1 to vertex {v} in intersection of A and B")
-                self.get_graph().add_to_phase(v, 1)
+                if v != x and v != y:
+                    print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Adding phase 1 to vertex {v} in intersection of A and B")
+                    self.get_graph().add_to_phase(v, 1)
 
         # Add/remove edges between A and B sets
         for i in range(len(A)):
@@ -526,21 +528,21 @@ class GraphState(Generic[VT, ET]):
                 return EdgeType.SIMPLE
             
         def fix_pivot(p):
-
+            print(f"Fixing pivot vertex {p}")
             neigh_p = self.get_neigbbors(p)
             phase_p = self.get_phase(p)
-            edge_p = self.get_graph().edge(x, self.get_bound(x))
+            edge_p = self.get_graph().edge(p, self.get_bound(p))
             type_p = self.get_graph().edge_type(edge_p)
 
             if phase_p % 1 == Fraction(1, 2):
-                self.local_comp_SH(x, quiet=quiet, step = step)
+                self.local_comp_SH(p, quiet=quiet, step = step)
             
             if phase_p > 1:
                 for a in neigh_p:
                     self.get_graph().add_to_phase(a, 1)
                 
                 if phase_p % 1 != Fraction(1, 2):
-                    self.get_graph().add_to_phase(x, -1)
+                    self.get_graph().add_to_phase(p, -1)
             
             self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
 
@@ -550,8 +552,7 @@ class GraphState(Generic[VT, ET]):
         # if step != 9:
         #     self.push_out_paulis(quiet=quiet, step = step)
 
-        if not self.validate(quiet=quiet, step = step):
-            raise ValueError("Graph is not a valid graph state")
+
 
     def fix_free_edges(self, quiet : bool = True) -> None:
         """
