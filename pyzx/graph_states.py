@@ -389,11 +389,12 @@ class GraphState(Generic[VT, ET]):
 
         for x in neighbors:
             if a > Fraction(1,2):
-                self._graph.add_to_phase(x, 1)
-            self._graph.add_to_phase(x, -Fraction(1, 2))
+                self._graph.add_to_phase(x, +Fraction(1,2))
+            else:
+                self._graph.add_to_phase(x, -Fraction(1, 2))
 
-        if a > Fraction(1,2):
-            self._graph.add_to_phase(v, -1)
+        # if a > Fraction(1,2):
+            # self._graph.add_to_phase(v, -1)
 
         self._graph.add_to_phase(v, +1) 
 
