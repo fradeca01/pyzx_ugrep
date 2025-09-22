@@ -485,7 +485,8 @@ class GraphState(Generic[VT, ET]):
 
         for v in A:
             if v in B:
-                self._graph.add_to_phase(v, 1)
+                if v != x and v != y:
+                    self._graph.add_to_phase(v, 1)
 
         # Add/remove edges between A and B sets
         for i in range(len(A)):
@@ -500,7 +501,7 @@ class GraphState(Generic[VT, ET]):
         # if step != 9:
         #     self.push_out_paulis(quiet=quiet, step = step)
 
-        if not self.validate(quiet=True, step = step):
+        if not self.validate(quiet=quiet, step = step):
             raise ValueError("Graph is not a valid graph state")
 
     def fix_free_edges(self, quiet : bool = True) -> None:
