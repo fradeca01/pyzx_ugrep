@@ -464,8 +464,6 @@ class GraphState(Generic[VT, ET]):
         neigh_y = [n for n in self._graph.neighbors(y) if n in self._states]
         
         phase_x = self._graph.phase(x)
-        phase_y = self._graph.phase(y)
-
         if phase_x == 0:
             self._graph.set_edge_type(edge_x, flip_edge(type_x))
         elif phase_x == Fraction(1, 2):
@@ -485,6 +483,7 @@ class GraphState(Generic[VT, ET]):
                 
 
 
+        phase_y = self._graph.phase(y)
         if phase_y == 0:
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
         elif phase_y == Fraction(1, 2):
