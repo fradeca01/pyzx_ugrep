@@ -84,7 +84,7 @@ class GraphState(Generic[VT, ET]):
         graph.auto_detect_io()
 
         #Simplify ZX diagram to be a graph-state
-        clifford_simp(graph, quiet=False) # O(n)
+        clifford_simp(graph, quiet=True) # O(n)
         # graph.normalize()
 
         self._graph = graph
@@ -334,8 +334,8 @@ class GraphState(Generic[VT, ET]):
 
         a = self.get_graph().phase(v)
 
-        if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
-            raise ValueError("This LC must be applied with a SH ending")
+        # if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
+        #     raise ValueError("This LC must be applied with a SH ending")
         
         self._graph.set_phase(v, 0)
 
@@ -352,7 +352,7 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
         
-        self.push_out_paulis(quiet=quiet, step = 3)
+        # self.push_out_paulis(quiet=quiet, step = 3)
 
         if not self.validate(quiet=True, step = 3):
             raise ValueError("Graph is not a valid graph state")
@@ -382,18 +382,21 @@ class GraphState(Generic[VT, ET]):
         edge = self.get_graph().edge(bound, v)
         
         if not quiet:
-            print(f"Step {2}: {self.steps.get(2,'UNKNOWN')} --- Performing local complementation HS on vertex {v} with bound {bound} and neighbors {neighbors}")
+            print(f"Step {2}: {self.steps.get(2,'UNKNOWN')} --- Performing local complementation HS on vertex {v} (phase: {a}) with bound {bound} and neighbors {neighbors}")
 
         if not (a % 1 == Fraction(1, 2) and self._graph.edge_type(edge) == EdgeType.HADAMARD):
             raise ValueError("This LC rule must be applied with a HS ending")
 
+        for x in neighbors:
+            if v > Fraction(1,2):
+                self._graph.add_to_phase(x, 1)
+            self._graph.add_to_phase(x, -Fraction(1, 2))
 
-        self._graph.add_to_phase(v, -1)
-        self._graph.set_edge_type(self._graph.edge(bound, v), EdgeType.SIMPLE)
+        self._graph.add_to_phase(v, +1) 
+
+        self._graph.set_edge_type(edge, EdgeType.SIMPLE)
 
         #Ss                
-        for x in neighbors:
-            self._graph.add_to_phase(x, -Fraction(1, 2))
 
         for x in neighbors:
             for y in neighbors:
@@ -405,7 +408,7 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(x, y))
 
-        self.push_out_paulis(quiet=quiet, step = 2)
+        # self.push_out_paulis(quiet=quiet, step = 2)
 
         if not self.validate(quiet=True, step = 2):
             raise ValueError("Graph is not a valid graph state")
@@ -433,20 +436,52 @@ class GraphState(Generic[VT, ET]):
         edge_y = self._graph.edge(y, self.get_bound(y))
         type_y = self._graph.edge_type(edge_y)
 
-        # Flip edge types
+        # Flip edge types (careful with phases here)
+        def flip_edge(type_e: EdgeType) -> EdgeType:
+            if type_e == EdgeType.SIMPLE:
+                return EdgeType.HADAMARD
+            else:
+                return EdgeType.SIMPLE
+            
+        neigh_x = [n for n in self._graph.neighbors(x) if n in self._states]
+        neigh_y = [n for n in self._graph.neighbors(y) if n in self._states]
+        
+        phase_x = self._graph.phase(x)
+        phase_y = self._graph.phase(y)
 
-        if type_x == EdgeType.SIMPLE:
-            type_x = EdgeType.HADAMARD
-        else:
-            type_x = EdgeType.SIMPLE
+        if phase_x == 0:
+            self._graph.set_edge_type(edge_x, flip_edge(type_x))
+        elif phase_x == Fraction(1, 2):
+            self.local_comp_SH(x, quiet=quiet, step = step)
+            self._graph.set_edge_type(edge_x, flip_edge(type_x))
+        elif phase_x == 1:
+            for a in neigh_x:
+                self._graph.add_to_phase(a, 1)
+            self._graph.set_edge_type(edge_x, flip_edge(type_x))
+        elif phase_x == Fraction(3, 2):
+            self.local_comp_SH(x, quiet=quiet, step = step)
+            for a in neigh_x:
+                self._graph.add_to_phase(a, 1)
+            self._graph.set_edge_type(edge_x, flip_edge(type_x))
 
-        if type_y == EdgeType.SIMPLE:
-            type_y = EdgeType.HADAMARD
-        else:
-            type_y = EdgeType.SIMPLE
+                
 
-        self._graph.set_edge_type(edge_x, type_x)
-        self._graph.set_edge_type(edge_y, type_y)
+
+        if phase_y == 0:
+            self._graph.set_edge_type(edge_y, flip_edge(type_y))
+        elif phase_y == Fraction(1, 2):
+            self.local_comp_SH(y, quiet=quiet, step = step)
+            self._graph.set_edge_type(edge_y, flip_edge(type_y))
+        elif phase_y == 1:
+            for a in neigh_y:
+                self._graph.add_to_phase(a, 1)
+            self._graph.set_edge_type(edge_y, flip_edge(type_y))
+        elif phase_y == Fraction(3, 2):
+            self.local_comp_SH(y, quiet=quiet, step = step)
+            for a in neigh_y:
+                self._graph.add_to_phase(a, 1)
+            self._graph.set_edge_type(edge_y, flip_edge(type_y))
+
 
         for v in A:
             if v in B:
@@ -462,8 +497,8 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self._graph.remove_edge(self._graph.edge(A[i], B[j]))
 
-        if step != 9:
-            self.push_out_paulis(quiet=quiet, step = step)
+        # if step != 9:
+        #     self.push_out_paulis(quiet=quiet, step = step)
 
         if not self.validate(quiet=True, step = step):
             raise ValueError("Graph is not a valid graph state")
@@ -581,7 +616,8 @@ class GraphState(Generic[VT, ET]):
 
             if ((edge_type == EdgeType.HADAMARD) and pauli.b == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.c == 1):  # Z case
                 g.add_to_phase(v, 1)
-            elif ((edge_type == EdgeType.HADAMARD) and pauli.c == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.b == 1): # X case
+            
+            if ((edge_type == EdgeType.HADAMARD) and pauli.c == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.b == 1): # X case
                 for x in states:
                     if x in g.neighbors(v):
                         g.add_to_phase(x, 1)
@@ -692,11 +728,11 @@ class GraphState(Generic[VT, ET]):
                     for y in neigh:
                         if y < x:
                             self.pivot(y, x, quiet = quiet, step=3)
-                            edge = self.get_graph().edge(y, self.get_bound(y))
-                            if self.get_graph().phase(y) == Fraction(1, 2) and self.get_graph().edge_type(edge) == EdgeType.HADAMARD: 
-                                self.local_comp_SH(y, quiet= quiet, step = 3)
+                            # edge = self.get_graph().edge(y, self.get_bound(y))
+                            # if self.get_graph().phase(y) == Fraction(1, 2) and self.get_graph().edge_type(edge) == EdgeType.HADAMARD: 
+                            #     self.local_comp_SH(y, quiet= quiet, step = 3)
                             go_on = True
-                            self.push_out_paulis()
+                            # self.push_out_paulis()
                             break
         
         if not self.validate(quiet=quiet, step = 3):
@@ -819,14 +855,17 @@ class GraphState(Generic[VT, ET]):
             quiet: If False, display intermediate steps and print pivot operations
         """     
         print("Transforming to canonical form...")
+        if not self.validate(quiet = quiet, step=0):
+            raise ValueError("Graph is not a valid graph state")
+        
         print(f"Step {1}: {self.steps.get(1,'UNKNOWN')}")
-        self.push_out_paulis(quiet=quiet, step = 1) # O(n)
+        # self.push_out_paulis(quiet=quiet, step = 1) # O(n)
         print(f"Step {2}: {self.steps.get(2,'UNKNOWN')}")
         self.remove_HS(quiet=quiet)
         print(f"Step {3}: {self.steps.get(3,'UNKNOWN')}")
         self.reorder_H(quiet = quiet)
         print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
-        self.conjugate_in_paulis(quiet= quiet)
+        # self.conjugate_in_paulis(quiet= quiet)
 
     def export_universal_circuit(self, quiet : bool = True) -> BaseGraph:
         """        
