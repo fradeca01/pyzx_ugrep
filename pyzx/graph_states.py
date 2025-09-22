@@ -527,12 +527,19 @@ class GraphState(Generic[VT, ET]):
             else:
                 return EdgeType.SIMPLE
             
-        def fix_pivot(p):
+        phase_x = self.get_phase(x)
+        phase_y = self.get_phase(y)
+
+        print(f"Phases before fixing pivots: x: {phase_x % 1}, y: {phase_y % 1}")
+
+        assert phase_x % 1 != Fraction(1,2) or phase_y % 1 != Fraction(1,2), "If everything correct impossible that the two pivots have phase 1/2"
+            
+        def fix_pivot(p, phase_p):
             print(f"Fixing pivot vertex {p}")
             neigh_p = self.get_neigbbors(p)
-            phase_p = self.get_phase(p)
             edge_p = self.get_graph().edge(p, self.get_bound(p))
             type_p = self.get_graph().edge_type(edge_p)
+            self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
 
             if phase_p % 1 == Fraction(1, 2):
                 self.local_comp_SH(p, quiet=quiet, step = step)
@@ -544,10 +551,9 @@ class GraphState(Generic[VT, ET]):
                 if phase_p % 1 != Fraction(1, 2):
                     self.get_graph().add_to_phase(p, -1)
             
-            self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
 
-        fix_pivot(x)
-        fix_pivot(y)
+        fix_pivot(x, phase_x)
+        fix_pivot(y, phase_y)
 
         # if step != 9:
         #     self.push_out_paulis(quiet=quiet, step = step)
