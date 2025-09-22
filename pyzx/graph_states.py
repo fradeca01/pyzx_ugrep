@@ -241,7 +241,7 @@ class GraphState(Generic[VT, ET]):
                 return False
         
         if not quiet:
-            print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Graph state is valid:")
+            # print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Graph state is valid:")
             draw_d3(self.get_graph(), labels=True, scale=40)
 
         return True
@@ -498,8 +498,8 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Pivoting between vertices {x} and {y}")
     
-        A = self.neighbors(x) 
-        B = self.neighbors(y) 
+        A = self.get_neigbbors(x) 
+        B = self.get_neigbbors(y) 
 
         for v in A:
             if v in B:
@@ -516,6 +516,8 @@ class GraphState(Generic[VT, ET]):
                 else:
                     self.get_graph().remove_edge(self.get_graph().edge(A[i], B[j]))
 
+        if not self.validate(quiet=quiet, step = step):
+            raise ValueError("Graph is not a valid graph state")
         # Flip edge types (careful with phases here)
         def flip_edge(type_e: EdgeType) -> EdgeType:
             if type_e == EdgeType.SIMPLE:
@@ -754,6 +756,8 @@ class GraphState(Generic[VT, ET]):
                     self.local_comp_HS(v, quiet=quiet)
                     go_on = True
                     break
+        
+        print(f"Step 2: {self.steps.get(2,'UNKNOWN')} --- Removing HS from graph ended:")
 
         if not self.validate(quiet=quiet, step=2):
             raise ValueError("Graph is not a valid graph state")
@@ -902,7 +906,9 @@ class GraphState(Generic[VT, ET]):
         Args:
             quiet: If False, display intermediate steps and print pivot operations
         """     
-        print("Transforming to canonical form...")
+        print(f"STARTING: CANONICAL FORM")
+        print()
+
         if not self.validate(quiet = quiet, step=0):
             raise ValueError("Graph is not a valid graph state")
         
@@ -914,6 +920,11 @@ class GraphState(Generic[VT, ET]):
         self.reorder_H(quiet = quiet)
         print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
         # self.conjugate_in_paulis(quiet= quiet)
+
+        print("---------------------------------")
+        print("OUTPUT:...................")
+        if not self.validate(quiet = quiet, step=0):
+            raise ValueError("Graph is not a valid graph state")
 
     def export_universal_circuit(self, quiet : bool = True) -> BaseGraph:
         """        
