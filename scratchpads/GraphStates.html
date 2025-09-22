@@ -7624,12 +7624,7 @@ Successfully installed imageio-2.37.0
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-
     <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"test_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"------------------------------------"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"------------------------------------"</span><span class="p">)</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">i</span>
     <span class="n">k</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">"./circuits/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">.qasm"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -7640,9 +7635,9 @@ Successfully installed imageio-2.37.0
     <span class="n">input_state</span> <span class="o">=</span> <span class="s2">"0"</span><span class="o">*</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"/"</span><span class="o">*</span><span class="n">k</span>
     <span class="n">g</span><span class="o">.</span><span class="n">apply_state</span><span class="p">(</span><span class="n">input_state</span><span class="p">)</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">GraphState</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-    <span class="c1"># g.to_canonical_form(quiet=True)</span>
-    <span class="c1"># draw(g.get_graph(), labels=True)</span>
     <span class="n">g</span><span class="o">.</span><span class="n">to_canonical_form</span><span class="p">(</span><span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># draw(g.get_graph(), labels=True)</span>
+    <span class="c1"># g.export_universal_circuit(quiet=True)</span>
     <span class="c1"># draw_d3(g, labels=True)</span>
     <span class="n">fig</span> <span class="o">=</span> <span class="n">draw_matplotlib</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">get_graph</span><span class="p">(),</span> <span class="n">labels</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"./circuits/test1/</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">.png"</span><span class="p">)</span>   
@@ -7659,10 +7654,7 @@ Successfully installed imageio-2.37.0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>------------------------------------
-test_0
-------------------------------------
-Transforming to canonical form...
+<pre>Transforming to canonical form...
 Step 0: UNKNOWN --- Graph state is valid:
 </pre>
 </div>
@@ -7670,7 +7662,7 @@ Step 0: UNKNOWN --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-punRjpFX" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-aaIHtcKd" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -8034,7 +8026,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-punRjpFX',
+showGraph('#graph-output-aaIHtcKd',
   JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "18", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
   8.0, false, true, '');
 </script>
@@ -8052,7 +8044,7 @@ Step 2: Removing HS --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-jRxCJGFy" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-6TIy4cmW" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -8416,7 +8408,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-jRxCJGFy',
+showGraph('#graph-output-6TIy4cmW',
   JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "18", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
   8.0, false, true, '');
 </script>
@@ -8434,7 +8426,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-BsanSYRw" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-XwWFBuRu" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -8798,8 +8790,8 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-BsanSYRw',
-  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 1, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "18", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 2, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
+showGraph('#graph-output-XwWFBuRu',
+  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 1, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "18", "t": 2, "index": 0, "num_parallel": 1}, {"source": "7", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 2, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
   8.0, false, true, '');
 </script>
 </div>
@@ -8815,7 +8807,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-Fr7pk3HA" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-tXCTQRt6" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -9179,8 +9171,8 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-Fr7pk3HA',
-  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "18", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 1, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
+showGraph('#graph-output-tXCTQRt6',
+  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "18", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 1, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
   8.0, false, true, '');
 </script>
 </div>
@@ -9195,7 +9187,7 @@ showGraph('#graph-output-Fr7pk3HA',
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-aT9O3T2K" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-dkdjTilW" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -9559,8 +9551,8 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-aT9O3T2K',
-  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "18", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 1, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
+showGraph('#graph-output-dkdjTilW',
+  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "18", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 1, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
   8.0, false, true, '');
 </script>
 </div>
@@ -9569,390 +9561,6 @@ showGraph('#graph-output-aT9O3T2K',
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Step 4: Injecting paulis
-OKKK
-Step 0: UNKNOWN --- Graph state is valid:
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-TgJYxJv5" style="overflow:auto; background-color: white"></div>
-<script type="module">
-var d3;
-if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
-var _settings_colors = JSON.parse('{"edge": "#000000", "Hedge": "#0088ff", "Xedge": "#999999", "boundary": "#000000", "X": "#ff8888", "Y": "#aabbff", "Z": "#ccffcc", "H": "#ffff66", "W": "#000000", "Zalt": "#ccffcc", "Walt": "#000000", "Xdark": "#ff8888", "Ydark": "#aabbff", "Zdark": "#99dd99"}');
-// PyZX - Python library for quantum circuit rewriting 
-//        and optimisation using the ZX-calculus
-// Copyright (C) 2018 - Aleks Kissinger and John van de Wetering
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//    http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// styling functions
-function nodeColor(t) {
-    if (t == 0) return _settings_colors['boundary'];
-    else if (t == 1) return _settings_colors['Z']; // "#ccffcc";
-    else if (t == 2) return _settings_colors['X']; // "#ff8888";
-    else if (t == 3) return _settings_colors['H']; // "yellow";
-    else if (t == 4) return _settings_colors['W']; // "black";
-    else if (t == 5) return _settings_colors['Walt']; // "black";
-    else if (t == 6) return _settings_colors['Zalt']; // "#ccffcc";
-}
-
-function edgeColor(t) {
-    if (t == 1) return _settings_colors['edge']; //"black";
-    else if (t == 2) return _settings_colors['Hedge']; // "#08f";
-    else if (t == 3) return _settings_colors['Xedge']; // "gray";
-}
-
-function webColor(t) {
-    if (t == 'X') return _settings_colors['Xdark'];
-    else if (t == 'Y') return _settings_colors['Ydark'];
-    else if (t == 'Z') return _settings_colors['Zdark'];
-    else if (t == 'I') return '#dddddd';
-}
-
-function nodeStyle(selected) {
-    return selected ? "stroke-width: 2px; stroke: #00f" : "stroke-width: 1.5px";
-}
-
-var symbolGround = {
-    draw: function(context, size){
-        let s = size/2;
-
-        context.moveTo(0,-s);
-        context.lineTo(0,0);
-
-        context.moveTo(-s,0);
-        context.lineTo(s,0);
-
-        context.moveTo(-2*s/3,s/3);
-        context.lineTo(2*s/3,s/3);
-
-        context.moveTo(-s/3,2*s/3);
-        context.lineTo(s/3,2*s/3);
-    }
-}
-
-function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_labels, scalar_str) {
-    var ntab = {};
-
-    var groundOffset = 2.5 * node_size;
-
-    graph.nodes.forEach(function(d) {
-        ntab[d.name] = d;
-        d.selected = false;
-        d.previouslySelected = false;
-        d.nhd = [];
-    });
-
-    var spiders_and_boundaries = graph.nodes.filter(function(d) {
-        return d.t != 3;
-    });
-
-    graph.links.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-        s.nhd.push(t);
-        t.nhd.push(s);
-    });
-
-    graph.pauli_web.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-    });
-
-    var shiftKey;
-
-    // SETUP SVG ITEMS
-
-    var svg = d3.select(tag)
-    //.attr("tabindex", 1)
-        .on("keydown.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-        .on("keyup.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-    //.each(function() { this.focus(); })
-        .append("svg")
-        .attr("style", "max-width: none; max-height: none")
-        .attr("width", width)
-        .attr("height", height);
-
-    var web = svg.append("g")
-        .attr("class", "web")
-        .selectAll("line")
-        .data(graph.pauli_web)
-        .enter().append("path")
-        .attr("stroke", function(d) { return webColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 7px");
-
-    var link = svg.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.links)
-        .enter().append("path")
-        .attr("stroke", function(d) { return edgeColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 1.5px");
-
-    var brush = svg.append("g")
-        .attr("class", "brush");
-
-    var node = svg.append("g")
-        .attr("class", "node")
-        .selectAll("g")
-        .data(graph.nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y +")";
-        });
-
-    // Draw a ground symbol connected to the node.
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", "M 0 0 L 0 "+(groundOffset))
-        .attr("class", "selectable");
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", d3.symbol().type(symbolGround).size(node_size*1.5))
-        .attr("transform", "translate(0,"+groundOffset+")")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.t != 3 && d.t != 5 && d.t != 6; })
-        .append("circle")
-        .attr("r", function(d) {
-            if (d.t == 0) return 0.5 * node_size;
-            else if (d.t == 4) return 0.25 * node_size;
-            else return node_size;
-        })
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    var hbox = node.filter(function(d) { return d.t == 3; });
-
-    hbox.append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    // draw a triangle for d.t == 5
-    node.filter(function(d) { return d.t == 5; })
-        .append("path")
-        .attr("d", "M 0 0 L "+node_size+" "+node_size+" L -"+node_size+" "+node_size+" Z")
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable")
-        .attr("transform", "translate(" + (-node_size/2) + ", 0) rotate(-90)");
-
-    // draw a square for Z box: d.t == 6
-    node.filter(function(d) { return d.t == 6; })
-        .append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.phase != ''; })
-        .append("text")
-        .attr("y", 0.7 * node_size + 14)
-        .text(function (d) { return d.phase })
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#00d")
-        .attr('style', 'pointer-events: none; user-select: none;');
-
-    if (show_labels) {
-        node.append("text")
-            .attr("y", -0.7 * node_size - 8)
-            .text(function (d) { return d.name; })
-            .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("font-family", "monospace")
-            .attr("fill", "#999")
-            .attr('style', 'pointer-events: none; user-select: none;');
-    }
-
-    // Display the chosen data fields over the node.
-    node.filter(d => d.vdata.length > 0)
-        .append("text")
-        .attr("y", d => -0.7 * node_size - 14 - 10 * d.vdata.length)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "8px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#c66")
-        .attr('style', 'pointer-events: none; user-select: none;')
-        .selectAll("tspan")
-        .data(d => d.vdata)
-        .enter()
-        .append("tspan")
-        .attr("x", "0")
-        .attr("dy", "1.2em")
-        .text(x => x.join(": "));
-
-    if (scalar_str != "") {
-        svg.append("text")
-            .text(scalar_str)
-            .attr("x", 60).attr("y", 40)
-            .attr("text-anchor", "middle")
-    }
-
-    function update_hboxes() {
-        if (auto_hbox) {
-            var pos = {};
-            hbox.attr("transform", function(d) {
-                // calculate barycenter of non-hbox neighbours, then nudge a bit
-                // to the NE.
-                var x=0,y=0,sz=0;
-                for (var i = 0; i < d.nhd.length; ++i) {
-                    if (d.nhd[i].t != 3) {
-                        sz++;
-                        x += d.nhd[i].x;
-                        y += d.nhd[i].y;
-                    }
-                }
-
-                offset = 0.25 * scale;
-
-                if (sz != 0) {
-                    x = (x/sz) + offset;
-                    y = (y/sz) - offset;
-
-                    while (pos[[x,y]]) {
-                        x += offset;
-                    }
-                    d.x = x;
-                    d.y = y;
-                    pos[[x,y]] = true;
-                }
-
-                return "translate("+d.x+","+d.y+")";
-            });
-        }
-    }
-
-    update_hboxes();
-
-    var link_curve = function(d) {
-        var x1 = d.source.x, x2 = d.target.x, y1 = d.source.y, y2 = d.target.y;
-        if (d.num_parallel == 1) {
-            return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-            var dx = x2 - x1, dy = y2 - y1;
-            var midx = 0.5 * (x1 + x2), midy = 0.5 * (y1 + y2);
-            var pos = (d.index / (d.num_parallel-1)) - 0.5;
-            var cx = midx - pos * dy;
-            var cy = midy + pos * dx;
-            return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-            // return `M ${x1} ${y1} L ${x2} ${y2}`;
-        }
-    };
-    link.attr("d", link_curve);
-
-
-    var web_curve = function(d) {
-        var x1 = d.source.x, x2 = (x1 + d.target.x)/2, y1 = d.source.y, y2 = (y1 + d.target.y)/2;
-        return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    web.attr("d", web_curve);
-
-    // EVENTS FOR DRAGGING AND SELECTION
-
-    node.on("mousedown", function(d) {
-        if (shiftKey) {
-            d3.select(this).selectAll(".selectable").attr("style", nodeStyle(d.selected = !d.selected));
-            d3.event.stopImmediatePropagation();
-        } else if (!d.selected) {
-            node.selectAll(".selectable").attr("style", function(p) { return nodeStyle(p.selected = d === p); });
-        }
-    })
-        .call(d3.drag().on("drag", function(d) {
-            var dx = d3.event.dx;
-            var dy = d3.event.dy;
-            // node.filter(function(d) { return d.selected; })
-            //     .attr("cx", function(d) { return d.x += dx; })
-            //     .attr("cy", function(d) { return d.y += dy; });
-            node.filter(function(d) { return d.selected; })
-                .attr("transform", function(d) {
-                    d.x += dx;
-                    d.y += dy;
-                    return "translate(" + d.x + "," + d.y +")";
-                });
-
-            update_hboxes();
-
-            link.filter(function(d) { return d.source.selected || d.target.selected ||
-                    (auto_hbox && d.source.t == 3); })
-                .attr("d", link_curve);
-            web.filter(function(d) { return d.source.selected || d.target.selected; })
-                .attr("d", web_curve);
-        }));
-
-    brush.call(d3.brush().keyModifiers(false)
-        .extent([[0, 0], [width, height]])
-        .on("start", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(
-                        d.selected = d.previouslySelected = shiftKey &&
-                        d.selected);
-                });
-            }
-        })
-        .on("brush", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                var selection = d3.event.selection;
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(d.selected = d.previouslySelected ^
-                        (selection != null
-                            && selection[0][0] <= d.x && d.x < selection[1][0]
-                            && selection[0][1] <= d.y && d.y < selection[1][1]));
-                });
-            }
-        })
-        .on("end", function() {
-            if (d3.event.selection != null) {
-                d3.select(this).call(d3.event.target.move, null);
-            }
-        }));
-}
-
-
-showGraph('#graph-output-TgJYxJv5',
-  JSON.parse('{"nodes": [{"name": "1", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "7", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "13", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "18", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "35", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "40", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "41", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "42", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "7", "t": 2, "index": 0, "num_parallel": 1}, {"source": "2", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "7", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "35", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "18", "target": "41", "t": 1, "index": 0, "num_parallel": 1}, {"source": "18", "target": "24", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "40", "t": 1, "index": 0, "num_parallel": 1}, {"source": "35", "target": "42", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 280, 40,
-  8.0, false, true, '');
-</script>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>------------------------------------
-test_1
-------------------------------------
 Transforming to canonical form...
 Step 0: UNKNOWN --- Graph state is valid:
 </pre>
@@ -9961,7 +9569,7 @@ Step 0: UNKNOWN --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-qdxPAJnu" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-FvSQC70U" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -10325,7 +9933,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-qdxPAJnu',
+showGraph('#graph-output-FvSQC70U',
   JSON.parse('{"nodes": [{"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "3", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "8", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "13", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "36", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "44", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "58", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "63", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "64", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "65", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "66", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "2", "target": "10", "t": 1, "index": 0, "num_parallel": 1}, {"source": "3", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "64", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "66", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "44", "target": "65", "t": 1, "index": 0, "num_parallel": 1}, {"source": "44", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "58", "target": "63", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 320, 40,
   8.0, false, true, '');
 </script>
@@ -10346,7 +9954,7 @@ Step 2: Removing HS --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-MPbkGpoo" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-KMk6XbGS" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -10710,7 +10318,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-MPbkGpoo',
+showGraph('#graph-output-KMk6XbGS',
   JSON.parse('{"nodes": [{"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "3", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "8", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "13", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "36", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "44", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "58", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "63", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "64", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "65", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "66", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "2", "target": "10", "t": 1, "index": 0, "num_parallel": 1}, {"source": "3", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "64", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "66", "t": 1, "index": 0, "num_parallel": 1}, {"source": "36", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "44", "target": "65", "t": 1, "index": 0, "num_parallel": 1}, {"source": "44", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "58", "target": "63", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 320, 40,
   8.0, false, true, '');
 </script>
@@ -10727,7 +10335,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-AByAfSCj" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-4vtfcPHE" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -11091,7 +10699,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-AByAfSCj',
+showGraph('#graph-output-4vtfcPHE',
   JSON.parse('{"nodes": [{"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "3", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "8", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "13", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "36", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "44", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "58", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "63", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "64", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "65", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "66", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "2", "target": "10", "t": 1, "index": 0, "num_parallel": 1}, {"source": "3", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "64", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "66", "t": 1, "index": 0, "num_parallel": 1}, {"source": "36", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "44", "target": "65", "t": 1, "index": 0, "num_parallel": 1}, {"source": "44", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "58", "target": "63", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 320, 40,
   8.0, false, true, '');
 </script>
@@ -11101,390 +10709,6 @@ showGraph('#graph-output-AByAfSCj',
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Step 4: Injecting paulis
-OKKK
-Step 0: UNKNOWN --- Graph state is valid:
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-gMZmnryk" style="overflow:auto; background-color: white"></div>
-<script type="module">
-var d3;
-if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
-var _settings_colors = JSON.parse('{"edge": "#000000", "Hedge": "#0088ff", "Xedge": "#999999", "boundary": "#000000", "X": "#ff8888", "Y": "#aabbff", "Z": "#ccffcc", "H": "#ffff66", "W": "#000000", "Zalt": "#ccffcc", "Walt": "#000000", "Xdark": "#ff8888", "Ydark": "#aabbff", "Zdark": "#99dd99"}');
-// PyZX - Python library for quantum circuit rewriting 
-//        and optimisation using the ZX-calculus
-// Copyright (C) 2018 - Aleks Kissinger and John van de Wetering
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//    http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// styling functions
-function nodeColor(t) {
-    if (t == 0) return _settings_colors['boundary'];
-    else if (t == 1) return _settings_colors['Z']; // "#ccffcc";
-    else if (t == 2) return _settings_colors['X']; // "#ff8888";
-    else if (t == 3) return _settings_colors['H']; // "yellow";
-    else if (t == 4) return _settings_colors['W']; // "black";
-    else if (t == 5) return _settings_colors['Walt']; // "black";
-    else if (t == 6) return _settings_colors['Zalt']; // "#ccffcc";
-}
-
-function edgeColor(t) {
-    if (t == 1) return _settings_colors['edge']; //"black";
-    else if (t == 2) return _settings_colors['Hedge']; // "#08f";
-    else if (t == 3) return _settings_colors['Xedge']; // "gray";
-}
-
-function webColor(t) {
-    if (t == 'X') return _settings_colors['Xdark'];
-    else if (t == 'Y') return _settings_colors['Ydark'];
-    else if (t == 'Z') return _settings_colors['Zdark'];
-    else if (t == 'I') return '#dddddd';
-}
-
-function nodeStyle(selected) {
-    return selected ? "stroke-width: 2px; stroke: #00f" : "stroke-width: 1.5px";
-}
-
-var symbolGround = {
-    draw: function(context, size){
-        let s = size/2;
-
-        context.moveTo(0,-s);
-        context.lineTo(0,0);
-
-        context.moveTo(-s,0);
-        context.lineTo(s,0);
-
-        context.moveTo(-2*s/3,s/3);
-        context.lineTo(2*s/3,s/3);
-
-        context.moveTo(-s/3,2*s/3);
-        context.lineTo(s/3,2*s/3);
-    }
-}
-
-function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_labels, scalar_str) {
-    var ntab = {};
-
-    var groundOffset = 2.5 * node_size;
-
-    graph.nodes.forEach(function(d) {
-        ntab[d.name] = d;
-        d.selected = false;
-        d.previouslySelected = false;
-        d.nhd = [];
-    });
-
-    var spiders_and_boundaries = graph.nodes.filter(function(d) {
-        return d.t != 3;
-    });
-
-    graph.links.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-        s.nhd.push(t);
-        t.nhd.push(s);
-    });
-
-    graph.pauli_web.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-    });
-
-    var shiftKey;
-
-    // SETUP SVG ITEMS
-
-    var svg = d3.select(tag)
-    //.attr("tabindex", 1)
-        .on("keydown.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-        .on("keyup.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-    //.each(function() { this.focus(); })
-        .append("svg")
-        .attr("style", "max-width: none; max-height: none")
-        .attr("width", width)
-        .attr("height", height);
-
-    var web = svg.append("g")
-        .attr("class", "web")
-        .selectAll("line")
-        .data(graph.pauli_web)
-        .enter().append("path")
-        .attr("stroke", function(d) { return webColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 7px");
-
-    var link = svg.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.links)
-        .enter().append("path")
-        .attr("stroke", function(d) { return edgeColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 1.5px");
-
-    var brush = svg.append("g")
-        .attr("class", "brush");
-
-    var node = svg.append("g")
-        .attr("class", "node")
-        .selectAll("g")
-        .data(graph.nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y +")";
-        });
-
-    // Draw a ground symbol connected to the node.
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", "M 0 0 L 0 "+(groundOffset))
-        .attr("class", "selectable");
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", d3.symbol().type(symbolGround).size(node_size*1.5))
-        .attr("transform", "translate(0,"+groundOffset+")")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.t != 3 && d.t != 5 && d.t != 6; })
-        .append("circle")
-        .attr("r", function(d) {
-            if (d.t == 0) return 0.5 * node_size;
-            else if (d.t == 4) return 0.25 * node_size;
-            else return node_size;
-        })
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    var hbox = node.filter(function(d) { return d.t == 3; });
-
-    hbox.append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    // draw a triangle for d.t == 5
-    node.filter(function(d) { return d.t == 5; })
-        .append("path")
-        .attr("d", "M 0 0 L "+node_size+" "+node_size+" L -"+node_size+" "+node_size+" Z")
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable")
-        .attr("transform", "translate(" + (-node_size/2) + ", 0) rotate(-90)");
-
-    // draw a square for Z box: d.t == 6
-    node.filter(function(d) { return d.t == 6; })
-        .append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.phase != ''; })
-        .append("text")
-        .attr("y", 0.7 * node_size + 14)
-        .text(function (d) { return d.phase })
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#00d")
-        .attr('style', 'pointer-events: none; user-select: none;');
-
-    if (show_labels) {
-        node.append("text")
-            .attr("y", -0.7 * node_size - 8)
-            .text(function (d) { return d.name; })
-            .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("font-family", "monospace")
-            .attr("fill", "#999")
-            .attr('style', 'pointer-events: none; user-select: none;');
-    }
-
-    // Display the chosen data fields over the node.
-    node.filter(d => d.vdata.length > 0)
-        .append("text")
-        .attr("y", d => -0.7 * node_size - 14 - 10 * d.vdata.length)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "8px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#c66")
-        .attr('style', 'pointer-events: none; user-select: none;')
-        .selectAll("tspan")
-        .data(d => d.vdata)
-        .enter()
-        .append("tspan")
-        .attr("x", "0")
-        .attr("dy", "1.2em")
-        .text(x => x.join(": "));
-
-    if (scalar_str != "") {
-        svg.append("text")
-            .text(scalar_str)
-            .attr("x", 60).attr("y", 40)
-            .attr("text-anchor", "middle")
-    }
-
-    function update_hboxes() {
-        if (auto_hbox) {
-            var pos = {};
-            hbox.attr("transform", function(d) {
-                // calculate barycenter of non-hbox neighbours, then nudge a bit
-                // to the NE.
-                var x=0,y=0,sz=0;
-                for (var i = 0; i < d.nhd.length; ++i) {
-                    if (d.nhd[i].t != 3) {
-                        sz++;
-                        x += d.nhd[i].x;
-                        y += d.nhd[i].y;
-                    }
-                }
-
-                offset = 0.25 * scale;
-
-                if (sz != 0) {
-                    x = (x/sz) + offset;
-                    y = (y/sz) - offset;
-
-                    while (pos[[x,y]]) {
-                        x += offset;
-                    }
-                    d.x = x;
-                    d.y = y;
-                    pos[[x,y]] = true;
-                }
-
-                return "translate("+d.x+","+d.y+")";
-            });
-        }
-    }
-
-    update_hboxes();
-
-    var link_curve = function(d) {
-        var x1 = d.source.x, x2 = d.target.x, y1 = d.source.y, y2 = d.target.y;
-        if (d.num_parallel == 1) {
-            return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-            var dx = x2 - x1, dy = y2 - y1;
-            var midx = 0.5 * (x1 + x2), midy = 0.5 * (y1 + y2);
-            var pos = (d.index / (d.num_parallel-1)) - 0.5;
-            var cx = midx - pos * dy;
-            var cy = midy + pos * dx;
-            return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-            // return `M ${x1} ${y1} L ${x2} ${y2}`;
-        }
-    };
-    link.attr("d", link_curve);
-
-
-    var web_curve = function(d) {
-        var x1 = d.source.x, x2 = (x1 + d.target.x)/2, y1 = d.source.y, y2 = (y1 + d.target.y)/2;
-        return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    web.attr("d", web_curve);
-
-    // EVENTS FOR DRAGGING AND SELECTION
-
-    node.on("mousedown", function(d) {
-        if (shiftKey) {
-            d3.select(this).selectAll(".selectable").attr("style", nodeStyle(d.selected = !d.selected));
-            d3.event.stopImmediatePropagation();
-        } else if (!d.selected) {
-            node.selectAll(".selectable").attr("style", function(p) { return nodeStyle(p.selected = d === p); });
-        }
-    })
-        .call(d3.drag().on("drag", function(d) {
-            var dx = d3.event.dx;
-            var dy = d3.event.dy;
-            // node.filter(function(d) { return d.selected; })
-            //     .attr("cx", function(d) { return d.x += dx; })
-            //     .attr("cy", function(d) { return d.y += dy; });
-            node.filter(function(d) { return d.selected; })
-                .attr("transform", function(d) {
-                    d.x += dx;
-                    d.y += dy;
-                    return "translate(" + d.x + "," + d.y +")";
-                });
-
-            update_hboxes();
-
-            link.filter(function(d) { return d.source.selected || d.target.selected ||
-                    (auto_hbox && d.source.t == 3); })
-                .attr("d", link_curve);
-            web.filter(function(d) { return d.source.selected || d.target.selected; })
-                .attr("d", web_curve);
-        }));
-
-    brush.call(d3.brush().keyModifiers(false)
-        .extent([[0, 0], [width, height]])
-        .on("start", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(
-                        d.selected = d.previouslySelected = shiftKey &&
-                        d.selected);
-                });
-            }
-        })
-        .on("brush", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                var selection = d3.event.selection;
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(d.selected = d.previouslySelected ^
-                        (selection != null
-                            && selection[0][0] <= d.x && d.x < selection[1][0]
-                            && selection[0][1] <= d.y && d.y < selection[1][1]));
-                });
-            }
-        })
-        .on("end", function() {
-            if (d3.event.selection != null) {
-                d3.select(this).call(d3.event.target.move, null);
-            }
-        }));
-}
-
-
-showGraph('#graph-output-gMZmnryk',
-  JSON.parse('{"nodes": [{"name": "2", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "3", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "8", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "13", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "36", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "44", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "58", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "63", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "64", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "65", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "66", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "2", "target": "10", "t": 1, "index": 0, "num_parallel": 1}, {"source": "3", "target": "13", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "13", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "64", "t": 1, "index": 0, "num_parallel": 1}, {"source": "8", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "8", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "36", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "13", "target": "44", "t": 2, "index": 0, "num_parallel": 1}, {"source": "36", "target": "66", "t": 1, "index": 0, "num_parallel": 1}, {"source": "36", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "44", "target": "65", "t": 1, "index": 0, "num_parallel": 1}, {"source": "44", "target": "58", "t": 2, "index": 0, "num_parallel": 1}, {"source": "58", "target": "63", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 320, 40,
-  8.0, false, true, '');
-</script>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>------------------------------------
-test_2
-------------------------------------
 Transforming to canonical form...
 Step 0: UNKNOWN --- Graph state is valid:
 </pre>
@@ -11493,7 +10717,7 @@ Step 0: UNKNOWN --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-OdQZaKQQ" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-UuuTf1eJ" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -11857,7 +11081,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-OdQZaKQQ',
+showGraph('#graph-output-UuuTf1eJ',
   JSON.parse('{"nodes": [{"name": "3", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "17", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "19", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "43", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "69", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "78", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "94", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "100", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "101", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "102", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "103", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "104", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "3", "target": "17", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "19", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "43", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "78", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "19", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "101", "t": 1, "index": 0, "num_parallel": 1}, {"source": "43", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "78", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "69", "target": "102", "t": 1, "index": 0, "num_parallel": 1}, {"source": "69", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "104", "t": 2, "index": 0, "num_parallel": 1}, {"source": "78", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "94", "target": "100", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 360, 40,
   8.0, false, true, '');
 </script>
@@ -11879,7 +11103,7 @@ Step 2: Removing HS --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-KQ4hmQEu" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-u8KCB0uj" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -12243,7 +11467,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-KQ4hmQEu',
+showGraph('#graph-output-u8KCB0uj',
   JSON.parse('{"nodes": [{"name": "3", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "17", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "19", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "43", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "69", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "78", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "94", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "100", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "101", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "102", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "103", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "104", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "3", "target": "17", "t": 1, "index": 0, "num_parallel": 1}, {"source": "4", "target": "19", "t": 1, "index": 0, "num_parallel": 1}, {"source": "17", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "43", "t": 2, "index": 0, "num_parallel": 1}, {"source": "19", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "101", "t": 1, "index": 0, "num_parallel": 1}, {"source": "43", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "69", "target": "102", "t": 1, "index": 0, "num_parallel": 1}, {"source": "69", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "104", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "78", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "78", "target": "103", "t": 1, "index": 0, "num_parallel": 1}, {"source": "94", "target": "100", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 360, 40,
   8.0, false, true, '');
 </script>
@@ -12260,7 +11484,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-dKezPiNp" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-pW8RBed2" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -12624,7 +11848,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-dKezPiNp',
+showGraph('#graph-output-pW8RBed2',
   JSON.parse('{"nodes": [{"name": "3", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "17", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "19", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "43", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "69", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "78", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "94", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "100", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "101", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "102", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "103", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "104", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "3", "target": "17", "t": 1, "index": 0, "num_parallel": 1}, {"source": "4", "target": "19", "t": 1, "index": 0, "num_parallel": 1}, {"source": "17", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "43", "t": 2, "index": 0, "num_parallel": 1}, {"source": "19", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "101", "t": 1, "index": 0, "num_parallel": 1}, {"source": "43", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "69", "target": "102", "t": 1, "index": 0, "num_parallel": 1}, {"source": "69", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "104", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "78", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "78", "target": "103", "t": 1, "index": 0, "num_parallel": 1}, {"source": "94", "target": "100", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 360, 40,
   8.0, false, true, '');
 </script>
@@ -12634,390 +11858,6 @@ showGraph('#graph-output-dKezPiNp',
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Step 4: Injecting paulis
-OKKK
-Step 0: UNKNOWN --- Graph state is valid:
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-qgdV58iy" style="overflow:auto; background-color: white"></div>
-<script type="module">
-var d3;
-if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
-var _settings_colors = JSON.parse('{"edge": "#000000", "Hedge": "#0088ff", "Xedge": "#999999", "boundary": "#000000", "X": "#ff8888", "Y": "#aabbff", "Z": "#ccffcc", "H": "#ffff66", "W": "#000000", "Zalt": "#ccffcc", "Walt": "#000000", "Xdark": "#ff8888", "Ydark": "#aabbff", "Zdark": "#99dd99"}');
-// PyZX - Python library for quantum circuit rewriting 
-//        and optimisation using the ZX-calculus
-// Copyright (C) 2018 - Aleks Kissinger and John van de Wetering
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//    http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// styling functions
-function nodeColor(t) {
-    if (t == 0) return _settings_colors['boundary'];
-    else if (t == 1) return _settings_colors['Z']; // "#ccffcc";
-    else if (t == 2) return _settings_colors['X']; // "#ff8888";
-    else if (t == 3) return _settings_colors['H']; // "yellow";
-    else if (t == 4) return _settings_colors['W']; // "black";
-    else if (t == 5) return _settings_colors['Walt']; // "black";
-    else if (t == 6) return _settings_colors['Zalt']; // "#ccffcc";
-}
-
-function edgeColor(t) {
-    if (t == 1) return _settings_colors['edge']; //"black";
-    else if (t == 2) return _settings_colors['Hedge']; // "#08f";
-    else if (t == 3) return _settings_colors['Xedge']; // "gray";
-}
-
-function webColor(t) {
-    if (t == 'X') return _settings_colors['Xdark'];
-    else if (t == 'Y') return _settings_colors['Ydark'];
-    else if (t == 'Z') return _settings_colors['Zdark'];
-    else if (t == 'I') return '#dddddd';
-}
-
-function nodeStyle(selected) {
-    return selected ? "stroke-width: 2px; stroke: #00f" : "stroke-width: 1.5px";
-}
-
-var symbolGround = {
-    draw: function(context, size){
-        let s = size/2;
-
-        context.moveTo(0,-s);
-        context.lineTo(0,0);
-
-        context.moveTo(-s,0);
-        context.lineTo(s,0);
-
-        context.moveTo(-2*s/3,s/3);
-        context.lineTo(2*s/3,s/3);
-
-        context.moveTo(-s/3,2*s/3);
-        context.lineTo(s/3,2*s/3);
-    }
-}
-
-function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_labels, scalar_str) {
-    var ntab = {};
-
-    var groundOffset = 2.5 * node_size;
-
-    graph.nodes.forEach(function(d) {
-        ntab[d.name] = d;
-        d.selected = false;
-        d.previouslySelected = false;
-        d.nhd = [];
-    });
-
-    var spiders_and_boundaries = graph.nodes.filter(function(d) {
-        return d.t != 3;
-    });
-
-    graph.links.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-        s.nhd.push(t);
-        t.nhd.push(s);
-    });
-
-    graph.pauli_web.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-    });
-
-    var shiftKey;
-
-    // SETUP SVG ITEMS
-
-    var svg = d3.select(tag)
-    //.attr("tabindex", 1)
-        .on("keydown.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-        .on("keyup.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-    //.each(function() { this.focus(); })
-        .append("svg")
-        .attr("style", "max-width: none; max-height: none")
-        .attr("width", width)
-        .attr("height", height);
-
-    var web = svg.append("g")
-        .attr("class", "web")
-        .selectAll("line")
-        .data(graph.pauli_web)
-        .enter().append("path")
-        .attr("stroke", function(d) { return webColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 7px");
-
-    var link = svg.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.links)
-        .enter().append("path")
-        .attr("stroke", function(d) { return edgeColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 1.5px");
-
-    var brush = svg.append("g")
-        .attr("class", "brush");
-
-    var node = svg.append("g")
-        .attr("class", "node")
-        .selectAll("g")
-        .data(graph.nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y +")";
-        });
-
-    // Draw a ground symbol connected to the node.
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", "M 0 0 L 0 "+(groundOffset))
-        .attr("class", "selectable");
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", d3.symbol().type(symbolGround).size(node_size*1.5))
-        .attr("transform", "translate(0,"+groundOffset+")")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.t != 3 && d.t != 5 && d.t != 6; })
-        .append("circle")
-        .attr("r", function(d) {
-            if (d.t == 0) return 0.5 * node_size;
-            else if (d.t == 4) return 0.25 * node_size;
-            else return node_size;
-        })
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    var hbox = node.filter(function(d) { return d.t == 3; });
-
-    hbox.append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    // draw a triangle for d.t == 5
-    node.filter(function(d) { return d.t == 5; })
-        .append("path")
-        .attr("d", "M 0 0 L "+node_size+" "+node_size+" L -"+node_size+" "+node_size+" Z")
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable")
-        .attr("transform", "translate(" + (-node_size/2) + ", 0) rotate(-90)");
-
-    // draw a square for Z box: d.t == 6
-    node.filter(function(d) { return d.t == 6; })
-        .append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.phase != ''; })
-        .append("text")
-        .attr("y", 0.7 * node_size + 14)
-        .text(function (d) { return d.phase })
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#00d")
-        .attr('style', 'pointer-events: none; user-select: none;');
-
-    if (show_labels) {
-        node.append("text")
-            .attr("y", -0.7 * node_size - 8)
-            .text(function (d) { return d.name; })
-            .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("font-family", "monospace")
-            .attr("fill", "#999")
-            .attr('style', 'pointer-events: none; user-select: none;');
-    }
-
-    // Display the chosen data fields over the node.
-    node.filter(d => d.vdata.length > 0)
-        .append("text")
-        .attr("y", d => -0.7 * node_size - 14 - 10 * d.vdata.length)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "8px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#c66")
-        .attr('style', 'pointer-events: none; user-select: none;')
-        .selectAll("tspan")
-        .data(d => d.vdata)
-        .enter()
-        .append("tspan")
-        .attr("x", "0")
-        .attr("dy", "1.2em")
-        .text(x => x.join(": "));
-
-    if (scalar_str != "") {
-        svg.append("text")
-            .text(scalar_str)
-            .attr("x", 60).attr("y", 40)
-            .attr("text-anchor", "middle")
-    }
-
-    function update_hboxes() {
-        if (auto_hbox) {
-            var pos = {};
-            hbox.attr("transform", function(d) {
-                // calculate barycenter of non-hbox neighbours, then nudge a bit
-                // to the NE.
-                var x=0,y=0,sz=0;
-                for (var i = 0; i < d.nhd.length; ++i) {
-                    if (d.nhd[i].t != 3) {
-                        sz++;
-                        x += d.nhd[i].x;
-                        y += d.nhd[i].y;
-                    }
-                }
-
-                offset = 0.25 * scale;
-
-                if (sz != 0) {
-                    x = (x/sz) + offset;
-                    y = (y/sz) - offset;
-
-                    while (pos[[x,y]]) {
-                        x += offset;
-                    }
-                    d.x = x;
-                    d.y = y;
-                    pos[[x,y]] = true;
-                }
-
-                return "translate("+d.x+","+d.y+")";
-            });
-        }
-    }
-
-    update_hboxes();
-
-    var link_curve = function(d) {
-        var x1 = d.source.x, x2 = d.target.x, y1 = d.source.y, y2 = d.target.y;
-        if (d.num_parallel == 1) {
-            return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-            var dx = x2 - x1, dy = y2 - y1;
-            var midx = 0.5 * (x1 + x2), midy = 0.5 * (y1 + y2);
-            var pos = (d.index / (d.num_parallel-1)) - 0.5;
-            var cx = midx - pos * dy;
-            var cy = midy + pos * dx;
-            return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-            // return `M ${x1} ${y1} L ${x2} ${y2}`;
-        }
-    };
-    link.attr("d", link_curve);
-
-
-    var web_curve = function(d) {
-        var x1 = d.source.x, x2 = (x1 + d.target.x)/2, y1 = d.source.y, y2 = (y1 + d.target.y)/2;
-        return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    web.attr("d", web_curve);
-
-    // EVENTS FOR DRAGGING AND SELECTION
-
-    node.on("mousedown", function(d) {
-        if (shiftKey) {
-            d3.select(this).selectAll(".selectable").attr("style", nodeStyle(d.selected = !d.selected));
-            d3.event.stopImmediatePropagation();
-        } else if (!d.selected) {
-            node.selectAll(".selectable").attr("style", function(p) { return nodeStyle(p.selected = d === p); });
-        }
-    })
-        .call(d3.drag().on("drag", function(d) {
-            var dx = d3.event.dx;
-            var dy = d3.event.dy;
-            // node.filter(function(d) { return d.selected; })
-            //     .attr("cx", function(d) { return d.x += dx; })
-            //     .attr("cy", function(d) { return d.y += dy; });
-            node.filter(function(d) { return d.selected; })
-                .attr("transform", function(d) {
-                    d.x += dx;
-                    d.y += dy;
-                    return "translate(" + d.x + "," + d.y +")";
-                });
-
-            update_hboxes();
-
-            link.filter(function(d) { return d.source.selected || d.target.selected ||
-                    (auto_hbox && d.source.t == 3); })
-                .attr("d", link_curve);
-            web.filter(function(d) { return d.source.selected || d.target.selected; })
-                .attr("d", web_curve);
-        }));
-
-    brush.call(d3.brush().keyModifiers(false)
-        .extent([[0, 0], [width, height]])
-        .on("start", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(
-                        d.selected = d.previouslySelected = shiftKey &&
-                        d.selected);
-                });
-            }
-        })
-        .on("brush", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                var selection = d3.event.selection;
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(d.selected = d.previouslySelected ^
-                        (selection != null
-                            && selection[0][0] <= d.x && d.x < selection[1][0]
-                            && selection[0][1] <= d.y && d.y < selection[1][1]));
-                });
-            }
-        })
-        .on("end", function() {
-            if (d3.event.selection != null) {
-                d3.select(this).call(d3.event.target.move, null);
-            }
-        }));
-}
-
-
-showGraph('#graph-output-qgdV58iy',
-  JSON.parse('{"nodes": [{"name": "3", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "17", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "19", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "43", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "69", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "78", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "94", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "100", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "101", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "102", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "103", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "104", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "3", "target": "17", "t": 1, "index": 0, "num_parallel": 1}, {"source": "4", "target": "19", "t": 1, "index": 0, "num_parallel": 1}, {"source": "17", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "17", "target": "43", "t": 2, "index": 0, "num_parallel": 1}, {"source": "19", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "101", "t": 1, "index": 0, "num_parallel": 1}, {"source": "43", "target": "69", "t": 2, "index": 0, "num_parallel": 1}, {"source": "43", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "69", "target": "102", "t": 1, "index": 0, "num_parallel": 1}, {"source": "69", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "104", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "78", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "94", "t": 2, "index": 0, "num_parallel": 1}, {"source": "78", "target": "103", "t": 1, "index": 0, "num_parallel": 1}, {"source": "94", "target": "100", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 360, 40,
-  8.0, false, true, '');
-</script>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>------------------------------------
-test_3
-------------------------------------
 Transforming to canonical form...
 Step 0: UNKNOWN --- Graph state is valid:
 </pre>
@@ -13026,7 +11866,7 @@ Step 0: UNKNOWN --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-nOERj866" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-T4HTgEpP" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -13390,7 +12230,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-nOERj866',
+showGraph('#graph-output-T4HTgEpP',
   JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 1, "index": 0, "num_parallel": 1}, {"source": "1", "target": "60", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "27", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "10", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "27", "t": 2, "index": 0, "num_parallel": 1}, {"source": "10", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "60", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 2, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 2, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
   8.0, false, true, '');
 </script>
@@ -13413,7 +12253,7 @@ Step 2: Removing HS --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-x9q66hWK" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-nRybcv5h" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -13777,7 +12617,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-x9q66hWK',
+showGraph('#graph-output-nRybcv5h',
   JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 1, "index": 0, "num_parallel": 1}, {"source": "1", "target": "27", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 2, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
   8.0, false, true, '');
 </script>
@@ -13795,7 +12635,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-vKQIAhKY" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-pTvvk1ra" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -14159,8 +12999,8 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-vKQIAhKY',
-  JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
+showGraph('#graph-output-pTvvk1ra',
+  JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
   8.0, false, true, '');
 </script>
 </div>
@@ -14175,7 +13015,7 @@ showGraph('#graph-output-vKQIAhKY',
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-F9ZqSQQG" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-L24CTk0J" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -14539,8 +13379,8 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-F9ZqSQQG',
-  JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
+showGraph('#graph-output-L24CTk0J',
+  JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
   8.0, false, true, '');
 </script>
 </div>
@@ -14549,390 +13389,6 @@ showGraph('#graph-output-F9ZqSQQG',
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Step 4: Injecting paulis
-OKKK
-Step 0: UNKNOWN --- Graph state is valid:
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-PXF8AJaK" style="overflow:auto; background-color: white"></div>
-<script type="module">
-var d3;
-if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
-var _settings_colors = JSON.parse('{"edge": "#000000", "Hedge": "#0088ff", "Xedge": "#999999", "boundary": "#000000", "X": "#ff8888", "Y": "#aabbff", "Z": "#ccffcc", "H": "#ffff66", "W": "#000000", "Zalt": "#ccffcc", "Walt": "#000000", "Xdark": "#ff8888", "Ydark": "#aabbff", "Zdark": "#99dd99"}');
-// PyZX - Python library for quantum circuit rewriting 
-//        and optimisation using the ZX-calculus
-// Copyright (C) 2018 - Aleks Kissinger and John van de Wetering
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//    http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// styling functions
-function nodeColor(t) {
-    if (t == 0) return _settings_colors['boundary'];
-    else if (t == 1) return _settings_colors['Z']; // "#ccffcc";
-    else if (t == 2) return _settings_colors['X']; // "#ff8888";
-    else if (t == 3) return _settings_colors['H']; // "yellow";
-    else if (t == 4) return _settings_colors['W']; // "black";
-    else if (t == 5) return _settings_colors['Walt']; // "black";
-    else if (t == 6) return _settings_colors['Zalt']; // "#ccffcc";
-}
-
-function edgeColor(t) {
-    if (t == 1) return _settings_colors['edge']; //"black";
-    else if (t == 2) return _settings_colors['Hedge']; // "#08f";
-    else if (t == 3) return _settings_colors['Xedge']; // "gray";
-}
-
-function webColor(t) {
-    if (t == 'X') return _settings_colors['Xdark'];
-    else if (t == 'Y') return _settings_colors['Ydark'];
-    else if (t == 'Z') return _settings_colors['Zdark'];
-    else if (t == 'I') return '#dddddd';
-}
-
-function nodeStyle(selected) {
-    return selected ? "stroke-width: 2px; stroke: #00f" : "stroke-width: 1.5px";
-}
-
-var symbolGround = {
-    draw: function(context, size){
-        let s = size/2;
-
-        context.moveTo(0,-s);
-        context.lineTo(0,0);
-
-        context.moveTo(-s,0);
-        context.lineTo(s,0);
-
-        context.moveTo(-2*s/3,s/3);
-        context.lineTo(2*s/3,s/3);
-
-        context.moveTo(-s/3,2*s/3);
-        context.lineTo(s/3,2*s/3);
-    }
-}
-
-function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_labels, scalar_str) {
-    var ntab = {};
-
-    var groundOffset = 2.5 * node_size;
-
-    graph.nodes.forEach(function(d) {
-        ntab[d.name] = d;
-        d.selected = false;
-        d.previouslySelected = false;
-        d.nhd = [];
-    });
-
-    var spiders_and_boundaries = graph.nodes.filter(function(d) {
-        return d.t != 3;
-    });
-
-    graph.links.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-        s.nhd.push(t);
-        t.nhd.push(s);
-    });
-
-    graph.pauli_web.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-    });
-
-    var shiftKey;
-
-    // SETUP SVG ITEMS
-
-    var svg = d3.select(tag)
-    //.attr("tabindex", 1)
-        .on("keydown.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-        .on("keyup.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-    //.each(function() { this.focus(); })
-        .append("svg")
-        .attr("style", "max-width: none; max-height: none")
-        .attr("width", width)
-        .attr("height", height);
-
-    var web = svg.append("g")
-        .attr("class", "web")
-        .selectAll("line")
-        .data(graph.pauli_web)
-        .enter().append("path")
-        .attr("stroke", function(d) { return webColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 7px");
-
-    var link = svg.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.links)
-        .enter().append("path")
-        .attr("stroke", function(d) { return edgeColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 1.5px");
-
-    var brush = svg.append("g")
-        .attr("class", "brush");
-
-    var node = svg.append("g")
-        .attr("class", "node")
-        .selectAll("g")
-        .data(graph.nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y +")";
-        });
-
-    // Draw a ground symbol connected to the node.
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", "M 0 0 L 0 "+(groundOffset))
-        .attr("class", "selectable");
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", d3.symbol().type(symbolGround).size(node_size*1.5))
-        .attr("transform", "translate(0,"+groundOffset+")")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.t != 3 && d.t != 5 && d.t != 6; })
-        .append("circle")
-        .attr("r", function(d) {
-            if (d.t == 0) return 0.5 * node_size;
-            else if (d.t == 4) return 0.25 * node_size;
-            else return node_size;
-        })
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    var hbox = node.filter(function(d) { return d.t == 3; });
-
-    hbox.append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    // draw a triangle for d.t == 5
-    node.filter(function(d) { return d.t == 5; })
-        .append("path")
-        .attr("d", "M 0 0 L "+node_size+" "+node_size+" L -"+node_size+" "+node_size+" Z")
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable")
-        .attr("transform", "translate(" + (-node_size/2) + ", 0) rotate(-90)");
-
-    // draw a square for Z box: d.t == 6
-    node.filter(function(d) { return d.t == 6; })
-        .append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.phase != ''; })
-        .append("text")
-        .attr("y", 0.7 * node_size + 14)
-        .text(function (d) { return d.phase })
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#00d")
-        .attr('style', 'pointer-events: none; user-select: none;');
-
-    if (show_labels) {
-        node.append("text")
-            .attr("y", -0.7 * node_size - 8)
-            .text(function (d) { return d.name; })
-            .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("font-family", "monospace")
-            .attr("fill", "#999")
-            .attr('style', 'pointer-events: none; user-select: none;');
-    }
-
-    // Display the chosen data fields over the node.
-    node.filter(d => d.vdata.length > 0)
-        .append("text")
-        .attr("y", d => -0.7 * node_size - 14 - 10 * d.vdata.length)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "8px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#c66")
-        .attr('style', 'pointer-events: none; user-select: none;')
-        .selectAll("tspan")
-        .data(d => d.vdata)
-        .enter()
-        .append("tspan")
-        .attr("x", "0")
-        .attr("dy", "1.2em")
-        .text(x => x.join(": "));
-
-    if (scalar_str != "") {
-        svg.append("text")
-            .text(scalar_str)
-            .attr("x", 60).attr("y", 40)
-            .attr("text-anchor", "middle")
-    }
-
-    function update_hboxes() {
-        if (auto_hbox) {
-            var pos = {};
-            hbox.attr("transform", function(d) {
-                // calculate barycenter of non-hbox neighbours, then nudge a bit
-                // to the NE.
-                var x=0,y=0,sz=0;
-                for (var i = 0; i < d.nhd.length; ++i) {
-                    if (d.nhd[i].t != 3) {
-                        sz++;
-                        x += d.nhd[i].x;
-                        y += d.nhd[i].y;
-                    }
-                }
-
-                offset = 0.25 * scale;
-
-                if (sz != 0) {
-                    x = (x/sz) + offset;
-                    y = (y/sz) - offset;
-
-                    while (pos[[x,y]]) {
-                        x += offset;
-                    }
-                    d.x = x;
-                    d.y = y;
-                    pos[[x,y]] = true;
-                }
-
-                return "translate("+d.x+","+d.y+")";
-            });
-        }
-    }
-
-    update_hboxes();
-
-    var link_curve = function(d) {
-        var x1 = d.source.x, x2 = d.target.x, y1 = d.source.y, y2 = d.target.y;
-        if (d.num_parallel == 1) {
-            return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-            var dx = x2 - x1, dy = y2 - y1;
-            var midx = 0.5 * (x1 + x2), midy = 0.5 * (y1 + y2);
-            var pos = (d.index / (d.num_parallel-1)) - 0.5;
-            var cx = midx - pos * dy;
-            var cy = midy + pos * dx;
-            return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-            // return `M ${x1} ${y1} L ${x2} ${y2}`;
-        }
-    };
-    link.attr("d", link_curve);
-
-
-    var web_curve = function(d) {
-        var x1 = d.source.x, x2 = (x1 + d.target.x)/2, y1 = d.source.y, y2 = (y1 + d.target.y)/2;
-        return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    web.attr("d", web_curve);
-
-    // EVENTS FOR DRAGGING AND SELECTION
-
-    node.on("mousedown", function(d) {
-        if (shiftKey) {
-            d3.select(this).selectAll(".selectable").attr("style", nodeStyle(d.selected = !d.selected));
-            d3.event.stopImmediatePropagation();
-        } else if (!d.selected) {
-            node.selectAll(".selectable").attr("style", function(p) { return nodeStyle(p.selected = d === p); });
-        }
-    })
-        .call(d3.drag().on("drag", function(d) {
-            var dx = d3.event.dx;
-            var dy = d3.event.dy;
-            // node.filter(function(d) { return d.selected; })
-            //     .attr("cx", function(d) { return d.x += dx; })
-            //     .attr("cy", function(d) { return d.y += dy; });
-            node.filter(function(d) { return d.selected; })
-                .attr("transform", function(d) {
-                    d.x += dx;
-                    d.y += dy;
-                    return "translate(" + d.x + "," + d.y +")";
-                });
-
-            update_hboxes();
-
-            link.filter(function(d) { return d.source.selected || d.target.selected ||
-                    (auto_hbox && d.source.t == 3); })
-                .attr("d", link_curve);
-            web.filter(function(d) { return d.source.selected || d.target.selected; })
-                .attr("d", web_curve);
-        }));
-
-    brush.call(d3.brush().keyModifiers(false)
-        .extent([[0, 0], [width, height]])
-        .on("start", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(
-                        d.selected = d.previouslySelected = shiftKey &&
-                        d.selected);
-                });
-            }
-        })
-        .on("brush", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                var selection = d3.event.selection;
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(d.selected = d.previouslySelected ^
-                        (selection != null
-                            && selection[0][0] <= d.x && d.x < selection[1][0]
-                            && selection[0][1] <= d.y && d.y < selection[1][1]));
-                });
-            }
-        })
-        .on("end", function() {
-            if (d3.event.selection != null) {
-                d3.select(this).call(d3.event.target.move, null);
-            }
-        }));
-}
-
-
-showGraph('#graph-output-PXF8AJaK',
-  JSON.parse('{"nodes": [{"name": "1", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "4", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "10", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "27", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "60", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "75", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "88", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "106", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "115", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "131", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "132", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "133", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "134", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "135", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "136", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "1", "target": "5", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "1", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "4", "target": "27", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "131", "t": 1, "index": 0, "num_parallel": 1}, {"source": "10", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "27", "target": "115", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "132", "t": 1, "index": 0, "num_parallel": 1}, {"source": "60", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "60", "target": "75", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "133", "t": 1, "index": 0, "num_parallel": 1}, {"source": "75", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "75", "target": "88", "t": 2, "index": 0, "num_parallel": 1}, {"source": "88", "target": "135", "t": 1, "index": 0, "num_parallel": 1}, {"source": "88", "target": "106", "t": 2, "index": 0, "num_parallel": 1}, {"source": "106", "target": "134", "t": 1, "index": 0, "num_parallel": 1}, {"source": "115", "target": "136", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 400, 40,
-  8.0, false, true, '');
-</script>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>------------------------------------
-test_4
-------------------------------------
 Transforming to canonical form...
 Step 0: UNKNOWN --- Graph state is valid:
 </pre>
@@ -14941,7 +13397,7 @@ Step 0: UNKNOWN --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-yFFhUTXh" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-hfBGxHbc" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -15305,7 +13761,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-yFFhUTXh',
+showGraph('#graph-output-hfBGxHbc',
   JSON.parse('{"nodes": [{"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "6", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "15", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "39", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "53", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "85", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "96", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "102", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "103", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "120", "x": 40.0, "y": 400.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "124", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "125", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "126", "x": 440.0, "y": 400.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "127", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "128", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "129", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "130", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "5", "target": "15", "t": 1, "index": 0, "num_parallel": 1}, {"source": "6", "target": "53", "t": 1, "index": 0, "num_parallel": 1}, {"source": "15", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "39", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "124", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "53", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "39", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "125", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "53", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "130", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "128", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "102", "target": "127", "t": 1, "index": 0, "num_parallel": 1}, {"source": "103", "target": "129", "t": 1, "index": 0, "num_parallel": 1}, {"source": "103", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "120", "target": "126", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 440, 40,
   8.0, false, true, '');
 </script>
@@ -15326,7 +13782,7 @@ Step 2: Removing HS --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-m3vqsvdX" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-z9CD9o91" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -15690,7 +14146,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-m3vqsvdX',
+showGraph('#graph-output-z9CD9o91',
   JSON.parse('{"nodes": [{"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "6", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "15", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "39", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "53", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "85", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "96", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "102", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "103", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "120", "x": 40.0, "y": 400.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "124", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "125", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "126", "x": 440.0, "y": 400.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "127", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "128", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "129", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "130", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "5", "target": "15", "t": 1, "index": 0, "num_parallel": 1}, {"source": "6", "target": "53", "t": 1, "index": 0, "num_parallel": 1}, {"source": "15", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "39", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "124", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "53", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "125", "t": 1, "index": 0, "num_parallel": 1}, {"source": "39", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "53", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "130", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "128", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "102", "target": "127", "t": 1, "index": 0, "num_parallel": 1}, {"source": "102", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "103", "target": "129", "t": 1, "index": 0, "num_parallel": 1}, {"source": "103", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "120", "target": "126", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 440, 40,
   8.0, false, true, '');
 </script>
@@ -15707,7 +14163,7 @@ Step 3: Reordering H --- Graph state is valid:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-dqDG3vb4" style="overflow:auto; background-color: white"></div>
+<div id="graph-output-Ynk7dTo5" style="overflow:auto; background-color: white"></div>
 <script type="module">
 var d3;
 if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
@@ -16071,7 +14527,7 @@ function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_
 }
 
 
-showGraph('#graph-output-dqDG3vb4',
+showGraph('#graph-output-Ynk7dTo5',
   JSON.parse('{"nodes": [{"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "6", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "15", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "39", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "53", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "85", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "96", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "102", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "103", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "120", "x": 40.0, "y": 400.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "124", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "125", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "126", "x": 440.0, "y": 400.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "127", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "128", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "129", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "130", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "5", "target": "15", "t": 1, "index": 0, "num_parallel": 1}, {"source": "6", "target": "53", "t": 1, "index": 0, "num_parallel": 1}, {"source": "15", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "39", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "124", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "53", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "125", "t": 1, "index": 0, "num_parallel": 1}, {"source": "39", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "53", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "130", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "128", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "102", "target": "127", "t": 1, "index": 0, "num_parallel": 1}, {"source": "102", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "103", "target": "129", "t": 1, "index": 0, "num_parallel": 1}, {"source": "103", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "120", "target": "126", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 440, 40,
   8.0, false, true, '');
 </script>
@@ -16081,382 +14537,7 @@ showGraph('#graph-output-dqDG3vb4',
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Step 4: Injecting paulis
-OKKK
-Step 0: UNKNOWN --- Graph state is valid:
 </pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div id="graph-output-o98X8TeX" style="overflow:auto; background-color: white"></div>
-<script type="module">
-var d3;
-if (d3 == null) { d3 = await import("https://cdn.skypack.dev/d3@5"); }
-var _settings_colors = JSON.parse('{"edge": "#000000", "Hedge": "#0088ff", "Xedge": "#999999", "boundary": "#000000", "X": "#ff8888", "Y": "#aabbff", "Z": "#ccffcc", "H": "#ffff66", "W": "#000000", "Zalt": "#ccffcc", "Walt": "#000000", "Xdark": "#ff8888", "Ydark": "#aabbff", "Zdark": "#99dd99"}');
-// PyZX - Python library for quantum circuit rewriting 
-//        and optimisation using the ZX-calculus
-// Copyright (C) 2018 - Aleks Kissinger and John van de Wetering
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//    http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// styling functions
-function nodeColor(t) {
-    if (t == 0) return _settings_colors['boundary'];
-    else if (t == 1) return _settings_colors['Z']; // "#ccffcc";
-    else if (t == 2) return _settings_colors['X']; // "#ff8888";
-    else if (t == 3) return _settings_colors['H']; // "yellow";
-    else if (t == 4) return _settings_colors['W']; // "black";
-    else if (t == 5) return _settings_colors['Walt']; // "black";
-    else if (t == 6) return _settings_colors['Zalt']; // "#ccffcc";
-}
-
-function edgeColor(t) {
-    if (t == 1) return _settings_colors['edge']; //"black";
-    else if (t == 2) return _settings_colors['Hedge']; // "#08f";
-    else if (t == 3) return _settings_colors['Xedge']; // "gray";
-}
-
-function webColor(t) {
-    if (t == 'X') return _settings_colors['Xdark'];
-    else if (t == 'Y') return _settings_colors['Ydark'];
-    else if (t == 'Z') return _settings_colors['Zdark'];
-    else if (t == 'I') return '#dddddd';
-}
-
-function nodeStyle(selected) {
-    return selected ? "stroke-width: 2px; stroke: #00f" : "stroke-width: 1.5px";
-}
-
-var symbolGround = {
-    draw: function(context, size){
-        let s = size/2;
-
-        context.moveTo(0,-s);
-        context.lineTo(0,0);
-
-        context.moveTo(-s,0);
-        context.lineTo(s,0);
-
-        context.moveTo(-2*s/3,s/3);
-        context.lineTo(2*s/3,s/3);
-
-        context.moveTo(-s/3,2*s/3);
-        context.lineTo(s/3,2*s/3);
-    }
-}
-
-function showGraph(tag, graph, width, height, scale, node_size, auto_hbox, show_labels, scalar_str) {
-    var ntab = {};
-
-    var groundOffset = 2.5 * node_size;
-
-    graph.nodes.forEach(function(d) {
-        ntab[d.name] = d;
-        d.selected = false;
-        d.previouslySelected = false;
-        d.nhd = [];
-    });
-
-    var spiders_and_boundaries = graph.nodes.filter(function(d) {
-        return d.t != 3;
-    });
-
-    graph.links.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-        s.nhd.push(t);
-        t.nhd.push(s);
-    });
-
-    graph.pauli_web.forEach(function(d) {
-        var s = ntab[d.source];
-        var t = ntab[d.target];
-        d.source = s;
-        d.target = t;
-    });
-
-    var shiftKey;
-
-    // SETUP SVG ITEMS
-
-    var svg = d3.select(tag)
-    //.attr("tabindex", 1)
-        .on("keydown.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-        .on("keyup.brush", function() {shiftKey = d3.event.shiftKey || d3.event.metaKey;})
-    //.each(function() { this.focus(); })
-        .append("svg")
-        .attr("style", "max-width: none; max-height: none")
-        .attr("width", width)
-        .attr("height", height);
-
-    var web = svg.append("g")
-        .attr("class", "web")
-        .selectAll("line")
-        .data(graph.pauli_web)
-        .enter().append("path")
-        .attr("stroke", function(d) { return webColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 7px");
-
-    var link = svg.append("g")
-        .attr("class", "link")
-        .selectAll("line")
-        .data(graph.links)
-        .enter().append("path")
-        .attr("stroke", function(d) { return edgeColor(d.t); })
-        .attr("fill", "transparent")
-        .attr("style", "stroke-width: 1.5px");
-
-    var brush = svg.append("g")
-        .attr("class", "brush");
-
-    var node = svg.append("g")
-        .attr("class", "node")
-        .selectAll("g")
-        .data(graph.nodes)
-        .enter().append("g")
-        .attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y +")";
-        });
-
-    // Draw a ground symbol connected to the node.
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", "M 0 0 L 0 "+(groundOffset))
-        .attr("class", "selectable");
-    node.filter(function(d) { return d.ground; })
-        .append("path")
-        .attr("stroke", "black")
-        .attr("style", "stroke-width: 1.5px")
-        .attr("fill", "none")
-        .attr("d", d3.symbol().type(symbolGround).size(node_size*1.5))
-        .attr("transform", "translate(0,"+groundOffset+")")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.t != 3 && d.t != 5 && d.t != 6; })
-        .append("circle")
-        .attr("r", function(d) {
-            if (d.t == 0) return 0.5 * node_size;
-            else if (d.t == 4) return 0.25 * node_size;
-            else return node_size;
-        })
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    var hbox = node.filter(function(d) { return d.t == 3; });
-
-    hbox.append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    // draw a triangle for d.t == 5
-    node.filter(function(d) { return d.t == 5; })
-        .append("path")
-        .attr("d", "M 0 0 L "+node_size+" "+node_size+" L -"+node_size+" "+node_size+" Z")
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable")
-        .attr("transform", "translate(" + (-node_size/2) + ", 0) rotate(-90)");
-
-    // draw a square for Z box: d.t == 6
-    node.filter(function(d) { return d.t == 6; })
-        .append("rect")
-        .attr("x", -0.75 * node_size).attr("y", -0.75 * node_size)
-        .attr("width", node_size * 1.5).attr("height", node_size * 1.5)
-        .attr("fill", function(d) { return nodeColor(d.t); })
-        .attr("stroke", "black")
-        .attr("class", "selectable");
-
-    node.filter(function(d) { return d.phase != ''; })
-        .append("text")
-        .attr("y", 0.7 * node_size + 14)
-        .text(function (d) { return d.phase })
-        .attr("text-anchor", "middle")
-        .attr("font-size", "12px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#00d")
-        .attr('style', 'pointer-events: none; user-select: none;');
-
-    if (show_labels) {
-        node.append("text")
-            .attr("y", -0.7 * node_size - 8)
-            .text(function (d) { return d.name; })
-            .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
-            .attr("font-family", "monospace")
-            .attr("fill", "#999")
-            .attr('style', 'pointer-events: none; user-select: none;');
-    }
-
-    // Display the chosen data fields over the node.
-    node.filter(d => d.vdata.length > 0)
-        .append("text")
-        .attr("y", d => -0.7 * node_size - 14 - 10 * d.vdata.length)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "8px")
-        .attr("font-family", "monospace")
-        .attr("fill", "#c66")
-        .attr('style', 'pointer-events: none; user-select: none;')
-        .selectAll("tspan")
-        .data(d => d.vdata)
-        .enter()
-        .append("tspan")
-        .attr("x", "0")
-        .attr("dy", "1.2em")
-        .text(x => x.join(": "));
-
-    if (scalar_str != "") {
-        svg.append("text")
-            .text(scalar_str)
-            .attr("x", 60).attr("y", 40)
-            .attr("text-anchor", "middle")
-    }
-
-    function update_hboxes() {
-        if (auto_hbox) {
-            var pos = {};
-            hbox.attr("transform", function(d) {
-                // calculate barycenter of non-hbox neighbours, then nudge a bit
-                // to the NE.
-                var x=0,y=0,sz=0;
-                for (var i = 0; i < d.nhd.length; ++i) {
-                    if (d.nhd[i].t != 3) {
-                        sz++;
-                        x += d.nhd[i].x;
-                        y += d.nhd[i].y;
-                    }
-                }
-
-                offset = 0.25 * scale;
-
-                if (sz != 0) {
-                    x = (x/sz) + offset;
-                    y = (y/sz) - offset;
-
-                    while (pos[[x,y]]) {
-                        x += offset;
-                    }
-                    d.x = x;
-                    d.y = y;
-                    pos[[x,y]] = true;
-                }
-
-                return "translate("+d.x+","+d.y+")";
-            });
-        }
-    }
-
-    update_hboxes();
-
-    var link_curve = function(d) {
-        var x1 = d.source.x, x2 = d.target.x, y1 = d.source.y, y2 = d.target.y;
-        if (d.num_parallel == 1) {
-            return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-            var dx = x2 - x1, dy = y2 - y1;
-            var midx = 0.5 * (x1 + x2), midy = 0.5 * (y1 + y2);
-            var pos = (d.index / (d.num_parallel-1)) - 0.5;
-            var cx = midx - pos * dy;
-            var cy = midy + pos * dx;
-            return `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
-            // return `M ${x1} ${y1} L ${x2} ${y2}`;
-        }
-    };
-    link.attr("d", link_curve);
-
-
-    var web_curve = function(d) {
-        var x1 = d.source.x, x2 = (x1 + d.target.x)/2, y1 = d.source.y, y2 = (y1 + d.target.y)/2;
-        return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    web.attr("d", web_curve);
-
-    // EVENTS FOR DRAGGING AND SELECTION
-
-    node.on("mousedown", function(d) {
-        if (shiftKey) {
-            d3.select(this).selectAll(".selectable").attr("style", nodeStyle(d.selected = !d.selected));
-            d3.event.stopImmediatePropagation();
-        } else if (!d.selected) {
-            node.selectAll(".selectable").attr("style", function(p) { return nodeStyle(p.selected = d === p); });
-        }
-    })
-        .call(d3.drag().on("drag", function(d) {
-            var dx = d3.event.dx;
-            var dy = d3.event.dy;
-            // node.filter(function(d) { return d.selected; })
-            //     .attr("cx", function(d) { return d.x += dx; })
-            //     .attr("cy", function(d) { return d.y += dy; });
-            node.filter(function(d) { return d.selected; })
-                .attr("transform", function(d) {
-                    d.x += dx;
-                    d.y += dy;
-                    return "translate(" + d.x + "," + d.y +")";
-                });
-
-            update_hboxes();
-
-            link.filter(function(d) { return d.source.selected || d.target.selected ||
-                    (auto_hbox && d.source.t == 3); })
-                .attr("d", link_curve);
-            web.filter(function(d) { return d.source.selected || d.target.selected; })
-                .attr("d", web_curve);
-        }));
-
-    brush.call(d3.brush().keyModifiers(false)
-        .extent([[0, 0], [width, height]])
-        .on("start", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(
-                        d.selected = d.previouslySelected = shiftKey &&
-                        d.selected);
-                });
-            }
-        })
-        .on("brush", function() {
-            if (d3.event.sourceEvent.type !== "end") {
-                var selection = d3.event.selection;
-                node.selectAll(".selectable").attr("style", function(d) {
-                    return nodeStyle(d.selected = d.previouslySelected ^
-                        (selection != null
-                            && selection[0][0] <= d.x && d.x < selection[1][0]
-                            && selection[0][1] <= d.y && d.y < selection[1][1]));
-                });
-            }
-        })
-        .on("end", function() {
-            if (d3.event.selection != null) {
-                d3.select(this).call(d3.event.target.move, null);
-            }
-        }));
-}
-
-
-showGraph('#graph-output-o98X8TeX',
-  JSON.parse('{"nodes": [{"name": "5", "x": 440.0, "y": 80.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "6", "x": 440.0, "y": 200.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "15", "x": 40.0, "y": 80.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "24", "x": 200.0, "y": 120.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "39", "x": 40.0, "y": 160.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "53", "x": 200.0, "y": 200.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "85", "x": 40.0, "y": 240.0, "z": 0.0, "t": 1, "phase": "\u03c0", "ground": false, "vdata": []}, {"name": "96", "x": 200.0, "y": 280.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "102", "x": 40.0, "y": 320.0, "z": 0.0, "t": 1, "phase": "3\u03c0/2", "ground": false, "vdata": []}, {"name": "103", "x": 200.0, "y": 360.0, "z": 0.0, "t": 1, "phase": "\u03c0/2", "ground": false, "vdata": []}, {"name": "120", "x": 40.0, "y": 400.0, "z": 0.0, "t": 1, "phase": "", "ground": false, "vdata": []}, {"name": "124", "x": 440.0, "y": 120.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "125", "x": 440.0, "y": 160.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "126", "x": 440.0, "y": 400.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "127", "x": 440.0, "y": 320.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "128", "x": 440.0, "y": 280.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "129", "x": 440.0, "y": 360.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}, {"name": "130", "x": 440.0, "y": 240.0, "z": 0.0, "t": 0, "phase": "", "ground": false, "vdata": []}], "links": [{"source": "5", "target": "15", "t": 1, "index": 0, "num_parallel": 1}, {"source": "6", "target": "53", "t": 1, "index": 0, "num_parallel": 1}, {"source": "15", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "39", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "15", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "124", "t": 1, "index": 0, "num_parallel": 1}, {"source": "24", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "53", "t": 2, "index": 0, "num_parallel": 1}, {"source": "24", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "125", "t": 1, "index": 0, "num_parallel": 1}, {"source": "39", "target": "85", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "96", "t": 2, "index": 0, "num_parallel": 1}, {"source": "39", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "53", "target": "103", "t": 2, "index": 0, "num_parallel": 1}, {"source": "85", "target": "130", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "128", "t": 1, "index": 0, "num_parallel": 1}, {"source": "96", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "96", "target": "102", "t": 2, "index": 0, "num_parallel": 1}, {"source": "102", "target": "127", "t": 1, "index": 0, "num_parallel": 1}, {"source": "102", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "103", "target": "129", "t": 1, "index": 0, "num_parallel": 1}, {"source": "103", "target": "120", "t": 2, "index": 0, "num_parallel": 1}, {"source": "120", "target": "126", "t": 1, "index": 0, "num_parallel": 1}], "pauli_web": []}'), 480, 440, 40,
-  8.0, false, true, '');
-</script>
 </div>
 </div>
 </div>

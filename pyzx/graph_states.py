@@ -443,6 +443,23 @@ class GraphState(Generic[VT, ET]):
             else:
                 return EdgeType.SIMPLE
             
+
+
+        for v in A:
+            if v in B:
+                if v != x and v != y:
+                    self._graph.add_to_phase(v, 1)
+
+        # Add/remove edges between A and B sets
+        for i in range(len(A)):
+            for j in range(len(B)):
+                if A[i] == B[j]:
+                    continue
+                elif not self._graph.connected(A[i], B[j]):
+                    self._graph.add_edge((A[i], B[j]), edgetype=EdgeType.HADAMARD)
+                else:
+                    self._graph.remove_edge(self._graph.edge(A[i], B[j]))
+
         neigh_x = [n for n in self._graph.neighbors(x) if n in self._states]
         neigh_y = [n for n in self._graph.neighbors(y) if n in self._states]
         
@@ -458,6 +475,7 @@ class GraphState(Generic[VT, ET]):
             for a in neigh_x:
                 self._graph.add_to_phase(a, 1)
             self._graph.set_edge_type(edge_x, flip_edge(type_x))
+            self._graph.set_phase(x, 0)
         elif phase_x == Fraction(3, 2):
             self.local_comp_SH(x, quiet=quiet, step = step)
             for a in neigh_x:
@@ -476,27 +494,12 @@ class GraphState(Generic[VT, ET]):
             for a in neigh_y:
                 self._graph.add_to_phase(a, 1)
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
+            self._graph.set_phase(y, 0)
         elif phase_y == Fraction(3, 2):
             self.local_comp_SH(y, quiet=quiet, step = step)
             for a in neigh_y:
                 self._graph.add_to_phase(a, 1)
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
-
-
-        for v in A:
-            if v in B:
-                if v != x and v != y:
-                    self._graph.add_to_phase(v, 1)
-
-        # Add/remove edges between A and B sets
-        for i in range(len(A)):
-            for j in range(len(B)):
-                if A[i] == B[j]:
-                    continue
-                elif not self._graph.connected(A[i], B[j]):
-                    self._graph.add_edge((A[i], B[j]), edgetype=EdgeType.HADAMARD)
-                else:
-                    self._graph.remove_edge(self._graph.edge(A[i], B[j]))
 
         # if step != 9:
         #     self.push_out_paulis(quiet=quiet, step = step)
