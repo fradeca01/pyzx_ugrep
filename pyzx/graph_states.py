@@ -388,9 +388,12 @@ class GraphState(Generic[VT, ET]):
             raise ValueError("This LC rule must be applied with a HS ending")
 
         for x in neighbors:
-            if v > Fraction(1,2):
+            if a > Fraction(1,2):
                 self._graph.add_to_phase(x, 1)
             self._graph.add_to_phase(x, -Fraction(1, 2))
+
+        if a > Fraction(1,2):
+            self._graph.add_to_phase(v, -1)
 
         self._graph.add_to_phase(v, +1) 
 
@@ -410,7 +413,7 @@ class GraphState(Generic[VT, ET]):
 
         # self.push_out_paulis(quiet=quiet, step = 2)
 
-        if not self.validate(quiet=True, step = 2):
+        if not self.validate(quiet=quiet, step = 2):
             raise ValueError("Graph is not a valid graph state")
 
     def pivot(self, x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
@@ -464,6 +467,8 @@ class GraphState(Generic[VT, ET]):
         neigh_y = [n for n in self._graph.neighbors(y) if n in self._states]
         
         phase_x = self._graph.phase(x)
+        phase_y = self._graph.phase(y)
+        
         if phase_x == 0:
             self._graph.set_edge_type(edge_x, flip_edge(type_x))
         elif phase_x == Fraction(1, 2):
@@ -473,17 +478,17 @@ class GraphState(Generic[VT, ET]):
             for a in neigh_x:
                 self._graph.add_to_phase(a, 1)
             self._graph.set_edge_type(edge_x, flip_edge(type_x))
-            self._graph.set_phase(x, 0)
+            self._graph.add_to_phase(x, -1)
         elif phase_x == Fraction(3, 2):
             self.local_comp_SH(x, quiet=quiet, step = step)
             for a in neigh_x:
                 self._graph.add_to_phase(a, 1)
+            self._graph.add_to_phase(x, -1)
             self._graph.set_edge_type(edge_x, flip_edge(type_x))
 
                 
 
 
-        phase_y = self._graph.phase(y)
         if phase_y == 0:
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
         elif phase_y == Fraction(1, 2):
@@ -493,11 +498,12 @@ class GraphState(Generic[VT, ET]):
             for a in neigh_y:
                 self._graph.add_to_phase(a, 1)
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
-            self._graph.set_phase(y, 0)
+            self._graph.add_to_phase(y, -1)
         elif phase_y == Fraction(3, 2):
             self.local_comp_SH(y, quiet=quiet, step = step)
             for a in neigh_y:
                 self._graph.add_to_phase(a, 1)
+            self._graph.add_to_phase(y, -1)
             self._graph.set_edge_type(edge_y, flip_edge(type_y))
 
         # if step != 9:
