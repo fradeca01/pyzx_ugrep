@@ -43,13 +43,15 @@ class TestCircuit(unittest.TestCase):
     def setUp(self):
         n = 3
         k = 1
-        graphs = []
         for i in range(10):
             s = f"test_{i}"
             n = 3 
-            k = 2
-            file_path = f"./test_graphs/{s}.json"
-            graphs.append(Graph.from_json(file_path))
+            file_path = f"./{s}.qasm"
+            if not os.path.exists(file_path):
+                qasm_random = stim.Tableau.random(n).to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
+                # qasm_random = self.stim_qasm_comply(qasm_random)
+                with open(file_path, "w") as f:
+                    f.write(qasm_random)
 
     def test_canonical_form(self):
         n = 3
@@ -58,15 +60,24 @@ class TestCircuit(unittest.TestCase):
             s = f"test_{i}"
             n = 3 
             k = 2
-            file_path = f"./test_graphs/{s}.qasm"
+            file_path = f"./{s}.qasm"
             with open(file_path, "r") as f:
                 qasm_random = f.read()
             pyzx_circ = Circuit.from_qasm(qasm_random)
             g = pyzx_circ.to_graph()
             input_state = "0"*(n-k) + "/"*k
             g.apply_state(input_state)
+            t1 = tensorfy(g)
             g = GraphState(g)
             g.to_canonical_form(quiet=True)
+            g.state_to_circuit()
+            g = g.get_graph()
+            g.auto_detect_io()
+            t2 = tensorfy(g)
+            print(t1)
+            print(t2)
+            self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {s}")
+
 
 if __name__ == '__main__':
     unittest.main()
