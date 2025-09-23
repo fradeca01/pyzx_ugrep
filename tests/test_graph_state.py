@@ -42,9 +42,10 @@ class TestCircuit(unittest.TestCase):
         return q
 
     def setUp(self):
-        reset = True
-        self.n = 6
-        self.k = 3
+        reset = False
+        self.n = 3
+        self.k = 1
+    
         for i in range(50):
             s = f"test_{i}"
             file_path = f"./test_graphs/{s}.qasm"
@@ -57,7 +58,7 @@ class TestCircuit(unittest.TestCase):
 
     @unittest.skip("Skipping pivot test for now")
     def test_pivot(self):
-        for i in range(7,8):
+        for i in range(0,10):
             with self.subTest(i=i):
                 s = f"test_{i}"
                 print(f"Testing pivot for {s}")
@@ -117,13 +118,10 @@ class TestCircuit(unittest.TestCase):
                 g = GraphState(g)
                 # draw(g, labels=True)
                 g.to_canonical_form(quiet=True)
+                # draw(g) 
                 g.state_to_circuit()
                 g.auto_detect_io()
-                # draw(g, labels=True)
-                g = g.get_graph()
-                g.auto_detect_io()
                 # clifford_simp(g, quiet=True) # O(n)
-                # draw(g) 
                 t2 = tensorfy(g)
                 # print(t1)
                 # print(t2)
