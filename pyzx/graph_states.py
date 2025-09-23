@@ -12,7 +12,7 @@ from pyzx.symbolic import Poly
 
 from .simplify import is_graph_like, spider_simp, id_simp, clifford_simp
 from fractions import Fraction
-from .d3 import draw_d3
+from .drawing import draw_d3, draw, draw_matplotlib
 from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
 from .extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
@@ -129,13 +129,13 @@ class GraphState(Generic[VT, ET]):
 
         #Simplify ZX diagram to be a graph-state
         clifford_simp(graph, quiet=True) # O(n)
+        graph.normalize()
 
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
         self._pivots = None
         self._paulis = None
-
         self.fix_free_edges(quiet=True)
         self.normalize_graph_state(quiet=True)
 
@@ -642,7 +642,7 @@ class GraphState(Generic[VT, ET]):
         self.normalize()
 
         states = self.get_states()
-        states.sort()
+        # states.sort()
         
         for i in range(len(states)):
             self.get_graph().set_qubit(self._states[i], i)
@@ -678,8 +678,14 @@ class GraphState(Generic[VT, ET]):
                 g.add_to_phase(v, 1)
             
             if ((edge_type == EdgeType.HADAMARD) and pauli.c == 1) or ((edge_type == EdgeType.SIMPLE) and pauli.b == 1): # X case
+                if not quiet:
+                    print(f"Step {4}: {self.steps.get(4,'UNKNOWN')} --- {g.neighbors(v)}")
+                phase = g.phase(v)
+                g.set_phase(v, -phase)
                 for x in states:
                     if x in g.neighbors(v):
+                        if not quiet:
+                            print(f"Step {4}: {self.steps.get(4,'UNKNOWN')} --- Adding 1 from {v} to neighbor {x}")
                         g.add_to_phase(x, 1)
         
         if not self.validate(quiet=quiet, step = 4):
@@ -698,8 +704,8 @@ class GraphState(Generic[VT, ET]):
         input_states = self.get_inputs()
         output_states = self.get_outputs()
 
-        input_states.sort()
-        output_states.sort()
+        # input_states.sort()
+        # output_states.sort()
 
         for i in range(len(input_states)):
             self.get_graph().set_qubit(input_states[i], i)
@@ -922,19 +928,30 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet = quiet, step=0):
             raise ValueError("Graph is not a valid graph state")
         
-        print(f"Step {1}: {self.steps.get(1,'UNKNOWN')}")
+        if not quiet:
+            print(f"Step {1}: {self.steps.get(1,'UNKNOWN')}")
+        if not quiet:
+            print(f"Step {2}: {self.steps.get(2,'UNKNOWN')}")
+        if not quiet:
+            print("Transforming to canonical form...")
+            print(f"Step {1}: {self.steps.get(1,'UNKNOWN')}")
         # self.push_out_paulis(quiet=quiet, step = 1) # O(n)
-        print(f"Step {2}: {self.steps.get(2,'UNKNOWN')}")
+        if not quiet:
+            print(f"Step {2}: {self.steps.get(2,'UNKNOWN')}")
         self.remove_HS(quiet=quiet)
-        print(f"Step {3}: {self.steps.get(3,'UNKNOWN')}")
+        if not quiet:
+            print(f"Step {3}: {self.steps.get(3,'UNKNOWN')}")
         self.reorder_H(quiet = quiet)
-        print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
+        if not quiet:
+            print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
         # self.conjugate_in_paulis(quiet= quiet)
 
-        print("---------------------------------")
-        print("OUTPUT:...................")
+        if not quiet:
+            print("---------------------------------")
+            print("OUTPUT:...................")
         if not self.validate(quiet = quiet, step=0):
             raise ValueError("Graph is not a valid graph state")
+
 
     def export_universal_circuit(self, quiet : bool = True) -> BaseGraph:
         """        
