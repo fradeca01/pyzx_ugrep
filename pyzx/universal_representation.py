@@ -270,3 +270,15 @@ def from_graph_state(g: GraphState) -> BaseGraph:
 
     return g
 
+def to_universal_representation(g: BaseGraph) -> BaseGraph:
+    """Convert a GraphState to its universal representation.
+
+    Args:
+        g (GraphState): The GraphState to convert.
+
+    Returns:
+        BaseGraph: The universal representation of the GraphState.
+    """
+    g = GraphState(g)
+    g.to_canonical_form(quiet=True)
+    return from_graph_state(g)

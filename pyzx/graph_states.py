@@ -757,33 +757,6 @@ class GraphState(Generic[VT, ET]):
         
         # return export_g
 
-    def remove_unitaries_input(self, quiet : bool = True) -> None:
-        """
-        Remove unitary operations from input vertices.
-        """
-        ins = self.get_graph().inputs()
-        for v in self._states:
-            bound = self.get_bound(v)
-            if bound in ins:
-                self.get_graph().set_phase(v, 0)
-                e = self.get_graph().edge(v, bound)
-                self.get_graph().set_edge_type(e, EdgeType.SIMPLE)
-
-        for e in self.get_graph().edge_set():
-            v = self.get_graph().edge_s(e)
-            w = self.get_graph().edge_t(e)
-            if v in self._states and w in self._states:
-                b1 = self.get_bound(v)
-                b2 = self.get_bound(w)
-                if b1 in ins and b2 in ins:
-                    self.get_graph().remove_edge(e)
-
-        if not quiet:
-            print(f"Step: {self.steps.get(6,'UNKNOWN')} --- Removed unitaries from inputs")
-
-        if not self.validate(quiet=quiet, step = 6):
-            raise ValueError("Graph is not a valid graph state")
-
 
     def remove_HS(self, quiet: bool = True) -> None:
         """
@@ -854,112 +827,15 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet, step = 3):
             raise ValueError("Graph is not a valid graph state")
 
-    def remove_pivot_phases(self, quiet : bool = True) -> None:
-        """
-        Remove local complementation pivot operations.
-        
-        Args:
-            pivots: List of pivot vertices
-        """
-
-        pivots = self.get_pivots()
-
-        if not quiet:
-            print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phases for pivots: {pivots}")
-
-        go_on = True
-        while go_on:
-            go_on = False
-            for v in pivots:
-                if self.get_graph().phase(v) != 0:
-                    neighbors = [x for x in self.get_graph().neighbors(v) if x in self._states]
-                    inputs_states = self.get_inputs()
-                    vin = -1
-                    for x in neighbors:
-                        if x in inputs_states:
-                            vin = x
-
-                    if not quiet:
-                        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')} --- Removing pivot phase for vertex {vin} with phase {self.get_graph().phase(v)}")
-                    # self.get_graph().set_phase(vin, 0)
-                    neighborsin = [x for x in self.get_graph().neighbors(vin) if x in self.get_outputs()]
-                    for x in neighborsin:
-                        self.get_graph().add_to_phase(x, Fraction(1, 2))
-
-                    go_on = True
-                    break
-        
-        if not self.validate(quiet=quiet, step = 8):
-            raise ValueError("Graph is not a valid graph state")
-
-    def to_RRREF(self, quiet : bool = True) -> List[VT]:
-        """
-        Transform the graph state to a reduced row echelon form.
-        
-        Returns:
-            List of pivot vertices
-        """
-        ins = [x for x in self._states if self.get_bound(x) in self.get_graph().inputs()]
-        outs = [x for x in self._states if self.get_bound(x) in self.get_graph().outputs()]
-
-        mat = bi_adj(self.get_graph(), ins, outs)
-        mat = mat.transpose()
-
-        if not quiet:
-            print(f"Step {7}: {self.steps.get(7,'UNKNOWN')} --- Reducing the matrix to RREF:")
-            print(mat)
-            print(">>>>>>>>>")
-
-        mat.gauss(full_reduce=True)
-        pivots = []
-        for i in range(mat.rows()):
-            for j in range(mat.cols()):
-                if mat[i, j] != 0:
-                    pivots.append(j)
-                    break
-
-        pivots = [outs[j] for j in pivots]
-        if not quiet:
-            print(mat)
-        mat = mat.transpose()
-
-        connectivity_from_biadj(self.get_graph(), mat, ins, outs)
-
-        self._pivots = pivots
-        if not quiet:
-            print(f"Step {7}: {self.steps.get(7,'UNKNOWN')} --- PIVOTS: {pivots}")
-
-        if not self.validate(quiet=quiet, step = 7):
-            raise ValueError("Graph is not a valid graph state")
-      
-        return pivots
-
-    def remove_pivot_edges(self, quiet : bool = True) -> None:
-        """
-        Remove edges between pivot vertices.
-        
-        Args:
-            pivots: List of pivot vertices
-        """
-
-        pivots = self.get_pivots()
-
-        for x in pivots:
-            for y in pivots:
-                if x != y and self.get_graph().connected(x, y):
-                    if not quiet:
-                        print(f"Step {9}: {self.steps.get(9,'UNKNOWN')} --- Removing pivot-pivot edges from pivots: {pivots}")
-                    # self.getget_graph()().remove_edge(self.getget_graph()().edge(x, y))
-                    self.pivot(x, y, quiet = quiet, step=9)
-
-        if not self.validate(quiet=quiet, step = 9):
-            raise ValueError("Graph is not a valid graph state")
-
+    
 
     #TODO: Vertify Canonical form
 
 
     def validate_canonical_form(self, quiet : bool = True) -> bool:
+
+        
+
         return False
 
     def to_canonical_form(self, quiet : bool = True):
@@ -1001,34 +877,6 @@ class GraphState(Generic[VT, ET]):
             print("OUTPUT:...................")
         if not self.validate(quiet = quiet, step=0):
             raise ValueError("Graph is not a valid graph state") 
-
-
-    def export_universal_graph(self, quiet : bool = True) -> BaseGraph:
-        """        
-        Export the graph state to a universal graph representation.
-
-        Returns:
-            A BaseGrpah object representing the universal circuit
-        """
-        ## Here start steps for the second canonical form
-        #TODO Ensure we are in graph state canonical form
-
-        if not self.validate_canonical_form(quiet = quiet):
-            self.to_canonical_form(quiet = quiet)
-
-        print("Exporting to universal circuit...")
-        print(f"Step {5}: {self.steps.get(5,'UNKNOWN')}")
-        self.state_to_map(quiet = quiet)
-        print(f"Step {7}: {self.steps.get(7,'UNKNOWN')}")
-        self.to_RRREF(quiet = quiet)
-        print(f"Step {8}: {self.steps.get(8,'UNKNOWN')}")
-        self.remove_pivot_phases(quiet = True)
-        print(f"Step {9}: {self.steps.get(9,'UNKNOWN')}")
-        self.remove_pivot_edges(quiet = True)
-        print(f"Step {6}: {self.steps.get(6,'UNKNOWN')}")
-        self.remove_unitaries_input(quiet = quiet)
-
-        return self.get_graph()
 
 
 
