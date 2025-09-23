@@ -499,13 +499,16 @@ class GraphState(Generic[VT, ET]):
             print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Pivoting between vertices {x} and {y}")
     
         A = self.get_neigbbors(x) + [x]
-        print(A)
+        if not quiet:
+            print(A)
         B = self.get_neigbbors(y) + [y]
-        print(B)
+        if not quiet:
+            print(B)
         for v in A:
             if v in B:
                 if v != x and v != y:
-                    print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Adding phase 1 to vertex {v} in intersection of A and B")
+                    if not quiet:
+                        print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Adding phase 1 to vertex {v} in intersection of A and B")
                     self.get_graph().add_to_phase(v, 1)
 
         # Add/remove edges between A and B sets
@@ -530,7 +533,8 @@ class GraphState(Generic[VT, ET]):
         phase_x = self.get_phase(x)
         phase_y = self.get_phase(y)
 
-        print(f"Phases before fixing pivots: x: {phase_x % 1}, y: {phase_y % 1}")
+        if not quiet:
+            print(f"Phases before fixing pivots: x: {phase_x % 1}, y: {phase_y % 1}")
 
         assert phase_x % 1 != Fraction(1,2) or phase_y % 1 != Fraction(1,2), "If everything correct impossible that the two pivots have phase 1/2"
 
@@ -540,8 +544,10 @@ class GraphState(Generic[VT, ET]):
             self.local_comp_SH(y, quiet=quiet, step = step)
             
         def fix_pivot(p, phase_p):
-            print(phase_p)
-            print(f"Fixing pivot vertex {p}")
+            if not quiet:
+                print(phase_p)
+            if not quiet:
+                print(f"Fixing pivot vertex {p}")
             neigh_p = self.get_neigbbors(p)
             edge_p = self.get_graph().edge(p, self.get_bound(p))
             type_p = self.get_graph().edge_type(edge_p)
@@ -773,7 +779,8 @@ class GraphState(Generic[VT, ET]):
                     go_on = True
                     break
         
-        print(f"Step 2: {self.steps.get(2,'UNKNOWN')} --- Removing HS from graph ended:")
+        if not quiet:
+            print(f"Step 2: {self.steps.get(2,'UNKNOWN')} --- Removing HS from graph ended:")
 
         if not self.validate(quiet=quiet, step=2):
             raise ValueError("Graph is not a valid graph state")
@@ -922,8 +929,9 @@ class GraphState(Generic[VT, ET]):
         Args:
             quiet: If False, display intermediate steps and print pivot operations
         """     
-        print(f"STARTING: CANONICAL FORM")
-        print()
+        if not quiet:
+            print(f"STARTING: CANONICAL FORM")
+            print()
 
         if not self.validate(quiet = quiet, step=0):
             raise ValueError("Graph is not a valid graph state")
