@@ -19,3 +19,4 @@ StreamlitApp/lib/*
 lib/*
 
 scratchpads/GraphStates.ipynb
+scratchpads/tests/*
