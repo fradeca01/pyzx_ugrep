@@ -33,6 +33,7 @@ from .circuit.qasmparser import qasm
 from .circuit.sqasm import sqasm
 from .graph_states import *
 from .generate import *
+from .universal_representation import from_graph_state
 from . import graph_states
 from . import generate
 from . import todd

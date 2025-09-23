@@ -1,3 +1,13 @@
+"""
+Universal representation module
+"""
+
+
+__all__ = [
+"from_graph_state",
+]
+
+
 
 from pyzx.symbolic import Poly
 from .graph_states import GraphState
@@ -10,6 +20,9 @@ from .extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
 import itertools
 from .circuit import Circuit
+
+
+
 
 
 def get_input_state(g : BaseGraph, v : int) -> Tuple[int, int]:
@@ -108,7 +121,7 @@ def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
     """
     Remove unitary operations from input vertices.
     """
-    ins = g.inputs()
+    ins = list(g.inputs())
 
     for s in ins:
         v = get_input_state(g, s)
@@ -116,7 +129,7 @@ def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
         e = g.edge(v, s)
         g.set_edge_type(e, EdgeType.SIMPLE)
 
-    for s1, s2 in ins:
+    for s1, s2 in zip(ins,ins):
         v = get_input_state(g, s1)
         w = get_input_state(g, s2)
         if g.connected(v, w):
@@ -145,8 +158,8 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
         for v in pivots:
             if g.phase(v) != 0:
                 neighbors = get_neigbbors(g, v)
-                inputs_states = get_inputs()
-                outputs_states = get_outputs()
+                inputs_states = get_inputs(g)
+                outputs_states = get_outputs(g)
 
                 vin = -1
 
@@ -238,14 +251,22 @@ def from_graph_state(g: GraphState) -> BaseGraph:
     g.to_canonical_form(quiet=True)
     g = g.state_to_map()
 
+
+
     print("Exporting to universal circuit...")
     # print(f"Step {5}: {self.steps.get(5,'UNKNOWN')}")
     # self.state_to_map(quiet = quiet)
     # print(f"Step {7}: {self.steps.get(7,'UNKNOWN')}")
+
+    draw(g)
+
     pivots = to_RRREF(g, quiet = True)
     # print(f"Step {8}: {self.steps.get(8,'UNKNOWN')}")
-    remove_pivot_phases(g, quiet = True)
+    remove_pivot_phases(g, pivots, quiet = True)
     # print(f"Step {9}: {self.steps.get(9,'UNKNOWN')}")
-    remove_pivot_edges(g, quiet = True)
+    remove_pivot_edges(g, pivots, quiet = True)
     # print(f"Step {6}: {self.steps.get(6,'UNKNOWN')}")
     remove_unitaries_input(g)
+
+    return g
+
