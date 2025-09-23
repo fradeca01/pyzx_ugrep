@@ -20,3 +20,5 @@ lib/*
 
 scratchpads/GraphStates.ipynb
 scratchpads/tests/*
+
+tests/test_graphs/*
