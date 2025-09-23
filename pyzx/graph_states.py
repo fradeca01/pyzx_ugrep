@@ -292,8 +292,10 @@ class GraphState(Generic[VT, ET]):
         Returns:
             List of output vertices
         """
-        return [v for v in self.get_states() if self.get_bound(v) in self.get_graph().outputs()]
-    
+        outputs = self.get_graph().outputs()
+        state_outputs = [list(self.get_graph().neighbors(v))[0] for v in outputs]
+        print(state_outputs)
+        return state_outputs        
     def get_inputs(self) -> List[VT]:
         """
         Get the inputs vertices of the graph state.
@@ -301,8 +303,10 @@ class GraphState(Generic[VT, ET]):
         Returns:
             List of inputs vertices
         """
-        return [v for v in self.get_states() if self.get_bound(v) in self.get_graph().inputs()]
-    
+        inputs = self.get_graph().inputs()
+        state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
+        print(state_inputs)
+        return state_inputs    
     def get_pivots(self) -> List[VT]:
         """
         Get the pivot vertices of the graph state.
@@ -393,17 +397,25 @@ class GraphState(Generic[VT, ET]):
 
 
         bound = self.get_bound(v)
+        new_bound = self.get_bound(bound)
         neighbors = self.get_neigbbors(v)
 
         if not quiet:
             print(f"Step {step}: {self.steps.get(step,'UNKNOWN')} --- Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
 
-        a = self.get_phase(v)
+        bound_phase = self.get_graph().phase(bound)
+        phase = self.get_phase(v)
 
         # if not (a == Fraction(1, 2) and self._graph.edge_type(self._graph.edge(bound, v)) == EdgeType.HADAMARD):
         #     raise ValueError("This LC must be applied with a SH ending")
         
-        self.get_graph().set_phase(v, 0)
+        # self.get_graph().set_phase(v, 0)
+
+        if phase > 1:
+            bound_phase = -bound_phase
+
+        self.get_graph().remove_vertex(bound)
+        self.get_graph().add_edge((new_bound, v), EdgeType.HADAMARD)
 
         for x in neighbors:
             self.get_graph().add_to_phase(x, Fraction(1, 2))
@@ -419,6 +431,10 @@ class GraphState(Generic[VT, ET]):
                     self._graph.remove_edge(self._graph.edge(x, y))
         
         # self.push_out_paulis(quiet=quiet, step = 3)
+  
+        if bound_phase > 1:
+            for x in neighbors:
+                self.get_graph().add_to_phase(x, 1)
 
         if not self.validate(quiet=quiet, step = 3):
             raise ValueError("Graph is not a valid graph state")
@@ -504,6 +520,13 @@ class GraphState(Generic[VT, ET]):
         B = self.get_neigbbors(y) + [y]
         if not quiet:
             print(B)
+        phase_x = self.get_phase(x)
+        phase_y = self.get_phase(y)
+        type_x = self.bound_edge_type(x)
+        type_y = self.bound_edge_type(y)
+        edge_x = self._graph.edge(x, self.get_bound(x))
+        edge_y = self._graph.edge(y, self.get_bound(y))
+
         for v in A:
             if v in B:
                 if v != x and v != y:
@@ -524,48 +547,82 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet, step = step):
             raise ValueError("Graph is not a valid graph state")
         # Flip edge types (careful with phases here)
+
         def flip_edge(type_e: EdgeType) -> EdgeType:
             if type_e == EdgeType.SIMPLE:
                 return EdgeType.HADAMARD
             else:
                 return EdgeType.SIMPLE
             
-        phase_x = self.get_phase(x)
-        phase_y = self.get_phase(y)
 
         if not quiet:
             print(f"Phases before fixing pivots: x: {phase_x % 1}, y: {phase_y % 1}")
 
-        assert phase_x % 1 != Fraction(1,2) or phase_y % 1 != Fraction(1,2), "If everything correct impossible that the two pivots have phase 1/2"
-
-        if phase_x % 1 == Fraction(1,2):
-            self.local_comp_SH(x, quiet=quiet, step = step)
-        elif phase_y % 1 == Fraction(1,2):
-            self.local_comp_SH(y, quiet=quiet, step = step)
-            
-        def fix_pivot(p, phase_p):
-            if not quiet:
-                print(phase_p)
-            if not quiet:
-                print(f"Fixing pivot vertex {p}")
-            neigh_p = self.get_neigbbors(p)
-            edge_p = self.get_graph().edge(p, self.get_bound(p))
-            type_p = self.get_graph().edge_type(edge_p)
-            self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
-
-            if phase_p >= 1:
-                for a in neigh_p:
-                    self.get_graph().add_to_phase(a, 1)
+        assert not (phase_x % 1 == Fraction(1,2) and phase_y % 1 == Fraction(1,2)), "Both vertices cannot have phase pi/2"  
+        assert not (phase_x % 1 == Fraction(1,2) and type_x == EdgeType.HADAMARD), "Vertex x cannot have phase pi/2 and simple edge"
+        assert not (phase_y % 1 == Fraction(1,2) and type_y == EdgeType.HADAMARD), "Vertex x cannot have phase pi/2 and simple edge"
                 
-                if phase_p % 1 != Fraction(1, 2):
-                    self.get_graph().add_to_phase(p, -1)
+        # def fix_pivot(p, phase_p):
+        #     if not quiet:
+        #         print(phase_p)
+        #     if not quiet:
+        #         print(f"Fixing pivot vertex {p}")
+        #     neigh_p = self.get_neigbbors(p)
+        #     edge_p = self.get_graph().edge(p, self.get_bound(p))
+        #     type_p = self.get_graph().edge_type(edge_p)
+        #     self.get_graph().set_edge_type(edge_p, flip_edge(type_p))
+
+        #     if phase_p >= 1:
+        #         for a in neigh_p:
+        #             self.get_graph().add_to_phase(a, 1)
+                
+        #         if phase_p % 1 != Fraction(1, 2):
+        #             self.get_graph().add_to_phase(p, -1)
             
 
-        fix_pivot(x, phase_x)
-        fix_pivot(y, phase_y)
+        # fix_pivot(x, phase_x)
+        # fix_pivot(y, phase_y)
+
+
+    
+        if phase_x % 1 == Fraction(1,2):
+            # self.local_comp_SH(x, quiet=quiet, step = step)
+            new = self._graph.add_vertex(VertexType.Z)
+            self.get_graph().set_qubit(new, self.get_graph().qubit(x))
+            self.get_graph().set_row(new, self.get_graph().row(x) + 1)
+            self.get_graph().set_phase(new, phase_x)
+            self.get_graph().set_phase(x, 0)
+            bound = self.get_bound(x)
+            self._graph.remove_edge(self._graph.edge(bound, x))
+            self._graph.add_edge((new, x), EdgeType.HADAMARD)
+            self._graph.add_edge((new, bound), EdgeType.SIMPLE)
+        else:
+            self._graph.set_edge_type(edge_x, flip_edge(type_x))
+
+        if phase_y % 1 == Fraction(1,2):
+            # self.local_comp_SH(y, quiet=quiet, step = step)
+            new = self._graph.add_vertex(VertexType.Z)
+            self.get_graph().set_phase(new, phase_y)
+            self.get_graph().set_phase(y, 0)
+            bound = self.get_bound(y)
+            self._graph.remove_edge(self._graph.edge(bound, y))
+            self._graph.add_edge((new, y), EdgeType.HADAMARD)
+            self._graph.add_edge((new, bound), EdgeType.SIMPLE)
+        else:
+            self._graph.set_edge_type(edge_y, flip_edge(type_y))
 
         # if step != 9:
         #     self.push_out_paulis(quiet=quiet, step = step)
+        if phase_x == 1:
+            self.get_graph().add_to_phase(x, -1)
+            for a in self.get_neigbbors(x):
+                self.get_graph().add_to_phase(a, 1)
+
+        if phase_y == 1:
+            self.get_graph().add_to_phase(y, -1)
+            for a in self.get_neigbbors(y):
+                self.get_graph().add_to_phase(a, 1)
+
 
 
 
@@ -705,8 +762,6 @@ class GraphState(Generic[VT, ET]):
         """
         Convert graph state to circuit representation by setting qubit and row positions.
         """
-        ins = list(self.get_graph().inputs())
-
         input_states = self.get_inputs()
         output_states = self.get_outputs()
 
@@ -809,6 +864,21 @@ class GraphState(Generic[VT, ET]):
                             go_on = True
                             # self.push_out_paulis()
                             break
+
+        for s in self.get_states():
+            bound = self.get_bound(s)
+            bound_phase = self.get_graph().phase(bound)
+            edge_type = self.bound_edge_type(s)
+
+            if edge_type == EdgeType.SIMPLE and bound_phase % 1 == Fraction(1, 2):
+                new_bound = self.get_bound(bound)
+                self.get_graph().remove_vertex(bound)
+                self.get_graph().add_edge((new_bound, s), EdgeType.SIMPLE)
+                self.get_graph().add_to_phase(s, bound_phase)
+                
+            if edge_type == EdgeType.HADAMARD and bound_phase % 1 == Fraction(1, 2):
+                self.local_comp_SH(s, quiet= quiet, step = 3)
+                # self.push_out_paulis()
         
         if not self.validate(quiet=quiet, step = 3):
             raise ValueError("Graph is not a valid graph state")
@@ -949,6 +1019,7 @@ class GraphState(Generic[VT, ET]):
         self.remove_HS(quiet=quiet)
         if not quiet:
             print(f"Step {3}: {self.steps.get(3,'UNKNOWN')}")
+        print("HWLOOOOOO")
         self.reorder_H(quiet = quiet)
         if not quiet:
             print(f"Step {4}: {self.steps.get(4,'UNKNOWN')}")
