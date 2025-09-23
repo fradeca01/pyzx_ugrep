@@ -42,11 +42,12 @@ class TestCircuit(unittest.TestCase):
         return q
 
     def setUp(self):
-        reset = False
-        self.n = 3
-        self.k = 1
+        reset = True
+        self.n = 6
+        self.k = 2
+        self.num_subtseps = 100
     
-        for i in range(50):
+        for i in range(self.num_subtseps):
             s = f"test_{i}"
             file_path = f"./test_graphs/{s}.qasm"
             if not os.path.exists(file_path) or reset == True:
@@ -87,7 +88,7 @@ class TestCircuit(unittest.TestCase):
                 g.pivot(x,y, quiet=True)
                 draw(g, labels=True)
                 g.conjugate_in_paulis(quiet=True)
-                g.state_to_circuit()
+                g.state_to_map()
                 draw(g, labels=True) 
                 # draw(g, labels=True)
                 g = g.get_graph()
@@ -102,7 +103,7 @@ class TestCircuit(unittest.TestCase):
     # @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
-        for i in range(0,10):
+        for i in range(0,self.num_subtseps):
             with self.subTest(i=i):
                 s = f"test_{i}"
                 print(f"Testing canonical form for {s}")
@@ -119,7 +120,7 @@ class TestCircuit(unittest.TestCase):
                 # draw(g, labels=True)
                 g.to_canonical_form(quiet=True)
                 # draw(g) 
-                g.state_to_circuit()
+                g.state_to_map()
                 g.auto_detect_io()
                 # clifford_simp(g, quiet=True) # O(n)
                 t2 = tensorfy(g)
