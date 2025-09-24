@@ -57,49 +57,6 @@ class TestCircuit(unittest.TestCase):
                     f.write(qasm_random)
 
 
-    @unittest.skip("Skipping pivot test for now")
-    def test_pivot(self):
-        for i in range(0,10):
-            with self.subTest(i=i):
-                s = f"test_{i}"
-                print(f"Testing pivot for {s}")
-                n = 3 
-                k = 2
-                file_path = f"./test_graphs/{s}.qasm"
-                with open(file_path, "r") as f:
-                    qasm_random = f.read()
-                pyzx_circ = Circuit.from_qasm(qasm_random)
-                g = pyzx_circ.to_graph()
-                input_state = "0"*(n-k) + "/"*k
-                g.apply_state(input_state)
-                # draw(g) 
-                t1 = tensorfy(g)
-                g = GraphState(g)
-                # draw(g, labels=True)
-                g.push_out_paulis()
-                g.remove_HS()
-                # x = random.choice(list(g._states))
-                # neighbors = [v for v in g._graph.neighbors(x) if v in g._states]
-                # y = random.choice(neighbors)
-                x = 27
-                y = 5
-                draw(g, labels=True)
-                print(f"Pivoting on {x}, {y}")
-                g.pivot(x,y, quiet=True)
-                draw(g, labels=True)
-                g.conjugate_in_paulis(quiet=True)
-                g = g.state_to_map()
-                draw(g, labels=True) 
-                # draw(g, labels=True)
-                g = g.get_graph()
-                g.auto_detect_io()
-                # clifford_simp(g, quiet=True) # O(n)
-                t2 = tensorfy(g)
-                # print(t1)
-                # print(t2)
-                self.assertTrue(compare_tensors(t1, t2), f"Pivot failed for {i}")
-
-
     # @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
