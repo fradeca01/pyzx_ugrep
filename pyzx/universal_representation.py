@@ -129,7 +129,7 @@ def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
         e = g.edge(v, s)
         g.set_edge_type(e, EdgeType.SIMPLE)
 
-    for s1, s2 in zip(ins,ins):
+    for s1, s2 in itertools.product(ins,ins):
         v = get_input_state(g, s1)
         w = get_input_state(g, s2)
         if g.connected(v, w):

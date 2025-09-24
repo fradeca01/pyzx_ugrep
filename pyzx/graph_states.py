@@ -202,7 +202,7 @@ class GraphState(Generic[VT, ET]):
         self._states = states
         self._inputs = graph.inputs()
         self._outputs = graph.outputs()
-        self.fix_free_edges(quiet=quiet)
+        self.fix_free_edges()
         self.normalize_graph_state(quiet=quiet)
         self.auto_detect_io()
 
@@ -338,7 +338,7 @@ class GraphState(Generic[VT, ET]):
             print(f"Step {step}: {self.to_canonical_steps.get(step,'UNKNOWN')} --- Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
 
         bound_phase = self.get_graph().phase(bound)
-        phase = self.get_phase(v)
+        phase = self.phase(v)
         
         if phase >= 1:
             self.get_graph().add_to_phase(bound, +1)
@@ -364,10 +364,11 @@ class GraphState(Generic[VT, ET]):
  
         if bound_phase > 1:
             for x in neighbors:
-                print("Adding phase 1 to neighbor", x)
+                if not quiet:
+                    print("Adding phase 1 to neighbor", x)
                 self.get_graph().add_to_phase(x, 1)
 
-        if not self.validate(quiet=quiet, step = 3):
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
 
@@ -422,7 +423,7 @@ class GraphState(Generic[VT, ET]):
 
         # self.push_out_paulis(quiet=quiet, step = 2)
 
-        if not self.validate(quiet=quiet, step = 2):
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
     def pivot(self, x: VT, y: VT, quiet : bool = True) -> None:
@@ -444,8 +445,8 @@ class GraphState(Generic[VT, ET]):
         A = self.get_neigbbors(x) + [x]
         B = self.get_neigbbors(y) + [y]
 
-        phase_x = self.get_phase(x)
-        phase_y = self.get_phase(y)
+        phase_x = self.phase(x)
+        phase_y = self.phase(y)
 
         for v in A:
             if v in B:
@@ -493,7 +494,7 @@ class GraphState(Generic[VT, ET]):
                 self._graph.add_edge((new, bound), EdgeType.SIMPLE)
             else:
                 edge_p = self._graph.edge(p, self.get_bound(p))
-                type_p = self.bound_edge_type(p)
+                type_p = self.edge_type(self.bound_edge(p))
                 self._graph.set_edge_type(edge_p, flip_edge(type_p))    
 
         fix_vertex(x, phase_x)
@@ -607,7 +608,7 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print(f"Step 2: {self.to_canonical_steps.get(2,'UNKNOWN')} --- Removing HS from graph ended")
 
-        if not self.validate(quiet=quiet, step=2):
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
 
@@ -627,14 +628,14 @@ class GraphState(Generic[VT, ET]):
                     neigh = [v for v in self.get_graph().neighbors(x) if v in self.get_states()]
                     for y in neigh:
                         if y < x:
-                            self.pivot(y, x, quiet = quiet, step=3)
+                            self.pivot(y, x, quiet = quiet)
                             go_on = True
                             break
 
         for s in self.get_states():
             bound = self.get_bound(s)
             bound_phase = self.get_graph().phase(bound)
-            edge_type = self.bound_edge_type(s)
+            edge_type = self.edge_type(self.bound_edge(s))
 
             if edge_type == EdgeType.SIMPLE and bound_phase % 1 == Fraction(1, 2):
                 new_bound = self.get_bound(bound)
@@ -645,7 +646,7 @@ class GraphState(Generic[VT, ET]):
             if edge_type == EdgeType.HADAMARD and bound_phase % 1 == Fraction(1, 2):
                 self.local_comp_SH(s, quiet= quiet, step = 3)
         
-        if not self.validate(quiet=quiet, step = 3):
+        if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
 
     
@@ -657,11 +658,12 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet):
             return False
     
-        for s1, s2 in zip(states, states):
+        for s1, s2 in itertools.product(states, states):
+            # print(s1, s2)
             if s1 < s2 and self.connected(s1, s2):
                 edge1 = self.edge_type(self.bound_edge(s1))
                 edge2 = self.edge_type(self.bound_edge(s2))
-
+                # print(edge2)
                 if edge2 == EdgeType.HADAMARD:
                     if not quiet:
                         print(f"Vertices {s1} and {s2} are connected and {s2} has a Hadamard edge to its boundary")
@@ -682,7 +684,7 @@ class GraphState(Generic[VT, ET]):
             print(f"STARTING: CANONICAL FORM")
             print()
 
-        if not self.validate(quiet = quiet, step=0):
+        if not self.validate(quiet = quiet):
             raise ValueError("Graph is not a valid graph state")
         
         if not quiet:
@@ -707,7 +709,7 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print("---------------------------------")
             print("OUTPUT:...................")
-        if not self.validate(quiet = quiet, step=0):
+        if not self.validate(quiet = quiet):
             raise ValueError("Graph is not a valid graph state") 
 
 
