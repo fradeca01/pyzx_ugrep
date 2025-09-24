@@ -4,7 +4,7 @@ Universal representation module
 
 
 __all__ = [
-"from_graph_state",
+"to_universal_representation",
 ]
 
 
@@ -167,8 +167,6 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
                     if x in inputs_states:
                         vin = x
 
-                if not quiet:
-                    print(f"Step {8}: --- Removing pivot phase for vertex {vin} with phase {self.get_graph().phase(v)}")
                 # self.get_graph().set_phase(vin, 0)
 
                 neighborsin = [x for x in get_neigbbors(g, vin) if x in outputs_states]
@@ -240,7 +238,7 @@ def remove_pivot_edges(g, pivots, quiet : bool = True) -> None:
 
 
 def from_graph_state(g: GraphState) -> BaseGraph:
-    """Convert a GraphState back to a BaseGraph.
+    """Convert a GraphState back to its uinversal representation.
 
     Args:
         g (GraphState): The GraphState to convert.
@@ -251,30 +249,20 @@ def from_graph_state(g: GraphState) -> BaseGraph:
     g.to_canonical_form(quiet=True)
     g = g.state_to_map()
 
-
-
     print("Exporting to universal circuit...")
-    # print(f"Step {5}: {self.steps.get(5,'UNKNOWN')}")
-    # self.state_to_map(quiet = quiet)
-    # print(f"Step {7}: {self.steps.get(7,'UNKNOWN')}")
-
-    draw(g)
 
     pivots = to_RRREF(g, quiet = True)
-    # print(f"Step {8}: {self.steps.get(8,'UNKNOWN')}")
     remove_pivot_phases(g, pivots, quiet = True)
-    # print(f"Step {9}: {self.steps.get(9,'UNKNOWN')}")
     remove_pivot_edges(g, pivots, quiet = True)
-    # print(f"Step {6}: {self.steps.get(6,'UNKNOWN')}")
     remove_unitaries_input(g)
 
     return g
 
 def to_universal_representation(g: BaseGraph) -> BaseGraph:
-    """Convert a GraphState to its universal representation.
+    """Convert a Clifford ZX diagram to its universal representation.
 
     Args:
-        g (GraphState): The GraphState to convert.
+        g : The Clifford ZX diagram as a BaseGraph.
 
     Returns:
         BaseGraph: The universal representation of the GraphState.
