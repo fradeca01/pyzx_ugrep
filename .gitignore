@@ -18,7 +18,7 @@ pyzx/js/d3.v5.js
 StreamlitApp/lib/*
 lib/*
 
-scratchpads/GraphStates.ipynb
-scratchpads/tests/*
+# scratchpads/GraphStates.ipynb
+scratchpads/test_graphs/*
 
 tests/test_graphs/*

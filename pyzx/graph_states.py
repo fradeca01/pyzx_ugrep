@@ -19,6 +19,8 @@ from .extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
 import itertools
 from .circuit import Circuit
+import time
+
 
 class GraphState(Generic[VT, ET]):
     """
@@ -110,7 +112,7 @@ class GraphState(Generic[VT, ET]):
         """
         outputs = self._outputs
         state_outputs = [list(self.get_graph().neighbors(v))[0] for v in outputs]
-        print(state_outputs)
+        # print(state_outputs)
         return state_outputs
       
     def get_inputs(self) -> List[VT]:
@@ -122,7 +124,7 @@ class GraphState(Generic[VT, ET]):
         """
         inputs = self._inputs
         state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
-        print(state_inputs)
+        # print(state_inputs)
         return state_inputs   
     
     def bound_edge(self, v: VT) -> ET:
@@ -159,7 +161,7 @@ class GraphState(Generic[VT, ET]):
             List of neighboring state vertices
             
         Raises:
-            ValueError: If the vertex is not a state vertex
+            ValueError: If the vertex f`is not a state vertex
         """
         
         if v not in self.get_states():
@@ -168,6 +170,67 @@ class GraphState(Generic[VT, ET]):
         neighbors = [x for x in self.get_graph().neighbors(v) if x in self.get_states()]
 
         return neighbors
+    
+    def fix_ordering(self) -> None:
+        g = Graph()
+        ty = self.types()
+        ph = self.phases()
+        qs = self.qubits()
+        rs = self.rows()
+        vtab = dict()
+        g.merge_vdata = self.merge_vdata 
+        # print(self.get_graph().inputs())
+        # print(self.get_inputs())
+        # print(self.get_graph().outputs())
+        # print(self.get_outputs())
+        for v in self.get_graph().inputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))   
+        for v in self.get_inputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))                        
+        for v in self.get_outputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))
+
+        for v in self.get_graph().outputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))
+
+        new_inputs = tuple(vtab[i] for i in self.inputs())
+        new_outputs = tuple(vtab[i] for i in self.outputs())
+        g.set_inputs(new_inputs)
+        g.set_outputs(new_outputs)
+        
+        for e in self.edges():
+            s, t = self.edge_st(e)
+            new_e = g.add_edge((vtab[s], vtab[t]), self.edge_type(e))
+            g.set_edata_dict(new_e, self.edata_dict(e))
+
+        self._graph = g
+        self._states = [vtab[v] for v in self._states]
+        self._inputs = [vtab[v] for v in self._inputs]
+        self._outputs = [vtab[v] for v in self._outputs]
     
 
     def __init__(self, graph: BaseGraph[VT, ET], quiet : bool = True) -> None:
@@ -193,18 +256,22 @@ class GraphState(Generic[VT, ET]):
 
         graph.auto_detect_io()
 
+
         #Simplify ZX diagram to be a graph-state
         clifford_simp(graph, quiet=quiet) # O(n)
         graph.normalize()
-
+        
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
         self._inputs = graph.inputs()
         self._outputs = graph.outputs()
         self.fix_free_edges()
+        # draw(self._graph, labels=True)
+        self.fix_ordering()
         self.normalize_graph_state(quiet=quiet)
         self.auto_detect_io()
+        # draw(self._graph, labels=True)
 
         self.validate(quiet = quiet)
 
@@ -572,11 +639,19 @@ class GraphState(Generic[VT, ET]):
         if original_io:
             self.get_graph().set_inputs(self._inputs)
             self.get_graph().set_outputs(self._outputs)
+        
+        # print(self._inputs)
+        # print(self._outputs)
+        
+        # draw(self.get_graph(), labels=True)
+
 
         export_g = self.get_graph().copy()
-
         self.get_graph().auto_detect_io()
-        
+
+        # draw(export_g, labels=True)
+
+
         export_g.normalize()
 
         return export_g
@@ -688,29 +763,36 @@ class GraphState(Generic[VT, ET]):
             raise ValueError("Graph is not a valid graph state")
         
         if not quiet:
-            print(f"Step {1}: {self.to_canonical_steps.get(1,'UNKNOWN')}")
-        if not quiet:
-            print(f"Step {2}: {self.to_canonical_steps.get(2,'UNKNOWN')}")
-        if not quiet:
             print("Transforming to canonical form...")
-            print(f"Step {1}: {self.to_canonical_steps.get(1,'UNKNOWN')}")
-        # self.push_out_paulis(quiet=quiet, step = 1) # O(n)
         if not quiet:
             print(f"Step {2}: {self.to_canonical_steps.get(2,'UNKNOWN')}")
         self.remove_HS(quiet=quiet)
         if not quiet:
             print(f"Step {3}: {self.to_canonical_steps.get(3,'UNKNOWN')}")
-        # print("HWLOOOOOO")
         self.reorder_H(quiet = quiet)
         if not quiet:
             print(f"Step {4}: {self.to_canonical_steps.get(4,'UNKNOWN')}")
-        # self.conjugate_in_paulis(quiet= quiet)
 
         if not quiet:
             print("---------------------------------")
             print("OUTPUT:...................")
         if not self.validate(quiet = quiet):
             raise ValueError("Graph is not a valid graph state") 
+        
+    
+    def benchmark_to_canonical_form(self):        
+        start = time.perf_counter()
+        self.remove_HS(quiet=True)
+        end1 = time.perf_counter()
+        self.reorder_H(quiet=True)
+        end2 = time.perf_counter()
+
+        if not self.validate():
+            raise ValueError("Graph is not a valid graph state") 
+
+        return (end1 - start, end2 - end1)
+
+
 
 
 
