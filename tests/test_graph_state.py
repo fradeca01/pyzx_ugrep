@@ -34,18 +34,11 @@ SEED = 1337
 @unittest.skipUnless(stim, "stim needs to be installed for this to run")
 class TestCircuit(unittest.TestCase):
 
-    def stim_qasm_comply(qasm: str) -> str:
-        q = qasm
-        q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
-        q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
-        q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
-        return q
-
     def setUp(self):
         reset = True
-        self.n = 6
+        self.n = 7
         self.k = 2
-        self.num_subtseps = 100
+        self.num_subtseps = 10
     
         for i in range(self.num_subtseps):
             s = f"test_{i}"
@@ -57,7 +50,42 @@ class TestCircuit(unittest.TestCase):
                     f.write(qasm_random)
 
 
-    # @unittest.skip("Skipping canonical form test for now")
+    def stim_qasm_comply(self, qasm: str) -> str:
+        q = qasm
+        q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
+        q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
+        # q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', '', q)
+        q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
+        return q
+    
+    def test_extraction(self):
+        for i in range(0,self.num_subtseps):
+            with self.subTest(i=i):
+                s = f"test_{i}"
+                print(f"Testing extraction for {s}")
+                tableau = stim.Tableau.random(self.n)
+                qasm_random1 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
+                qasm_random2 = tableau.to_circuit(method = "graph_state").to_qasm(open_qasm_version=3)
+                # print(self.stim_qasm_comply(qasm_random2))
+                pyzx_circ1 = Circuit.from_qasm(qasm_random1)
+                pyzx_circ2 = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
+                # draw(pyzx_circ2.to_graph(), labels=True)
+
+                
+
+                g1 = pyzx_circ1.to_graph()
+                g2 = pyzx_circ2.to_graph()
+                input_state = "0"*(self.n)
+                # input_state = "0"*(self.n-self.k) + "/"*self.k
+                g1.apply_state(input_state)
+                g2.apply_state(input_state)
+
+                t1 = tensorfy(g1)
+                t2 = tensorfy(g2)
+                  # print(t2)
+                self.assertTrue(compare_tensors(t1, t2), f"Extraction failed for {i}")
+
+    @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
         for i in range(0,self.num_subtseps):

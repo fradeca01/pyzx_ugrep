@@ -4,7 +4,7 @@ Universal representation module
 
 
 __all__ = [
-"to_universal_representation",
+"to_universal_representation", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation"
 ]
 
 
@@ -20,6 +20,10 @@ from .extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
 import itertools
 from .circuit import Circuit
+import pprint
+from .linalg import Mat2
+
+import time
 
 
 
@@ -247,16 +251,90 @@ def from_graph_state(g: GraphState) -> BaseGraph:
         BaseGraph: The converted BaseGraph.
     """
     g.to_canonical_form(quiet=True)
+
+    # draw(g, labels=True, scale=120)
+
     g = g.state_to_map()
 
-    print("Exporting to universal circuit...")
+    # draw(g, labels=True)
 
-    pivots = to_RRREF(g, quiet = True)
-    remove_pivot_phases(g, pivots, quiet = True)
-    remove_pivot_edges(g, pivots, quiet = True)
+    # print("Exporting to universal circuit...")
     remove_unitaries_input(g)
+    # draw(g, labels=True)
+    # print("to RRREF...")
+    pivots = to_RRREF(g, quiet = True)
+    # draw(g, labels=True)
+    # print("Removing pivot phases...")
+    remove_pivot_phases(g, pivots, quiet = True)
+    # draw(g, labels=True)
+    # print("Removing pivot edges...")
+    remove_pivot_edges(g, pivots, quiet = True)
+    # draw(g, labels=True)
+    # print("Removing unitaries from inputs...")
+    remove_unitaries_input(g)
+    # draw(g, labels=True)
 
     return g
+
+def benchmark_from_graph_state(g: GraphState) -> Tuple[float, float, float]:
+
+    g.to_canonical_form(quiet=True)
+    g = g.state_to_map()
+
+    start = time.perf_counter()
+    pivots = to_RRREF(g, quiet = True)
+    end1 = time.perf_counter()
+    remove_pivot_phases(g, pivots, quiet = True)
+    end2 = time.perf_counter()
+    remove_pivot_edges(g, pivots, quiet = True)
+    end3 = time.perf_counter()
+    remove_unitaries_input(g)
+    end4 = time.perf_counter()
+
+    time_rref = end1 - start
+    time_remove_phases = end2 - end1
+    time_remove_edges = end3 - end2
+    time_remove_unitaries = end4 - end3
+    return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
+
+def to_universal_graph_representation(g: BaseGraph, quiet : bool = True) -> Dict:
+    """Convert a Clifford ZX diagram to its universal representation.
+
+    Args:
+        g : The Clifford ZX diagram as a BaseGraph.
+        quiet : If True, suppresses output messages.
+
+    Returns:
+        BaseGraph: The adjacency matrix of the universal representation.
+    """
+    g = GraphState(g)
+    g.to_canonical_form(quiet=quiet)
+    g = from_graph_state(g)
+    # draw(g, labels=True)
+
+    # draw(g)
+
+    inputs = get_inputs(g)
+    outputs = get_outputs(g)
+
+
+    d = g.to_dict()
+
+    d["inputs"] = inputs
+    d["outputs"] = outputs
+
+    g_filtered = d
+
+    # 1. collect IDs of boundary vertices
+    boundary_ids = {v["id"] for v in d["vertices"] if v["t"] == VertexType.BOUNDARY}
+
+    # 2. filter vertices
+    g_filtered["vertices"] = [v for v in d["vertices"] if v["id"] not in boundary_ids]
+
+    # 3. filter edges (remove any edge touching a boundary vertex)
+    g_filtered["edges"] = [e for e in d["edges"] if e[0] not in boundary_ids and e[1] not in boundary_ids]
+    # pprint.pprint(g_filtered)
+    return g_filtered
 
 def to_universal_representation(g: BaseGraph) -> BaseGraph:
     """Convert a Clifford ZX diagram to its universal representation.
