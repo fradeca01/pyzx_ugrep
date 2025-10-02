@@ -1,3 +1,7 @@
+## ⚠️ This is a thesis fork ⚠️
+
+This is a fork of the [PyZX repository]("https://github.com/zxcalc/pyzx"). See [THESIS_README.md]("https://github.com/fradeca01/pyzx_ugrep/THESIS_README.md") for details.
+
 ## PyZX
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
