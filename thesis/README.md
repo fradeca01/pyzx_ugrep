@@ -24,10 +24,26 @@ representation for stabilizer codes"*, [University of Udine, 2024/2025].
    pip install -r requirements.txt
    ```
 
-3. Install `pyzx` package:
-    ```bash
-    pip install ./pyzx
-    ```
+
+## How to run benchmarks
+
+1. Move to `thesis/benchamarks` folder
+2. Run `benchmark_universal.py` script, the following arguments are available:
+    - `--test_n`: run the benchmark with the number of physical qubits as variable with the same parameters as in the thesis
+    - `--test_k`: run the benchmark with the number of logical qubits as variable with the same parameters as in the thesis
+    - `--clean`: delete all test instances after a succesfull run
+
+    At least one of `--test_n` or `--test_k` is mandatory. It is also possible to change the parameters by modifying the `main` of this script. 
+
+3. To plot the results it is possible to use the `benchmarks/plot.py` script, the following arguments are available:
+    - `--path`: Mandatory. The path where results from `benchmark_universal.py` are stored.
+    - `--log_scale`: to use logarithmic scale on $y$ axis.
+    - `--save`: the path to save the plot.
+
+## Examples
+
+It is possible to generate some examples of universal graph representations in the `graph_state.ipynb` notebook.
+
 
 ## Graphical interface
 

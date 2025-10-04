@@ -41,11 +41,11 @@ def tableau_to_graph(list, quiet = True):
     # g.to_canonical_form(quiet = quiet)
     return d
 
-def hash_func(g : GraphState):
-    """
-    Hash function for GraphState objects.
-    """
-    return hash(tuple(g.get_states())) ^ hash(tuple(g.edges())) ^ hash(tuple(g.inputs())) ^ hash(tuple(g.outputs()))
+# def hash_func(g : GraphState):
+#     """
+#     Hash function for GraphState objects.
+#     """
+#     return hash(tuple(g.get_states())) ^ hash(tuple(g.edges())) ^ hash(tuple(g.inputs())) ^ hash(tuple(g.outputs()))
 
 # @st.cache_data(hash_funcs={GraphState: hash_func}, show_spinner=True)
 def pyzx_graph_to_pyvis(d : Dict):

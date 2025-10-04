@@ -61,8 +61,13 @@ def save_results(total_times, graph_building_times, graph_canonical_times, graph
 
 def generate_instance(n, name, method = "graph_state"):
     s = name
-    file_path = f"./test_graphs/{s}.qasm"
-    if not os.path.exists(file_path) or True:
+    base = "./test_graphs"
+    file_path = f"{base}/{s}.qasm"
+
+    if not os.path.exists(base):
+        os.makedirs(base)
+    
+    if not os.path.exists(file_path):
         qasm_random = stim.Tableau.random(n).to_circuit(method = method).to_qasm(open_qasm_version=3)
         qasm_random = stim_qasm_comply(qasm_random)
         with open(file_path, "w") as f:
@@ -79,7 +84,7 @@ def load_instance(n, k, name):
     g.apply_state(input_state)
     return g
 
-def run_test(i, n, k, num_iteration_per_test = 10, method = "graph_state"):
+def run_test(i, n, k, num_iteration_per_test = 10, method = "elimination"):
     sum_time_graph = 0.0
     sum_time_canonical = 0.0
     sum_time_ur = 0.0
@@ -104,7 +109,7 @@ def run_test(i, n, k, num_iteration_per_test = 10, method = "graph_state"):
 
     return result_time_graph, result_time_canonical, result_time_ur, result_total_time
 
-def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, method = "graph_state"):
+def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, method = "elimination"):
     
 
     print(f"Generating {num_tests} random tests ({num_iteration_per_test} iterations per test) starting from {start_n}...")
@@ -138,7 +143,7 @@ def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, metho
     save_results(total_times, graph_building_times, graph_canonical_times, graph_ur_times, path = "./test_n/")
 
 
-def test_k(n, num_iteration_per_test = 10, method = "graph_state"):
+def test_k(n, num_iteration_per_test = 10, method = "elimination"):
     
     print(f"Generating {n-1} random tests ({num_iteration_per_test} iterations per test) with n = {n}...")
 
@@ -174,14 +179,20 @@ def test_k(n, num_iteration_per_test = 10, method = "graph_state"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark Universal Representation")
+    parser.add_argument("--test_n", action="store_true", help="Plot after benchmarking")
+    parser.add_argument("--test_k", action="store_true", help="Plot after benchmarking")
     parser.add_argument("--clean", action="store_true", help="Clean instances")
-    parser.add_argument("--plot", action="store_true", help="Plot after benchmarking")
+    # parser.add_argument("--plot", action="store_true", help="Plot after benchmarking")
     args = parser.parse_args()
-    test_n(start_n = 100, k = 20, method="elimination", num_tests=1, num_iteration_per_test=1)
-    # test_k(n = 100, num_iteration_per_test=1, method="elimination")
 
-    if args.plot:
-        plot.plot(base_path="./test_k/")
+    if args.test_n:
+        test_n(start_n = 5, k = 50, method="elimination", num_tests=50, num_iteration_per_test=5)
+
+    if args.test_k:
+        test_k(n = 50, num_iteration_per_test=5, method="elimination")
+
+    if not args.test_n and not args.test_k:
+        exit("Insert --test_k or --test_n argument or both")
 
     if args.clean:
         for file_name in os.listdir("./test_graphs/"):
