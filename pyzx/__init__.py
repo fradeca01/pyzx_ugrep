@@ -31,6 +31,10 @@ from .local_search.simulated_annealing import anneal
 from .local_search.genetic import GeneticOptimizer
 from .circuit.qasmparser import qasm
 from .circuit.sqasm import sqasm
+from .graph_states import *
+from .generate import *
+from .universal_representation import to_universal_representation, from_graph_state, benchmark_from_graph_state, to_universal_graph_representation
+from . import graph_states
 from . import generate
 from . import todd
 from . import linalg
