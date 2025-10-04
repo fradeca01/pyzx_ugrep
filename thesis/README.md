@@ -31,6 +31,6 @@ representation for stabilizer codes"*, [University of Udine, 2024/2025].
 
 ## Graphical interface
 
-To access the graphical interface to transform a stabilzer code to its universal represetntation visit the following: [Link]("Link")
+To access the graphical interface to transform a stabilzer code to its universal represetntation visit the following: [Link](https://universal-graph-repr.streamlit.app/)
 
 
