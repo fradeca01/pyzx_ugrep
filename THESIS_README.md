@@ -7,7 +7,7 @@ This fork of [PyZX]("https://github.com/zxcalc/pyzx") contains some additions to
 ## Additions
 
 The main addition done are the following:
-- Added the `graph_state` subpackage which provides methods to create and work with `graph states` from pyzx graphs. 
+- Added the `graph_state` subpackage, which provides methods to create and work with `graph states` from pyzx graphs. 
 
 - Added the `uinversal_representation` subpackage, which provides methods to transform a Clifford ZX diagram to its universal representation. 
 
