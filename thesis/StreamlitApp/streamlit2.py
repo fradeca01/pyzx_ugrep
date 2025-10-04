@@ -4,12 +4,27 @@ import networkx as nx
 from pyvis.network import Network
 import streamlit as st
 import tempfile
+from typing import Dict
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from pyzx import *
 
+@st.dialog("Instructions")
+def instructions_popup():
+    st.markdown("""
+    ### How to use this tool
 
+    1. **Select an example code** (Steane, Shor, or Five-qubit) from the sidebar  
+       or enter your own stabilizers manually.  
+    2. Set the number of **physical qubits (n)** and **logical qubits (k)**.  
+    3. Enter stabilizers in the input fields (alphabet: `I, X, Y, Z`).  
+    4. Click **Convert** to generate a graph representation.  
+    5. The graph will appear in the **Graph View** section below.  
+
+    ⚠️ Make sure stabilizers are the correct length and contain only valid symbols.
+    """)
+    
 def tableau_to_graph(list, quiet = True):
     n = len(list[0])
     k = n - len(list)
@@ -18,9 +33,13 @@ def tableau_to_graph(list, quiet = True):
     stim_circ = tableau.to_circuit(method="elimination")
     qasm = stim_circ.to_qasm(open_qasm_version=3)
     pyzx_circ = Circuit.from_qasm(qasm)
-    g = GraphState.from_circuit(pyzx_circ, k)
-    g.to_canonical_form(quiet = quiet)
-    return g
+    g = pyzx_circ.to_graph()
+    input_state = "0"*(n-k) + "/"*k
+    g.apply_state(input_state)
+    d = to_universal_graph_representation(g)
+    # g = GraphState.from_circuit(pyzx_circ, k)
+    # g.to_canonical_form(quiet = quiet)
+    return d
 
 def hash_func(g : GraphState):
     """
@@ -28,28 +47,42 @@ def hash_func(g : GraphState):
     """
     return hash(tuple(g.get_states())) ^ hash(tuple(g.edges())) ^ hash(tuple(g.inputs())) ^ hash(tuple(g.outputs()))
 
-@st.cache_data(hash_funcs={GraphState: hash_func}, show_spinner=True)
-def pyzx_graph_to_pyvis(g : GraphState):
+# @st.cache_data(hash_funcs={GraphState: hash_func}, show_spinner=True)
+def pyzx_graph_to_pyvis(d : Dict):
 
     nxg = nx.Graph()
-    for v in g.get_states():
-        v_type = g.type(v)
-        if g.get_bound(v) in g.inputs():
+    bounds = []
+    for v in d["vertices"]:
+        v_type = v["t"]
+        if v["id"] in d["inputs"]:
             color = "green"
         else:
             color = "blue"
         if v_type != VertexType.BOUNDARY:
-            nxg.add_node(v, 
-                        label=str(v), 
+            nxg.add_node(v["id"], 
                         color=color, 
                         title=f"Type: {v_type.name}")
+        else:
+            bounds.append(v["id"])
             
-    for e in g.edges():
-        edge_type = g.edge_type(g.edge(*e))
+    for e in d["edges"]:
+        vertexes = d["vertices"]
+        edge_type = e[2]
         edge_color = "red" if edge_type == EdgeType.HADAMARD else "black"
-        if g.type(e[0]) != VertexType.BOUNDARY and g.type(e[1]) != VertexType.BOUNDARY:
+        if e[0] not in bounds and e[1] not in bounds:
             nxg.add_edge(e[0], e[1])
             nxg[e[0]][e[1]]['color'] = edge_color
+
+    # pos = nx.spring_layout(nxg, seed=42)  # nice spacing
+
+    node_colors = [nxg.nodes[n]['color'] for n in nxg.nodes()]
+    edge_colors = [nxg[u][v]['color'] for u,v in nxg.edges()]
+
+    # Draw the graph
+    # plt.figure(figsize=(10,8))
+    # nx.draw_networkx_nodes(nxg, pos, node_color=node_colors, node_size=700)
+    # nx.draw_networkx_edges(nxg, pos, edge_color=edge_colors, width=2)
+    # nx.draw_networkx_labels(nxg, pos, font_size=10, font_color='black')
 
     # # Create PyVis network
     net = Network(notebook=False, directed=False)
@@ -94,6 +127,18 @@ def load_example():
 
     # st.rerun()
 
+def clear_example():
+    st.session_state["example"] = "None"
+
+
+
+
+if "show_instructions" not in st.session_state:
+    st.session_state.show_instructions = True
+
+if st.session_state.show_instructions:
+    instructions_popup()
+    st.session_state.show_instructions = False
 
 lc, rc = st.columns(2)
 
@@ -117,7 +162,7 @@ with st.sidebar:
         st.caption(f"Each stabilizer must have length {n} (alphabet: I X Y Z).")
         for i in range(m):
             # val = st.session_state.get(f"stab_{i}", "")
-            st.text_input(f"S{i+1}", key=f"stab_{i}")
+            st.text_input(f"S{i+1}", key=f"stab_{i}", on_change=clear_example)
             stab_inputs.append(st.session_state.get(f"stab_{i}", "").strip().replace(" ", ""))
 
     run_btn = st.button("Convert")
@@ -136,10 +181,11 @@ if run_btn:
     else:
         for s in tableau_list:
             if len(s) != n:
-                st.error(f"'{s}' has length {len(s)} ≠ {n}.")
+                st.error(f"Stabilizer '{s}' has length {len(s)}, which is not {n}.")
                 valid = False
             if any(c not in "IXYZ" for c in s):
-                st.error(f"Invalid symbol in '{s}'. Allowed: I X Y Z.")
+                c = next(c for c in s if c not in "IXYZ")
+                st.error(f"'{c}' is not a valid symbol. Allowed: I, X, Y, Z.")
                 valid = False
     # if m != len(tableau_list):
     #     st.warning(f"{len(tableau_list)} non-empty rows (expected {m}).")
@@ -154,15 +200,19 @@ if run_btn:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
                 net.save_graph(tmp.name)
                 st.session_state.graph_html = open(tmp.name, "r").read()
-
                 os.unlink(tmp.name)
         except Exception as e:
+            st.session_state.graph_html = None
             st.error(f"Conversion failed: {e}")
+    else:
+        st.session_state.graph_html = None
+
+        # st.info("Graph will appear here after conversion.")
 
 @st.fragment()
 def render_graph():
-    st.write("# Graph View")
-    if "graph_html" in st.session_state:
+    if "graph_html" in st.session_state and st.session_state.graph_html is not None:
+        st.write("# Graph View")
         graph_html = st.session_state.graph_html
         st.components.v1.html(graph_html, height=600, width = 1000)
     else:
