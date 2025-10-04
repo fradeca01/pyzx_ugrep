@@ -1,6 +1,6 @@
 ## ⚠️ This is a thesis fork ⚠️
 
-This is a fork of the [PyZX repository]("https://github.com/zxcalc/pyzx"). See [THESIS_README.md](https://github.com/fradeca01/pyzx_ugrep/THESIS_README.md) for details.
+This is a fork of the [PyZX repository]("https://github.com/zxcalc/pyzx"). See [THESIS_README.md](https://github.com/fradeca01/pyzx_ugrep/blob/master/THESIS_README.md) for details.
 
 ## PyZX
 
