@@ -15,10 +15,9 @@ pyzx.egg-info
 *.ipynb_checkpoints
 pyzx/js/d3.v5.js
 *~
-StreamlitApp/lib/*
+thesis/StreamlitApp/lib/*
 lib/*
 
 # scratchpads/GraphStates.ipynb
-scratchpads/test_graphs/*
-
-tests/test_graphs/*
+thesis/scratchpads/test_graphs/*
+thesis/benchmarks/test_graphs/*
