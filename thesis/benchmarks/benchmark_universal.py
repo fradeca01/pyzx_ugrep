@@ -192,7 +192,7 @@ if __name__ == "__main__":
         test_k(n = 50, num_iteration_per_test=5, method="elimination")
 
     if not args.test_n and not args.test_k:
-        exit("Insert --test_k or --test_n argument or both")
+        print("Insert --test_k or --test_n argument or both")
 
     if args.clean:
         for file_name in os.listdir("./test_graphs/"):

@@ -21,3 +21,4 @@ lib/*
 # scratchpads/GraphStates.ipynb
 thesis/scratchpads/test_graphs/*
 thesis/benchmarks/test_graphs/*
+*/test_graphs/*
