@@ -47,6 +47,6 @@ It is possible to generate some examples of universal graph representations in t
 
 ## Graphical interface
 
-To access the graphical interface to transform a stabilzer code to its universal represetntation visit the following: [Link](https://universal-graph-repr.streamlit.app/)
+To access the graphical interface to transform a stabilzer code to its universal represetntation visit the following: [Link](https://universal-rep.streamlit.app/)
 
 
