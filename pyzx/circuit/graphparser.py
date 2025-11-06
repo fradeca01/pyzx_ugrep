@@ -44,6 +44,8 @@ def graph_to_circuit(g:BaseGraph[VT,ET], split_phases:bool=True) -> Circuit:
             t = ty[v]
             neigh = [w for w in g.neighbors(v) if rs[w]<r]
             if len(neigh) != 1:
+                print(v)
+                print(neigh)
                 raise TypeError("Graph doesn't seem circuit like: multiple parents")
             n = neigh[0]
             if qs[n] != q:

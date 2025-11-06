@@ -183,22 +183,6 @@ class GraphState(Generic[VT, ET]):
         # print(self.get_inputs())
         # print(self.get_graph().outputs())
         # print(self.get_outputs())
-        for v in self.get_graph().inputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))   
-        for v in self.get_inputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))                        
         for v in self.get_outputs():
             i = g.add_vertex(ty[v],phase=ph[v])
             if v in qs: g.set_qubit(i,qs[v])
@@ -208,6 +192,15 @@ class GraphState(Generic[VT, ET]):
             for k in self.vdata_keys(v):
                 g.set_vdata(i, k, self.vdata(v, k))
 
+        for v in self.get_inputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))                        
+
         for v in self.get_graph().outputs():
             i = g.add_vertex(ty[v],phase=ph[v])
             if v in qs: g.set_qubit(i,qs[v])
@@ -216,6 +209,15 @@ class GraphState(Generic[VT, ET]):
             vtab[v] = i
             for k in self.vdata_keys(v):
                 g.set_vdata(i, k, self.vdata(v, k))
+
+        for v in self.get_graph().inputs():
+            i = g.add_vertex(ty[v],phase=ph[v])
+            if v in qs: g.set_qubit(i,qs[v])
+            if v in rs:
+                g.set_row(i, rs[v])
+            vtab[v] = i
+            for k in self.vdata_keys(v):
+                g.set_vdata(i, k, self.vdata(v, k))   
 
         new_inputs = tuple(vtab[i] for i in self.inputs())
         new_outputs = tuple(vtab[i] for i in self.outputs())
@@ -231,6 +233,21 @@ class GraphState(Generic[VT, ET]):
         self._states = [vtab[v] for v in self._states]
         self._inputs = [vtab[v] for v in self._inputs]
         self._outputs = [vtab[v] for v in self._outputs]
+
+    def cji(self) -> None:
+        g = self.get_graph()
+        qs = self.get_states()
+        inputs = self.get_inputs() 
+
+
+        for j in range(len(inputs)):
+            print(inputs[j], len(qs))
+            bound = self.get_bound(inputs[j])
+            self.set_qubit(inputs[j], len(qs) -1 )
+            self.set_qubit(bound, len(qs) -1)
+            print(self.qubit(inputs[j]), self.qubit(bound))
+
+
     
 
     def __init__(self, graph: BaseGraph[VT, ET], quiet : bool = True) -> None:
@@ -268,12 +285,18 @@ class GraphState(Generic[VT, ET]):
         self._outputs = graph.outputs()
         self.fix_free_edges()
         # draw(self._graph, labels=True)
+        draw(self._graph, labels=True)
         self.fix_ordering()
+        self.cji()
         self.normalize_graph_state(quiet=quiet)
+        # self.get_graph().set_qubit(0, 10)
         self.auto_detect_io()
+
+        draw(self._graph, labels=True)
         # draw(self._graph, labels=True)
 
         self.validate(quiet = quiet)
+
 
     def pretty_print(self, draw : bool = False) -> None:
         """
@@ -619,15 +642,15 @@ class GraphState(Generic[VT, ET]):
         if not self.validate(quiet=quiet):
             raise ValueError("Graph is not a valid graph state")
         
-        self.normalize()
+        # self.normalize()
 
         states = self.get_states()
        
         for i in range(len(states)):
-            self.get_graph().set_qubit(self._states[i], i)
-            self.get_graph().set_row(self._states[i], (i % 2) * 4)
+            # self.get_graph().set_qubit(self._states[i], i)
+            self.get_graph().set_row(self._states[i], (self.get_graph().qubit(self._states[i]) % 2) * 4)
             bound = self.get_bound(self._states[i])
-            self.get_graph().set_qubit(bound, i)
+            # self.get_graph().set_qubit(bound, i)
             self.get_graph().set_row(bound, 10)
 
 

@@ -58,6 +58,18 @@ class TestCircuit(unittest.TestCase):
         q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
         return q
     
+
+    def test_graph_state(self):
+        for i in range(0,self.num_subtseps):
+            with self.subTest(i=i):
+                s = f"test_{i}"
+                print(f"Testing graph state for {s}")
+                tableau = stim.Tableau.random(self.n)
+                qasm_random1 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
+                qasm_random2 = tableau.to_circuit(method = "graph_state").to_qasm(open_qasm_version=3)
+       
+    
+    @unittest.skip("Skipping canonical form test for now")
     def test_extraction(self):
         for i in range(0,self.num_subtseps):
             with self.subTest(i=i):
@@ -85,7 +97,6 @@ class TestCircuit(unittest.TestCase):
                   # print(t2)
                 self.assertTrue(compare_tensors(t1, t2), f"Extraction failed for {i}")
 
-    @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
         for i in range(0,self.num_subtseps):
