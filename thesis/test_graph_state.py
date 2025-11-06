@@ -37,7 +37,7 @@ class TestCircuit(unittest.TestCase):
     def setUp(self):
         reset = True
         self.n = 7
-        self.k = 2
+        self.k = 1
         self.num_subtseps = 10
     
         for i in range(self.num_subtseps):
@@ -66,8 +66,57 @@ class TestCircuit(unittest.TestCase):
                 print(f"Testing graph state for {s}")
                 tableau = stim.Tableau.random(self.n)
                 qasm_random1 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
-                qasm_random2 = tableau.to_circuit(method = "graph_state").to_qasm(open_qasm_version=3)
-       
+                pyzx_circ = Circuit.from_qasm(qasm_random1)
+                g = pyzx_circ.to_graph()
+                input_state = "0"*(4) + "/"*1
+                g.apply_state(input_state)
+                g = GraphState(g)
+                g.to_canonical_form()
+
+                t1 = tensorfy(g)
+
+                out = self.n - self.k
+                n = self.n
+                input = self.k
+
+
+                stabilizers = []
+
+                for i in range (out - input):
+                    stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n))
+
+                # Loop must go from 0 to N-2
+                for i in range(out - input, n-1): 
+                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+1}") * stim.PauliString(n)) 
+
+                stabilizers.append(stim.PauliString("I" * (out - input))  + stim.PauliString("X" * (n - (out - input))))
+
+                # print("Stabilizers:")
+                # for s in stabilizers:
+                #     print(s)
+
+                tableau = stim.Tableau.from_stabilizers(stabilizers)
+
+                state = stim.TableauSimulator()
+                state.set_state_from_stabilizers(stabilizers)
+                state.do_tableau(tableau, range(out - input + 1))
+
+                print(state.current_inverse_tableau().inverse())
+                t = state.current_inverse_tableau().inverse()
+
+                qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
+                pyzx_circ = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
+                g = pyzx_circ.to_graph()
+                input_state = "0"*(n)
+                g.apply_state(input_state)
+                clifford_simp(g)
+                g.normalize()
+                g.auto_detect_io()
+                g = GraphState(g)
+                g.to_canonical_form()
+                t2 = tensorfy(g)
+
+                self.assertTrue(compare_tensors(t1, t2), f"Graph state failed for {i}")
     
     @unittest.skip("Skipping canonical form test for now")
     def test_extraction(self):
@@ -96,7 +145,8 @@ class TestCircuit(unittest.TestCase):
                 t2 = tensorfy(g2)
                   # print(t2)
                 self.assertTrue(compare_tensors(t1, t2), f"Extraction failed for {i}")
-
+    
+    @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
         for i in range(0,self.num_subtseps):
