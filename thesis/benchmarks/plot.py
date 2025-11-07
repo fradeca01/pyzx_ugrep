@@ -32,7 +32,7 @@ def plot(base_path = "./", save = None, log_scale = False):
 
 
     plt.figure(figsize=(10, 6))
-    # plt.plot(range(1,len(graph_building_times)+1), graph_building_times, label="To graph state", marker='o')
+    plt.plot(range(1,len(graph_building_times)+1), graph_building_times, label="To graph state", marker='o')
     plt.plot(range(1,len(graph_building_times)+1), graph_canonical_times, label="To canonical form", marker='s')
     plt.plot(range(1,len(graph_building_times)+1), graph_ur_times, label="To universal representation", marker='^')
 

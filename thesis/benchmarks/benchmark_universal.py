@@ -19,6 +19,7 @@ except ImportError:
 def measure_all(g):
     copy_g = g.copy()
     start = time.perf_counter()
+    print(copy_g)
     g2 = GraphState(copy_g)
     end1 = time.perf_counter()
     g2.to_canonical_form(quiet=True)
@@ -59,7 +60,7 @@ def save_results(total_times, graph_building_times, graph_canonical_times, graph
         for t in total_times:
             f.write(f"{t}\n")
 
-def generate_instance(n, name, method = "graph_state"):
+def generate_instance(n, k, name, method = "graph_state"):
     s = name
     base = "./test_graphs"
     file_path = f"{base}/{s}.qasm"
@@ -68,19 +69,41 @@ def generate_instance(n, name, method = "graph_state"):
         os.makedirs(base)
     
     if not os.path.exists(file_path):
-        qasm_random = stim.Tableau.random(n).to_circuit(method = method).to_qasm(open_qasm_version=3)
+        # qasm_random = stim.Tableau.random(n).to_circuit(method = method).to_qasm(open_qasm_version=3)
+        if method == "elimination":
+            qasm_random = stim.Tableau.random(n).to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
+        elif method == "graph_state":
+            tableau = stim.Tableau.random(n)
+            stabilizers = []
+
+            for i in range (n - k):
+                stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
+
+            for i in range(n-k, n): 
+                stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
+                stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+            state = stim.TableauSimulator()
+            state.set_state_from_stabilizers(stabilizers)
+            state.do_tableau(tableau, range(n))
+            t = state.current_inverse_tableau().inverse()
+            qasm_random = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)
+
         qasm_random = stim_qasm_comply(qasm_random)
         with open(file_path, "w") as f:
             f.write(qasm_random)
 
-def load_instance(n, k, name):
+def load_instance(n, k, name, method):
     s = name
     file_path = f"./test_graphs/{s}.qasm"
     with open(file_path, "r") as f:
         qasm_random = f.read()
     pyzx_circ = Circuit.from_qasm(qasm_random)
     g = pyzx_circ.to_graph()
-    input_state = "0"*(n - k) + "/"*k
+    if method == "graph_state":
+        input_state = "0"*(n + k)
+    else:
+        input_state = "0"*(n - k) + "/"*k
     g.apply_state(input_state)
     return g
 
@@ -94,8 +117,9 @@ def run_test(i, n, k, num_iteration_per_test = 10, method = "elimination"):
 
     for j in range(num_iteration_per_test):
         s = f"test_{i}_{j}"
-        g = load_instance(n, k, s)
+        g = load_instance(n, k, s, method = method)
         time_graph, time_canonical, time_ur, total_time = measure_all(g)
+        
 
         sum_time_graph += time_graph
         sum_time_canonical += time_canonical
@@ -119,7 +143,7 @@ def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, metho
         # print(f"Generating tests {i} with n={n}")
         for j in range(num_iteration_per_test):
             s = f"test_{i}_{j}"
-            generate_instance(n, s, method = method)
+            generate_instance(n,k, s, method = method)
 
 
     print(f"Running benchmark with n as variable and k fixed = 5 random logical qubits...")
@@ -134,7 +158,6 @@ def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, metho
         n = start_n + i
 
         result_time_graph, result_time_canonical, result_time_ur, result_total_time = run_test(i, n, k, num_iteration_per_test, method)
-
         graph_building_times.append(result_time_graph)
         graph_canonical_times.append(result_time_canonical)
         graph_ur_times.append(result_time_ur)
@@ -186,7 +209,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.test_n:
-        test_n(start_n = 5, k = 50, method="elimination", num_tests=50, num_iteration_per_test=5)
+        test_n(start_n = 5, k = 2, method="graph_state", num_tests=50, num_iteration_per_test=1)
 
     if args.test_k:
         test_k(n = 50, num_iteration_per_test=5, method="elimination")

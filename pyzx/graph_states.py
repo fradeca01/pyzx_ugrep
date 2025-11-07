@@ -237,15 +237,16 @@ class GraphState(Generic[VT, ET]):
     def cji(self) -> None:
         g = self.get_graph()
         qs = self.get_states()
+
         inputs = self.get_inputs() 
 
 
         for j in range(len(inputs)):
-            print(inputs[j], len(qs))
+            # print(inputs[j], len(qs))
             bound = self.get_bound(inputs[j])
-            self.set_qubit(inputs[j], len(qs) -1 )
-            self.set_qubit(bound, len(qs) -1)
-            print(self.qubit(inputs[j]), self.qubit(bound))
+            self.set_qubit(inputs[j], len(qs) - len(inputs) + j  )
+            self.set_qubit(bound, len(qs) - len(inputs) + j )
+            # print(self.qubit(inputs[j]), self.qubit(bound))
 
 
     
@@ -277,6 +278,8 @@ class GraphState(Generic[VT, ET]):
         #Simplify ZX diagram to be a graph-state
         clifford_simp(graph, quiet=quiet) # O(n)
         graph.normalize()
+
+        # print("INIT")
         
         self._graph = graph
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
@@ -285,14 +288,15 @@ class GraphState(Generic[VT, ET]):
         self._outputs = graph.outputs()
         self.fix_free_edges()
         # draw(self._graph, labels=True)
-        draw(self._graph, labels=True)
         self.fix_ordering()
         self.cji()
+        # draw(self._graph, labels=True)
         self.normalize_graph_state(quiet=quiet)
+        # draw(self._graph, labels=True)
         # self.get_graph().set_qubit(0, 10)
         self.auto_detect_io()
 
-        draw(self._graph, labels=True)
+        # draw(self._graph, labels=True)
         # draw(self._graph, labels=True)
 
         self.validate(quiet = quiet)
@@ -622,6 +626,7 @@ class GraphState(Generic[VT, ET]):
                     edge_type = self.get_graph().edge_type(self.get_graph().edge(bound[i], v))
                     new = self.get_graph().add_vertex(VertexType.Z)
                     self._states.append(new)
+                    self.set_qubit(new, self.qubit(bound[i]))
                     if edge_type == EdgeType.HADAMARD:
                         self.get_graph().add_edge((bound[i], new), EdgeType.SIMPLE)
                         # self.get_graph().add_edge((new, v), EdgeType.HADAMARD)
