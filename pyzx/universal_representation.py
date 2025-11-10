@@ -4,7 +4,7 @@ Universal representation module
 
 
 __all__ = [
-"to_universal_representation", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation"
+"to_universal_representation", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound"
 ]
 
 
@@ -29,23 +29,23 @@ import time
 
 
 
-def get_input_state(g : BaseGraph, v : int) -> Tuple[int, int]:
+def get_input_state(g : BaseGraph, v : int) -> int:
     """
-    Get the input state of a vertex.
+    Get the input state of a boundary vertex.
 
     Args:
         g (BaseGraph): The graph.
         v (int): The vertex.
 
     Returns:
-        Tuple[int, int]: The input state as a tuple (qubit, row).
+        int: the state vertex corresponding to the state.
     """
 
     ns = list(g.neighbors(v))
 
     return ns[0]
 
-def get_neigbbors(g, v: VT) -> List[VT]:
+def get_neighbors(g, v: VT) -> List[VT]:
     """
     Get the neighbors of a state vertex.
     
@@ -161,7 +161,7 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
         go_on = False
         for v in pivots:
             if g.phase(v) != 0:
-                neighbors = get_neigbbors(g, v)
+                neighbors = get_neighbors(g, v)
                 inputs_states = get_inputs(g)
                 outputs_states = get_outputs(g)
 
@@ -173,7 +173,7 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
 
                 # self.get_graph().set_phase(vin, 0)
 
-                neighborsin = [x for x in get_neigbbors(g, vin) if x in outputs_states]
+                neighborsin = [x for x in get_neighbors(g, vin) if x in outputs_states]
 
                 for x in neighborsin:
                     g.add_to_phase(x, Fraction(1, 2))
@@ -198,8 +198,8 @@ def pivot(g, x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
     if not quiet:
         print(f"Step --- Pivoting between vertices {x} and {y}")
 
-    A = get_neigbbors(g,x) + [x]
-    B = get_neigbbors(g,y) + [y]
+    A = get_neighbors(g,x) + [x]
+    B = get_neighbors(g,y) + [y]
 
     phase_x = g.phase(x)
     phase_y = g.phase(y)
@@ -246,21 +246,18 @@ def from_graph_state(g: GraphState, inputs, outputs) -> BaseGraph:
 
     Args:
         g (GraphState): The GraphState to convert.
+        inputs: List of input vertices
+        outputs: List of output vertices
 
     Returns:
         BaseGraph: The converted BaseGraph.
     """
     g.to_canonical_form(quiet=True)
-
     draw(g, labels=True)
-
-    # draw(g, labels=True, scale=120)
-
     state_to_map(g, inputs, outputs)
-
     draw(g, labels=True)
 
-    # draw(g, labels=True)
+
 
     # print("Exporting to universal circuit...")
     remove_unitaries_input(g)
@@ -308,23 +305,18 @@ def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : boo
 
     Args:
         g : The Clifford ZX diagram as a BaseGraph.
+        inputs : List of input vertices
+        outputs : List of output vertices
         quiet : If True, suppresses output messages.
 
     Returns:
         BaseGraph: The adjacency matrix of the universal representation.
     """
-    # g = GraphState(g)
-    # g.to_canonical_form(quiet=quiet)
-    # g = from_graph_state(g)
-    # draw(g, labels=True)
-
-    # draw(g)
-
     g = to_universal_representation(g, inputs, outputs)
-
-    # inputs = get_inputs(g)
-    # outputs = get_outputs(g)
     d = g.to_dict()
+
+    inputs = get_inputs(g)
+    outputs = get_outputs(g)
 
     d["inputs"] = inputs
     d["outputs"] = outputs
@@ -340,7 +332,23 @@ def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : boo
     # 3. filter edges (remove any edge touching a boundary vertex)
     g_filtered["edges"] = [e for e in d["edges"] if e[0] not in boundary_ids and e[1] not in boundary_ids]
     # pprint.pprint(g_filtered)
-    return g_filtered
+
+    vertex_map = {}
+    adjacency_list = [[] for _ in range(len(d["vertices"]))]
+
+    for i in range(len(d["vertices"])):
+        vertex_map[d["vertices"][i]["id"]] = i
+
+    for e in d["edges"]:
+        v1 = vertex_map[e[0]]
+        v2 = vertex_map[e[1]]
+
+        adjacency_list[v1].append(v2)
+        adjacency_list[v2].append(v1)
+
+    inp =[vertex_map[x] for x in  d["inputs"]]
+    print(g_filtered["edges"])
+    return {"inputs" : inp, "adjacency_list" : adjacency_list}
 
 def state_to_map(g, inputs, outputs) -> BaseGraph[VT, ET]:
     """
@@ -350,6 +358,36 @@ def state_to_map(g, inputs, outputs) -> BaseGraph[VT, ET]:
     g.set_inputs(inputs)
     g.set_outputs(outputs)
     g.normalize()
+
+
+def distance_upper_bound(d: Dict) -> int:
+    """
+    Compute an upper bound on the distance of the code represented by the graph state.
+
+    Args:
+        g (BaseGraph): The graph state.
+
+    Returns:
+        int: The upper bound on the distance.
+    """
+
+    adj = d["adjacency_list"]
+    inp = d["inputs"]    
+
+    mindeg = len(adj)
+
+    for i in inp:
+        deg = len(adj[i])
+        mindeg = min(mindeg, deg) 
+
+        for v in adj[i]:
+            deg2 = len(adj[v])
+            mindeg = min(mindeg, deg2)
+
+    return mindeg
+
+
+
 
 def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
     """Convert a Clifford ZX diagram to its universal representation.

@@ -16,6 +16,7 @@ from pyzx.circuit import Circuit
 from pyzx import draw
 from pyzx.graph import Graph
 from pyzx.graph_states import GraphState
+from pyzx.universal_representation import to_universal_representation, get_inputs, get_outputs
 
 np: Optional[ModuleType]
 try:
@@ -154,6 +155,45 @@ class TestCircuit(unittest.TestCase):
                 # print(t1)
                 # print(t2)
                 self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {i}")
+
+        
+    def test_universal_representation(self):
+        for i in range(0,self.num_subtseps):
+            with self.subTest(i=i):
+                s = f"test_{i}"
+                print(f"Testing universal representation for {s}")
+                tableau = stim.Tableau.random(self.n)
+
+                n = self.n 
+                k = self.k
+
+                code_stab = tableau.to_stabilizers()
+            
+                stabilizers = []
+
+                for i in range (n - k):
+                    stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
+
+                for i in range(n-k, n): 
+                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
+                    stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+
+                state = stim.TableauSimulator()
+                state.set_state_from_stabilizers(stabilizers)
+                state.do_tableau(tableau, range(n))
+                t = state.current_inverse_tableau().inverse()
+                qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
+                pyzx_circ2 = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
+                g = pyzx_circ2.to_graph()
+                input_state = "0"*(n+k)
+                inputs = g.outputs()[n:n+k]
+                outputs = g.outputs()[:n]
+                g.apply_state(input_state)
+                g_ur = to_universal_representation(g, inputs, outputs )
+                
+
+
 
 
 if __name__ == '__main__':
