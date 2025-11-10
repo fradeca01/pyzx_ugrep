@@ -241,7 +241,7 @@ def remove_pivot_edges(g, pivots, quiet : bool = True) -> None:
                 pivot(g, x, y, quiet = quiet, step=9)
 
 
-def from_graph_state(g: GraphState) -> BaseGraph:
+def from_graph_state(g: GraphState, inputs, outputs) -> BaseGraph:
     """Convert a GraphState back to its uinversal representation.
 
     Args:
@@ -252,9 +252,13 @@ def from_graph_state(g: GraphState) -> BaseGraph:
     """
     g.to_canonical_form(quiet=True)
 
+    draw(g, labels=True)
+
     # draw(g, labels=True, scale=120)
 
-    g = g.state_to_map()
+    state_to_map(g, inputs, outputs)
+
+    draw(g, labels=True)
 
     # draw(g, labels=True)
 
@@ -273,6 +277,8 @@ def from_graph_state(g: GraphState) -> BaseGraph:
     # print("Removing unitaries from inputs...")
     remove_unitaries_input(g)
     # draw(g, labels=True)
+
+    draw(g, labels=True)
 
     return g
 
@@ -297,7 +303,7 @@ def benchmark_from_graph_state(g: GraphState) -> Tuple[float, float, float]:
     time_remove_unitaries = end4 - end3
     return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
 
-def to_universal_graph_representation(g: BaseGraph, quiet : bool = True) -> Dict:
+def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : bool = True) -> Dict:
     """Convert a Clifford ZX diagram to its universal representation.
 
     Args:
@@ -307,17 +313,17 @@ def to_universal_graph_representation(g: BaseGraph, quiet : bool = True) -> Dict
     Returns:
         BaseGraph: The adjacency matrix of the universal representation.
     """
-    g = GraphState(g)
-    g.to_canonical_form(quiet=quiet)
-    g = from_graph_state(g)
+    # g = GraphState(g)
+    # g.to_canonical_form(quiet=quiet)
+    # g = from_graph_state(g)
     # draw(g, labels=True)
 
     # draw(g)
 
-    inputs = get_inputs(g)
-    outputs = get_outputs(g)
+    g = to_universal_representation(g, inputs, outputs)
 
-
+    # inputs = get_inputs(g)
+    # outputs = get_outputs(g)
     d = g.to_dict()
 
     d["inputs"] = inputs
@@ -336,7 +342,16 @@ def to_universal_graph_representation(g: BaseGraph, quiet : bool = True) -> Dict
     # pprint.pprint(g_filtered)
     return g_filtered
 
-def to_universal_representation(g: BaseGraph) -> BaseGraph:
+def state_to_map(g, inputs, outputs) -> BaseGraph[VT, ET]:
+    """
+    Export graph state to a ZX-diagram.
+    """
+
+    g.set_inputs(inputs)
+    g.set_outputs(outputs)
+    g.normalize()
+
+def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
     """Convert a Clifford ZX diagram to its universal representation.
 
     Args:
@@ -345,6 +360,11 @@ def to_universal_representation(g: BaseGraph) -> BaseGraph:
     Returns:
         BaseGraph: The universal representation of the GraphState.
     """
+    # draw(g, labels=True)
     g = GraphState(g)
-    g.to_canonical_form(quiet=True)
-    return from_graph_state(g)
+    # draw(g, labels=True)
+    # g.to_canonical_form(quiet=True)
+    # state_to_map(g, inputs, outputs)
+    return from_graph_state(g, inputs, outputs)
+
+

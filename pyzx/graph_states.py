@@ -122,7 +122,7 @@ class GraphState(Generic[VT, ET]):
         Returns:
             List of inputs states
         """
-        inputs = self._inputs
+        inputs = self.inputs()
         state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
         # print(state_inputs)
         return state_inputs   
@@ -235,11 +235,8 @@ class GraphState(Generic[VT, ET]):
         self._outputs = [vtab[v] for v in self._outputs]
 
     def cji(self) -> None:
-        g = self.get_graph()
         qs = self.get_states()
-
-        inputs = self.get_inputs() 
-
+        inputs = self.get_inputs()
 
         for j in range(len(inputs)):
             # print(inputs[j], len(qs))
@@ -275,30 +272,22 @@ class GraphState(Generic[VT, ET]):
         graph.auto_detect_io()
 
 
-        #Simplify ZX diagram to be a graph-state
         clifford_simp(graph, quiet=quiet) # O(n)
         graph.normalize()
-
-        # print("INIT")
         
         self._graph = graph
+        
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
+        
         self._inputs = graph.inputs()
         self._outputs = graph.outputs()
+        
         self.fix_free_edges()
-        # draw(self._graph, labels=True)
-        self.fix_ordering()
+        # self.fix_ordering()
         self.cji()
-        # draw(self._graph, labels=True)
         self.normalize_graph_state(quiet=quiet)
-        # draw(self._graph, labels=True)
-        # self.get_graph().set_qubit(0, 10)
         self.auto_detect_io()
-
-        # draw(self._graph, labels=True)
-        # draw(self._graph, labels=True)
-
         self.validate(quiet = quiet)
 
 
@@ -659,30 +648,30 @@ class GraphState(Generic[VT, ET]):
             self.get_graph().set_row(bound, 10)
 
 
-    def state_to_map(self, original_io : bool = True) -> BaseGraph[VT, ET]:
-        """
-        Export graph state to a ZX-diagram.
-        """
+    # def state_to_map(self, original_io : bool = True) -> BaseGraph[VT, ET]:
+    #     """
+    #     Export graph state to a ZX-diagram.
+    #     """
 
-        if original_io:
-            self.get_graph().set_inputs(self._inputs)
-            self.get_graph().set_outputs(self._outputs)
+    #     if original_io:
+    #         self.get_graph().set_inputs(self._inputs)
+    #         self.get_graph().set_outputs(self._outputs)
         
-        # print(self._inputs)
-        # print(self._outputs)
+    #     # print(self._inputs)
+    #     # print(self._outputs)
         
-        # draw(self.get_graph(), labels=True)
+    #     # draw(self.get_graph(), labels=True)
 
 
-        export_g = self.get_graph().copy()
-        self.get_graph().auto_detect_io()
+    #     export_g = self.get_graph().copy()
+    #     self.get_graph().auto_detect_io()
 
-        # draw(export_g, labels=True)
+    #     # draw(export_g, labels=True)
 
 
-        export_g.normalize()
+    #     export_g.normalize()
 
-        return export_g
+    #     return export_g
 
 
     def remove_HS(self, quiet: bool = True) -> None:

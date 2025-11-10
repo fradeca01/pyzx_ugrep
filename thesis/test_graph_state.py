@@ -35,21 +35,11 @@ SEED = 1337
 class TestCircuit(unittest.TestCase):
 
     def setUp(self):
-        reset = True
+        self.reset = True
         self.n = 8
         self.k = 1
         self.num_subtseps = 20
     
-        for i in range(self.num_subtseps):
-            s = f"test_{i}"
-            file_path = f"./test_graphs/{s}.qasm"
-            if not os.path.exists(file_path) or reset == True:
-                qasm_random = stim.Tableau.random(self.n).to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
-                # qasm_random = self.stim_qasm_comply(qasm_random)
-                with open(file_path, "w") as f:
-                    f.write(qasm_random)
-
-
     def stim_qasm_comply(self, qasm: str) -> str:
         q = qasm
         q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
@@ -132,12 +122,18 @@ class TestCircuit(unittest.TestCase):
                   # print(t2)
                 self.assertTrue(compare_tensors(t1, t2), f"Extraction failed for {i}")
     
-    @unittest.skip("Skipping canonical form test for now")
+    # @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
         for i in range(0,self.num_subtseps):
             with self.subTest(i=i):
                 s = f"test_{i}"
+                file_path = f"./test_graphs/{s}.qasm"
+                if not os.path.exists(file_path) or self.reset == True:
+                    qasm_random = stim.Tableau.random(self.n).to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
+                    # qasm_random = self.stim_qasm_comply(qasm_random)
+                    with open(file_path, "w") as f:
+                        f.write(qasm_random)
                 print(f"Testing canonical form for {s}")
                 file_path = f"./test_graphs/{s}.qasm"
                 with open(file_path, "r") as f:
@@ -147,12 +143,12 @@ class TestCircuit(unittest.TestCase):
                 input_state = "0"*(self.n-self.k) + "/"*self.k
                 g.apply_state(input_state)
                 # draw(g) 
-                t1 = tensorfy(g)
                 g = GraphState(g)
+                t1 = tensorfy(g)
                 # draw(g, labels=True)
                 g.to_canonical_form(quiet=True)
                 # draw(g) 
-                g = g.state_to_map()
+                # g = g.state_to_map()
                 # clifford_simp(g, quiet=True) # O(n)
                 t2 = tensorfy(g)
                 # print(t1)
