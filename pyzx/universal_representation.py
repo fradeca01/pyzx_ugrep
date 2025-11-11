@@ -418,6 +418,27 @@ def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
     # state_to_map(g, inputs, outputs)
     return from_graph_state(g, inputs, outputs)
 
+class Pauli:
+
+    # (a,b,c) represents i^a * X^b * Z^c
+    def __init__ (self, a, b, c):
+        self.a = a % 4
+        self.b = b % 2
+        self.c = c % 2
+
+    def __mul__(self, other):
+        s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
+        a = (self.a + other.a + 2*s) % 4 # phase
+        b = (self.b + other.b) % 2 # X part
+        c = (self.c + other.c) % 2 # Z part
+        return GraphState.Pauli(a, b, c)
+
+    def __repr__(self):
+        phase = [1, 1j, -1, -1j][self.a]
+        label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
+        return f"{phase}*{label}"
+
+
 
 def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
     """
@@ -432,10 +453,14 @@ def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, 
 
     pivots = {i : -1 for i in inputs}
 
-    inputs = {i : [] for i in range(len(adj)) if i not in inputs}
+    out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
+
+    print(inputs)
+    print(adj)
 
     for i in range(len(adj)):
         if i not in inputs:
+            # print()
             neigh = adj[i]
             count = 0
             input = -1
@@ -443,30 +468,40 @@ def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, 
                 if n in inputs:
                     count += 1
                     input = n
-                    inputs[i].append(n)
+                    # print(n)
+                    out_to_in[i] = n
             if count == 1:
                 if pivots[input] == -1:
                     pivots[input] = i 
 
-    
-    stabilizers = []
-
-    s = "I"*n
-
-    # n = 
+    # print(out_to_in)
 
 
-    for n in len(adj):
-        if n not in inputs and n not in pivots.values():
-            s[n] = "X"
-            for x in adj[n]:
+    # print("pivots", pivots.values())
+    # print("out to in", out_to_in)
+
+
+
+    stabilizers = [[Pauli(0,0,0) for _ in range(len(adj) - len(inputs)) ] for _ in range(len(adj) - 2 * len(inputs))]
+
+    k = 0
+    for i in range(len(inputs), len(adj)):
+        if i not in pivots.values():
+            # print("Scanning vertex", i)
+            # print(k, i)
+            stabilizers[k][i - len(inputs)] *= Pauli(0,1,0)
+            # print(stabilizers[k])
+            for x in adj[i]:
                 if x not in inputs:
-                    s[x] = "Z"
-            y = pivots[inputs[i]] 
-            s[y] = "X"
-            for x in adj[x]:
+                    stabilizers[k][x - len(inputs)] *= Pauli(0,0,1)
+            # print(stabilizers[k])
+            y = pivots[out_to_in[i]] 
+            stabilizers[k][y - len(inputs)] *= Pauli(0,1,0)
+            # print(stabilizers[k])
+            for x in adj[y]:
                 if x not in inputs:
-                    s[x] = "Z"
+                    stabilizers[k][x- len(inputs)] *= Pauli(0,0,1)
+            # print(stabilizers[k])
+            k += 1
 
-            
-
+    return stabilizers
