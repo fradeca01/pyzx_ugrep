@@ -813,33 +813,4 @@ class GraphState(Generic[VT, ET]):
 
 
 
-    def to_stabilizer_tableau (self, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
-        """
-        Convert the graph state to a stabilizer tableau.
-        
-        Returns:
-            A list of stabilizers representing the graph state
-        """
-
-        # CHANGE WITH CORRECT METHOD WHEN IMPLEMENTED
-        if not self.validate():
-            raise ValueError("Graph is not a valid graph state")
-
-        stabilizers = []
-
-        n = len(self.get_outputs())
-        
-        map = {v : i for i, v in enumerate(self.get_outputs())}
-
-        pivots = self.get_pivots()
-        outs_no_pivots = [v for v in self.get_outputs() if v not in pivots]
-        inputs = self.get_inputs()
-
-        for v in outs_no_pivots:
-            s = ["I" for _ in range(n)]
-            s[map[v]] = "X"
-            for x in self.get_graph().neighbors(v):
-                if x in self.get_ouputs():
-                    s[map[x]] = "Z"
-        return stabilizers
 

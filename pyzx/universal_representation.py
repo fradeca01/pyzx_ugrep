@@ -23,6 +23,9 @@ from .circuit import Circuit
 import pprint
 from .linalg import Mat2
 
+from functools import reduce
+from collections import defaultdict
+
 import time
 
 
@@ -336,8 +339,18 @@ def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : boo
     vertex_map = {}
     adjacency_list = [[] for _ in range(len(d["vertices"]))]
 
-    for i in range(len(d["vertices"])):
-        vertex_map[d["vertices"][i]["id"]] = i
+
+    print(inputs)
+    print(outputs)
+
+
+    for i in range(len(inputs)):
+        vertex_map[inputs[i]] = i
+
+    # outputs = [v for v in d["vertices"] if v["id"] not in inputs]
+
+    for i in range(len(inputs), len(outputs) + len(inputs)):
+        vertex_map[outputs[i - len(inputs)]] = i
 
     for e in d["edges"]:
         v1 = vertex_map[e[0]]
@@ -405,4 +418,55 @@ def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
     # state_to_map(g, inputs, outputs)
     return from_graph_state(g, inputs, outputs)
 
+
+def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
+    """
+    Convert a graph to a stabilizer tableau.
+    
+    Returns:
+        A list of stabilizers representing the graph state
+    """
+
+    inputs = d["inputs"]
+    adj = d["adjacency_list"]
+
+    pivots = {i : -1 for i in inputs}
+
+    inputs = {i : [] for i in range(len(adj)) if i not in inputs}
+
+    for i in range(len(adj)):
+        if i not in inputs:
+            neigh = adj[i]
+            count = 0
+            input = -1
+            for n in neigh:
+                if n in inputs:
+                    count += 1
+                    input = n
+                    inputs[i].append(n)
+            if count == 1:
+                if pivots[input] == -1:
+                    pivots[input] = i 
+
+    
+    stabilizers = []
+
+    s = "I"*n
+
+    # n = 
+
+
+    for n in len(adj):
+        if n not in inputs and n not in pivots.values():
+            s[n] = "X"
+            for x in adj[n]:
+                if x not in inputs:
+                    s[x] = "Z"
+            y = pivots[inputs[i]] 
+            s[y] = "X"
+            for x in adj[x]:
+                if x not in inputs:
+                    s[x] = "Z"
+
+            
 
