@@ -431,6 +431,64 @@ class Pauli:
 
 
 
+def implement_encoder(d : Dict) -> Circuit:
+
+    inputs = d["inputs"]
+    adj = d["adjacency_list"]
+
+    pivots = {i : -1 for i in inputs}
+
+    out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
+
+    print(inputs)
+    print(adj)
+
+    for i in range(len(adj)):
+        if i not in inputs:
+            # print()
+            neigh = adj[i]
+            count = 0
+            input = -1
+            for n in neigh:
+                if n in inputs:
+                    count += 1
+                    input = n
+                    # print(n)
+                    out_to_in[i] = n
+            if count == 1:
+                if pivots[input] == -1:
+                    pivots[input] = i 
+
+    
+    n = len(adj)
+    k = len(inputs)
+
+    print(inputs)
+
+    c = Circuit(n)
+
+    c.add_gate("H", n-1)
+    for i in range(n-2, k-1, -1):
+        c.add_gate("CNOT", n-1, i)
+    
+    for i in inputs:
+        for j in adj[i]:
+            if j not in pivots.values():
+                c.add_gate("CZ", i, j)
+        
+    for i in inputs:
+        c.add_gate("H", i)
+
+    for v in range(n):
+        if v not in inputs:
+            for u in adj[v]:
+                if u not in inputs:
+                    c.add_gate("CZ", v, u)
+    
+    draw(c, labels=True)
+
+    return c
+
 def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
     """
     Convert a graph to a stabilizer tableau.
