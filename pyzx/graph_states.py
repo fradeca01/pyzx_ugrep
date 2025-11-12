@@ -36,7 +36,7 @@ class GraphState(Generic[VT, ET]):
         4 : "Injecting paulis",
     }
 
-
+    
     class Pauli:
 
         # (a,b,c) represents i^a * X^b * Z^c
@@ -102,34 +102,34 @@ class GraphState(Generic[VT, ET]):
         return bounds[0]
     
 
-    def get_outputs(self) -> List[VT]:
+    # def get_outputs(self) -> List[VT]:
 
-        """
-        Get the output vertices of the original ZX diagram.
+    #     """
+    #     Get the output vertices of the original ZX diagram.
         
-        Returns:
-            List of output states
-        """
-        outputs = self._outputs
-        state_outputs = [list(self.get_graph().neighbors(v))[0] for v in outputs]
-        # print(state_outputs)
-        return state_outputs
+    #     Returns:
+    #         List of output states
+    #     """
+    #     outputs = self._outputs
+    #     state_outputs = [list(self.get_graph().neighbors(v))[0] for v in outputs]
+    #     # print(state_outputs)
+    #     return state_outputs
       
-    def get_inputs(self) -> List[VT]:
-        """
-        Get the input vertices of the original ZX diagram.
+    # def get_inputs(self) -> List[VT]:
+    #     """
+    #     Get the input vertices of the original ZX diagram.
         
-        Returns:
-            List of inputs states
-        """
-        inputs = self.inputs()
-        state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
-        # print(state_inputs)
-        return state_inputs   
+    #     Returns:
+    #         List of inputs states
+    #     """
+    #     inputs = self.inputs()
+    #     state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
+    #     # print(state_inputs)
+    #     return state_inputs   
     
     def bound_edge(self, v: VT) -> ET:
         """
-        Get the edge type connecting a state vertex to its boundary vertex.
+        Get the edge connecting a state vertex to its boundary vertex.
         
         Args:
             v: The state vertex
@@ -150,7 +150,7 @@ class GraphState(Generic[VT, ET]):
         return edge 
     
 
-    def get_neigbbors(self, v: VT) -> List[VT]:
+    def get_neighbors(self, v: VT) -> List[VT]:
         """
         Get the neighbors of a state vertex.
         
@@ -161,7 +161,7 @@ class GraphState(Generic[VT, ET]):
             List of neighboring state vertices
             
         Raises:
-            ValueError: If the vertex f`is not a state vertex
+            ValueError: If the vertex is not a state vertex
         """
         
         if v not in self.get_states():
@@ -171,79 +171,78 @@ class GraphState(Generic[VT, ET]):
 
         return neighbors
     
-    def fix_ordering(self) -> None:
-        g = Graph()
-        ty = self.types()
-        ph = self.phases()
-        qs = self.qubits()
-        rs = self.rows()
-        vtab = dict()
-        g.merge_vdata = self.merge_vdata 
-        # print(self.get_graph().inputs())
-        # print(self.get_inputs())
-        # print(self.get_graph().outputs())
-        # print(self.get_outputs())
-        for v in self.get_outputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))
+    # def fix_ordering(self) -> None:
+    #     g = Graph()
+    #     ty = self.types()
+    #     ph = self.phases()
+    #     qs = self.qubits()
+    #     rs = self.rows()
+    #     vtab = dict()
+    #     g.merge_vdata = self.merge_vdata 
+    #     # print(self.get_graph().inputs())
+    #     # print(self.get_inputs())
+    #     # print(self.get_graph().outputs())
+    #     # print(self.get_outputs())
+    #     for v in self.get_outputs():
+    #         i = g.add_vertex(ty[v],phase=ph[v])
+    #         if v in qs: g.set_qubit(i,qs[v])
+    #         if v in rs:
+    #             g.set_row(i, rs[v])
+    #         vtab[v] = i
+    #         for k in self.vdata_keys(v):
+    #             g.set_vdata(i, k, self.vdata(v, k))
 
-        for v in self.get_inputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))                        
+    #     for v in self.get_inputs():
+    #         i = g.add_vertex(ty[v],phase=ph[v])
+    #         if v in qs: g.set_qubit(i,qs[v])
+    #         if v in rs:
+    #             g.set_row(i, rs[v])
+    #         vtab[v] = i
+    #         for k in self.vdata_keys(v):
+    #             g.set_vdata(i, k, self.vdata(v, k))                        
 
-        for v in self.get_graph().outputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))
+    #     for v in self.get_graph().outputs():
+    #         i = g.add_vertex(ty[v],phase=ph[v])
+    #         if v in qs: g.set_qubit(i,qs[v])
+    #         if v in rs:
+    #             g.set_row(i, rs[v])
+    #         vtab[v] = i
+    #         for k in self.vdata_keys(v):
+    #             g.set_vdata(i, k, self.vdata(v, k))
 
-        for v in self.get_graph().inputs():
-            i = g.add_vertex(ty[v],phase=ph[v])
-            if v in qs: g.set_qubit(i,qs[v])
-            if v in rs:
-                g.set_row(i, rs[v])
-            vtab[v] = i
-            for k in self.vdata_keys(v):
-                g.set_vdata(i, k, self.vdata(v, k))   
+    #     for v in self.get_graph().inputs():
+    #         i = g.add_vertex(ty[v],phase=ph[v])
+    #         if v in qs: g.set_qubit(i,qs[v])
+    #         if v in rs:
+    #             g.set_row(i, rs[v])
+    #         vtab[v] = i
+    #         for k in self.vdata_keys(v):
+    #             g.set_vdata(i, k, self.vdata(v, k))   
 
-        new_inputs = tuple(vtab[i] for i in self.inputs())
-        new_outputs = tuple(vtab[i] for i in self.outputs())
-        g.set_inputs(new_inputs)
-        g.set_outputs(new_outputs)
+    #     new_inputs = tuple(vtab[i] for i in self.inputs())
+    #     new_outputs = tuple(vtab[i] for i in self.outputs())
+    #     g.set_inputs(new_inputs)
+    #     g.set_outputs(new_outputs)
         
-        for e in self.edges():
-            s, t = self.edge_st(e)
-            new_e = g.add_edge((vtab[s], vtab[t]), self.edge_type(e))
-            g.set_edata_dict(new_e, self.edata_dict(e))
+    #     for e in self.edges():
+    #         s, t = self.edge_st(e)
+    #         new_e = g.add_edge((vtab[s], vtab[t]), self.edge_type(e))
+    #         g.set_edata_dict(new_e, self.edata_dict(e))
 
-        self._graph = g
-        self._states = [vtab[v] for v in self._states]
-        self._inputs = [vtab[v] for v in self._inputs]
-        self._outputs = [vtab[v] for v in self._outputs]
+    #     self._graph = g
+    #     self._states = [vtab[v] for v in self._states]
+    #     self._inputs = [vtab[v] for v in self._inputs]
+    #     self._outputs = [vtab[v] for v in self._outputs]
 
     def cji(self) -> None:
         qs = self.get_states()
-        inputs = self.get_inputs()
+        inputs = self.inputs()
+        state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
 
-        for j in range(len(inputs)):
-            # print(inputs[j], len(qs))
-            bound = self.get_bound(inputs[j])
-            self.set_qubit(inputs[j], len(qs) - len(inputs) + j  )
-            self.set_qubit(bound, len(qs) - len(inputs) + j )
-            # print(self.qubit(inputs[j]), self.qubit(bound))
+        for j in range(len(state_inputs)):
+            bound = self.get_bound(state_inputs[j])
+            self.set_qubit(state_inputs[j], len(qs) - len(state_inputs) + j  )
+            self.set_qubit(bound, len(qs) - len(state_inputs) + j )
 
 
     
@@ -251,6 +250,8 @@ class GraphState(Generic[VT, ET]):
     def __init__(self, graph: BaseGraph[VT, ET], quiet : bool = True) -> None:
         """
         Initialize an (extended) GraphState from a Clifford ZX-diagram.
+
+        Inputs are moved on the bottom qubits, outputs on the top qubits.
         
         Args:
             graph: A Clifford ZX-diagram. 
@@ -271,7 +272,6 @@ class GraphState(Generic[VT, ET]):
 
         graph.auto_detect_io()
 
-
         clifford_simp(graph, quiet=quiet) # O(n)
         graph.normalize()
         
@@ -280,8 +280,8 @@ class GraphState(Generic[VT, ET]):
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
         
-        self._inputs = graph.inputs()
-        self._outputs = graph.outputs()
+        # self._inputs = graph.inputs()
+        # self._outputs = graph.outputs()
         
         self.fix_free_edges()
         # self.fix_ordering()
@@ -403,7 +403,7 @@ class GraphState(Generic[VT, ET]):
         """
         Perform a local complementation with SH ending on vertex v.
 
-        Effectively remves the phase on vertex v and adds pi/2 to each neighbor of v.
+        Effectively removes the phase on vertex v and adds pi/2 to each neighbor of v.
 
         Args:
             v: The vertex to apply the local complementation to.
@@ -415,7 +415,7 @@ class GraphState(Generic[VT, ET]):
 
         bound = self.get_bound(v)
         new_bound = self.get_bound(bound)
-        neighbors = self.get_neigbbors(v)
+        neighbors = self.get_neighbors(v)
 
         if not quiet:
             print(f"Step {step}: {self.to_canonical_steps.get(step,'UNKNOWN')} --- Performing local complementation SH on vertex {v} with bound {bound} and neighbors {neighbors}")
@@ -474,7 +474,7 @@ class GraphState(Generic[VT, ET]):
         """
 
         bound = self.get_bound(v)
-        neighbors = self.get_neigbbors(v)
+        neighbors = self.get_neighbors(v)
         a = self.get_graph().phase(v)
         edge = self.get_graph().edge(bound, v)
         
@@ -525,8 +525,8 @@ class GraphState(Generic[VT, ET]):
         if not quiet:
             print(f"-> Pivoting between vertices {x} and {y}")
     
-        A = self.get_neigbbors(x) + [x]
-        B = self.get_neigbbors(y) + [y]
+        A = self.get_neighbors(x) + [x]
+        B = self.get_neighbors(y) + [y]
 
         phase_x = self.phase(x)
         phase_y = self.phase(y)
@@ -585,12 +585,12 @@ class GraphState(Generic[VT, ET]):
 
         if phase_x == 1:
             self.get_graph().add_to_phase(x, -1)
-            for a in self.get_neigbbors(x):
+            for a in self.get_neighbors(x):
                 self.get_graph().add_to_phase(a, 1)
 
         if phase_y == 1:
             self.get_graph().add_to_phase(y, -1)
-            for a in self.get_neigbbors(y):
+            for a in self.get_neighbors(y):
                 self.get_graph().add_to_phase(a, 1)
 
         if not self.validate(quiet=quiet):
@@ -628,7 +628,7 @@ class GraphState(Generic[VT, ET]):
 
     def normalize_graph_state(self, quiet : bool = True) -> None:
         """
-        Normalize the graph state by setting proper qubit and row assignments.
+        Normalize the graph state by setting proper row assignments.
         
         Raises:
             ValueError: If the graph is not a valid graph state
@@ -646,32 +646,6 @@ class GraphState(Generic[VT, ET]):
             bound = self.get_bound(self._states[i])
             # self.get_graph().set_qubit(bound, i)
             self.get_graph().set_row(bound, 10)
-
-
-    # def state_to_map(self, original_io : bool = True) -> BaseGraph[VT, ET]:
-    #     """
-    #     Export graph state to a ZX-diagram.
-    #     """
-
-    #     if original_io:
-    #         self.get_graph().set_inputs(self._inputs)
-    #         self.get_graph().set_outputs(self._outputs)
-        
-    #     # print(self._inputs)
-    #     # print(self._outputs)
-        
-    #     # draw(self.get_graph(), labels=True)
-
-
-    #     export_g = self.get_graph().copy()
-    #     self.get_graph().auto_detect_io()
-
-    #     # draw(export_g, labels=True)
-
-
-    #     export_g.normalize()
-
-    #     return export_g
 
 
     def remove_HS(self, quiet: bool = True) -> None:
@@ -749,6 +723,19 @@ class GraphState(Generic[VT, ET]):
 
         if not self.validate(quiet=quiet):
             return False
+        
+        for s in states:
+            edge = self.bound_edge(s)
+            bound = self.get_bound(s)
+            if self.type(bound) != VertexType.BOUNDARY:
+                if not quiet:
+                    print(f"Vertex {s} is not connected to a boundary vertex, only Z, S, H, SZ, HZ admitted in canonical form")
+                return False
+
+            if self.edge_type(edge) == EdgeType.HADAMARD and self.phase(s) % 1 == Fraction(1, 2):
+                if not quiet:
+                    print(f"Vertex {s} has a Hadamard edge to its boundary and the state has phase pi/2, only Z, S, H, SZ, HZ admitted in canonical form")
+                return False
     
         for s1, s2 in itertools.product(states, states):
             # print(s1, s2)
@@ -794,7 +781,12 @@ class GraphState(Generic[VT, ET]):
             print("---------------------------------")
             print("OUTPUT:...................")
         if not self.validate(quiet = quiet):
-            raise ValueError("Graph is not a valid graph state") 
+            raise ValueError("Graph is not a valid graph state")
+
+        if not self.validate_canonical_form(quiet = quiet):
+            raise ValueError("Graph is not in canonical form after transformation, INTERNAL ERROR")
+
+
         
     
     def benchmark_to_canonical_form(self):        

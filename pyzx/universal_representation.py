@@ -22,23 +22,19 @@ import itertools
 from .circuit import Circuit
 import pprint
 from .linalg import Mat2
-
-from functools import reduce
-from collections import defaultdict
-
 import time
 
 
 
 
 
-def get_input_state(g : BaseGraph, v : int) -> int:
+def get_node_from_boundary(g : BaseGraph, v : VT) -> VT:
     """
-    Get the input state of a boundary vertex.
+    Get the internal node connected to a boundary vertex.
 
     Args:
         g (BaseGraph): The graph.
-        v (int): The vertex.
+        v (VT): The vertex.
 
     Returns:
         int: the state vertex corresponding to the state.
@@ -50,13 +46,13 @@ def get_input_state(g : BaseGraph, v : int) -> int:
 
 def get_neighbors(g, v: VT) -> List[VT]:
     """
-    Get the neighbors of a state vertex.
+    Get the neighbors of an iternal vertex.
     
     Args:
-        v: The state vertex
+        v: The internal vertex
     
     Returns:
-        List of neighboring state vertices
+        List of neighboring internal vertices
         
     Raises:
         ValueError: If the vertex is not a state vertex
@@ -67,33 +63,33 @@ def get_neighbors(g, v: VT) -> List[VT]:
 
     return neighbors
 
-def get_inputs(g) -> List[int]:
+def get_internal_inputs(g) -> List[VT]:
     """
-    Get the input vertices of the graph state.
+    Get the internal input vertices.
 
     Returns:
         List[int]: The list of input vertices.
     """
-    return [get_input_state(g, s) for s in g.inputs()]
+    return [get_node_from_boundary(g, s) for s in g.inputs()]
 
-def get_outputs(g) -> List[int]:
+def get_internal_outputs(g) -> List[VT]:
     """
-    Get the output vertices of the graph state.
+    Get the internal output vertices.
 
     Returns:
         List[int]: The list of output vertices.
     """
-    return [get_input_state(g, s) for s in g.outputs()]
+    return [get_node_from_boundary(g, s) for s in g.outputs()]
 
 def to_RRREF(g : BaseGraph, quiet : bool = True) -> List[VT]:
     """
-    Transform the graph state to a reduced row echelon form.
+    Transform the graph to a reduced row echelon form.
     
     Returns:
-        List of pivot vertices
+        List of pivot vertices after gauss elimination
     """
-    inputs = get_inputs(g)
-    outputs = get_outputs(g)
+    inputs = get_internal_inputs(g)
+    outputs = get_internal_outputs(g)
 
     mat = bi_adj(g, inputs, outputs)
     mat = mat.transpose()
@@ -131,18 +127,17 @@ def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
     ins = list(g.inputs())
 
     for s in ins:
-        v = get_input_state(g, s)
+        v = get_node_from_boundary(g, s)
         g.set_phase(v, 0)
         e = g.edge(v, s)
         g.set_edge_type(e, EdgeType.SIMPLE)
 
     for s1, s2 in itertools.product(ins,ins):
-        v = get_input_state(g, s1)
-        w = get_input_state(g, s2)
+        v = get_node_from_boundary(g, s1)
+        w = get_node_from_boundary(g, s2)
         if g.connected(v, w):
             e = g.edge(v, w)
             g.remove_edge(e)
-
 
     if not quiet:
         print(f"Step: --- Removed unitaries from inputs")
@@ -165,8 +160,8 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
         for v in pivots:
             if g.phase(v) != 0:
                 neighbors = get_neighbors(g, v)
-                inputs_states = get_inputs(g)
-                outputs_states = get_outputs(g)
+                inputs_states = get_internal_inputs(g)
+                outputs_states = get_internal_outputs(g)
 
                 vin = -1
 
@@ -244,8 +239,8 @@ def remove_pivot_edges(g, pivots, quiet : bool = True) -> None:
                 pivot(g, x, y, quiet = quiet, step=9)
 
 
-def from_graph_state(g: GraphState, inputs, outputs) -> BaseGraph:
-    """Convert a GraphState back to its uinversal representation.
+def from_graph_state(g: GraphState, inputs) -> BaseGraph:
+    """Convert a GraphState to its uinversal representation.
 
     Args:
         g (GraphState): The GraphState to convert.
@@ -256,12 +251,10 @@ def from_graph_state(g: GraphState, inputs, outputs) -> BaseGraph:
         BaseGraph: The converted BaseGraph.
     """
     g.to_canonical_form(quiet=True)
-    draw(g, labels=True)
-    state_to_map(g, inputs, outputs)
-    draw(g, labels=True)
-
-
-
+    # draw(g, labels=True)
+    print(inputs)
+    state_to_map(g, inputs)
+    # draw(g, labels=True)
     # print("Exporting to universal circuit...")
     remove_unitaries_input(g)
     # draw(g, labels=True)
@@ -278,7 +271,7 @@ def from_graph_state(g: GraphState, inputs, outputs) -> BaseGraph:
     remove_unitaries_input(g)
     # draw(g, labels=True)
 
-    draw(g, labels=True)
+    # draw(g, labels=True)
 
     return g
 
@@ -303,23 +296,24 @@ def benchmark_from_graph_state(g: GraphState) -> Tuple[float, float, float]:
     time_remove_unitaries = end4 - end3
     return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
 
-def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : bool = True) -> Dict:
-    """Convert a Clifford ZX diagram to its universal representation.
+def to_universal_graph_representation(g: BaseGraph, inputs, quiet : bool = True) -> Dict:
+    """
+    
+    Convert a Clifford ZX diagram to its universal representation.
 
     Args:
         g : The Clifford ZX diagram as a BaseGraph.
         inputs : List of input vertices
-        outputs : List of output vertices
         quiet : If True, suppresses output messages.
 
     Returns:
         BaseGraph: The adjacency matrix of the universal representation.
     """
-    g = to_universal_representation(g, inputs, outputs)
+    g = to_universal_representation(g, inputs)
     d = g.to_dict()
 
-    inputs = get_inputs(g)
-    outputs = get_outputs(g)
+    inputs = get_internal_inputs(g)
+    outputs = get_internal_outputs(g)
 
     d["inputs"] = inputs
     d["outputs"] = outputs
@@ -340,8 +334,8 @@ def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : boo
     adjacency_list = [[] for _ in range(len(d["vertices"]))]
 
 
-    print(inputs)
-    print(outputs)
+    # print(inputs)
+    # print(outputs)
 
 
     for i in range(len(inputs)):
@@ -360,14 +354,14 @@ def to_universal_graph_representation(g: BaseGraph, inputs, outputs, quiet : boo
         adjacency_list[v2].append(v1)
 
     inp =[vertex_map[x] for x in  d["inputs"]]
-    print(g_filtered["edges"])
+    # print(g_filtered["edges"])
     return {"inputs" : inp, "adjacency_list" : adjacency_list}
 
-def state_to_map(g, inputs, outputs) -> BaseGraph[VT, ET]:
+def state_to_map(g, inputs) -> BaseGraph[VT, ET]:
     """
     Export graph state to a ZX-diagram.
     """
-
+    outputs = [i for i in g.outputs() if i not in inputs]
     g.set_inputs(inputs)
     g.set_outputs(outputs)
     g.normalize()
@@ -402,7 +396,7 @@ def distance_upper_bound(d: Dict) -> int:
 
 
 
-def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
+def to_universal_representation(g: BaseGraph, inputs) -> BaseGraph:
     """Convert a Clifford ZX diagram to its universal representation.
 
     Args:
@@ -411,12 +405,9 @@ def to_universal_representation(g: BaseGraph, inputs, outputs) -> BaseGraph:
     Returns:
         BaseGraph: The universal representation of the GraphState.
     """
-    # draw(g, labels=True)
     g = GraphState(g)
     # draw(g, labels=True)
-    # g.to_canonical_form(quiet=True)
-    # state_to_map(g, inputs, outputs)
-    return from_graph_state(g, inputs, outputs)
+    return from_graph_state(g, inputs)
 
 class Pauli:
 

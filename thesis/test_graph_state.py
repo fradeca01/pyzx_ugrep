@@ -16,7 +16,7 @@ from pyzx.circuit import Circuit
 from pyzx import draw
 from pyzx.graph import Graph
 from pyzx.graph_states import GraphState
-from pyzx.universal_representation import to_universal_representation, get_inputs, get_outputs
+from pyzx.universal_representation import to_universal_representation, get_internal_inputs, get_internal_outputs
 
 np: Optional[ModuleType]
 try:
