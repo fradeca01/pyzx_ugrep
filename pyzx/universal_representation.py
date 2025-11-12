@@ -554,3 +554,30 @@ def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, 
             k += 1
 
     return stabilizers
+
+def to_distance_mzn(d : Dict):
+    dzn = ""
+
+    inputs = d["inputs"]
+    dzn += f"I_nodes = {{{', '.join(str(x) for x in inputs)}}};\n"
+    dzn += f"O_P_nodes = {{{', '.join(str(x) for x in range(len(d['adjacency_list'])) if x not in inputs)}}};\n"
+
+    dzn += f"[|"
+
+    for i in range(len(d['adjacency_list'])):
+        row = ""
+        for j in range(len(d['adjacency_list'])):
+            if j in d['adjacency_list'][i]:
+                row += "true, "
+            else:
+                row += "false, "
+        dzn += row[:-2] + "|\n"
+
+    dzn += "|];\n"
+
+    dzn += "initial_lights = array1d[O_P_nodes, ["
+    for i in range(len(d['adjacency_list'])):
+        if i not in inputs:
+            row = "0, "
+            dzn += row
+    dzn += "]];\n"
