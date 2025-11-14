@@ -1,9 +1,9 @@
 include "globals.mzn";
 
 %% --- PARAMETERS (INPUT) ---
-% 1. Node Sets
+% 1. Node Sets -> int starting from 1
 set of int: I_nodes; % Input nodes (logical qubits)
-set of int: O_P_nodes; % Non-pivot output nodes (physical qubits/lights)
+set of int: O_P_nodes; % Output nodes (physical qubits)
 
 % 2. Graph Structure
 int: num_nodes = card(I_nodes union O_P_nodes);
@@ -11,7 +11,6 @@ array[1..num_nodes, 1..num_nodes] of bool: adj; % Adjacency matrix
 
 % 3. Initial light states
 array[O_P_nodes] of 0..1: initial_lights;
-
 
 set of int: nodes = O_P_nodes union I_nodes;
 

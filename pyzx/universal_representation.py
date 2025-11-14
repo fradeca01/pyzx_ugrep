@@ -523,13 +523,6 @@ def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, 
                 if pivots[input] == -1:
                     pivots[input] = i 
 
-    # print(out_to_in)
-
-
-    # print("pivots", pivots.values())
-    # print("out to in", out_to_in)
-
-
 
     stabilizers = [[Pauli(0,0,0) for _ in range(len(adj) - len(inputs)) ] for _ in range(len(adj) - 2 * len(inputs))]
 
@@ -555,12 +548,12 @@ def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, 
 
     return stabilizers
 
-def to_distance_mzn(d : Dict):
+def to_distance_mzn(d : Dict) -> str:
     dzn = ""
 
     inputs = d["inputs"]
-    dzn += f"I_nodes = {{{', '.join(str(x) for x in inputs)}}};\n"
-    dzn += f"O_P_nodes = {{{', '.join(str(x) for x in range(len(d['adjacency_list'])) if x not in inputs)}}};\n"
+    dzn += f"I_nodes = {{{', '.join(str(x+1) for x in inputs)}}};\n"
+    dzn += f"O_P_nodes = {{{', '.join(str(x+1) for x in range(len(d['adjacency_list'])) if x not in inputs)}}};\n"
 
     dzn += f"[|"
 
@@ -581,3 +574,5 @@ def to_distance_mzn(d : Dict):
             row = "0, "
             dzn += row
     dzn += "]];\n"
+
+    return dzn
