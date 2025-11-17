@@ -4,7 +4,7 @@ Universal representation module
 
 
 __all__ = [
-"to_universal_representation", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound"
+"to_universal_representation", "implement_encoder", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound", "from_tableau"
 ]
 
 
@@ -23,7 +23,8 @@ from .circuit import Circuit
 import pprint
 from .linalg import Mat2
 import time
-
+import stim
+import re
 
 
 
@@ -393,6 +394,46 @@ def distance_upper_bound(d: Dict) -> int:
 
     return mindeg
 
+def stim_qasm_comply(qasm: str) -> str:
+    q = qasm
+    q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
+    q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
+    q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
+    return q
+
+def from_tableau(code, n, k):
+
+    code = [stim.PauliString(x) for x in code]
+
+
+    tableau = stim.Tableau.from_stabilizers(code, allow_underconstrained=True)
+
+    stabilizers = []
+
+    for i in range (n - k):
+        stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
+
+    for i in range(n-k, n): 
+        stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
+        stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+    state = stim.TableauSimulator()
+    # print(stabilizers)
+    state.set_state_from_stabilizers(stabilizers)
+    state.do_tableau(tableau, range(n))
+    t = state.current_inverse_tableau().inverse()
+
+    # print("YEE2")
+
+    qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
+    pyzx_circ2 = Circuit.from_qasm(stim_qasm_comply(qasm_random2))
+    g2 = pyzx_circ2.to_graph()
+    input_state = "0"*(n+k)
+    inputs = g2.outputs()[n:n+k]
+    g2.apply_state(input_state)
+    d = to_universal_graph_representation(g2, inputs)
+    return d
+
 
 
 
@@ -440,8 +481,8 @@ def implement_encoder(d : Dict) -> Circuit:
 
     out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
 
-    print(inputs)
-    print(adj)
+    # print(inputs)
+    # print(adj)
 
     for i in range(len(adj)):
         if i not in inputs:
@@ -463,7 +504,7 @@ def implement_encoder(d : Dict) -> Circuit:
     n = len(adj)
     k = len(inputs)
 
-    print(inputs)
+    # print(inputs)
 
     c = Circuit(n)
 
@@ -485,7 +526,7 @@ def implement_encoder(d : Dict) -> Circuit:
                 if u not in inputs:
                     c.add_gate("CZ", v, u)
     
-    draw(c, labels=True)
+    # draw(c, labels=True)
 
     return c
 

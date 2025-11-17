@@ -1,0 +1,38 @@
+{
+    "steane": {
+        "n": 7,
+        "k": 1,
+        "stabilizers": [
+            "IIIXXXX",
+            "IXXIIXX",
+            "XIXIXIX",
+            "IIIZZZZ",
+            "IZZIIZZ",
+            "ZIZIZIZ"
+        ]
+    },
+    "5_qubit": {
+        "n": 5,
+        "k": 1,
+        "stabilizers": [
+            "XZZXI",
+            "IXZZX",
+            "XIXZZ",
+            "ZXIXZ"
+        ]
+    },
+    "shor": {
+        "n": 9,
+        "k": 1,
+        "stabilizers": [
+            "ZZIIIIIII",
+            "IZZIIIIII",
+            "IIIZZIIII",
+            "IIIIZZIII",
+            "IIIIIIZZI",
+            "IIIIIIIZZ",
+            "XXXXXXIII",
+            "IIIXXXXXX"
+        ]
+    }
+}
