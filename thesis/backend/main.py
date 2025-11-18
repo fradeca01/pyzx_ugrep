@@ -1,20 +1,20 @@
-# main.py
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Optional
-import networkx as nx
-import stim
-from pyvis.network import Network
+import asyncio
+import time
+import uuid
 import json
+from contextlib import asynccontextmanager
+from multiprocessing import Process, Queue
+from typing import Dict, Any, Optional, List
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+
 # --- IMPORTA IL TUO PACCHETTO ---
-# Sostituisci "mio_pacchetto_personale" con il nome
-# con cui importeresti normalmente il tuo pacchetto
-from pyzx import * 
+from pyzx import * # --- CONFIGURAZIONE ---
+TIMEOUT_SECONDS = 15  # Se il frontend non si fa sentire per 15s, uccidiamo il job
 
 # --- Modelli di Dati ---
-# Questo definisce i dati che ci aspettiamo dal frontend.
-# FastAPI li controllerà automaticamente.
 class StabilizerInput(BaseModel):
     selectedExample: Optional[str] = None
     n: int = None
@@ -22,163 +22,173 @@ class StabilizerInput(BaseModel):
     random: bool = False
     stabilizers: List[str] = []
 
-# --- Crea l'applicazione API ---
-app = FastAPI()
+# --- GLOBAL STATE ---
+JOBS: Dict[str, Any] = {}
 
-# --- Endpoint di Test ---
-# Un semplice URL per vedere se il server è vivo
-@app.get("/")
-def read_root():
-    return {"message": "Ciao! Il backend è attivo."}
+# --- TASK DI PULIZIA (IL "BIDELLO") ---
+async def cleanup_stale_jobs():
+    """Controlla periodicamente se ci sono job abbandonati."""
+    print("Avvio task di pulizia job...")
+    while True:
+        await asyncio.sleep(5) # Controlla ogni 5 secondi
+        now = time.time()
+        
+        # Creiamo una lista delle chiavi da rimuovere per non modificare il dizionario mentre lo iteriamo
+        jobs_to_remove = []
+        
+        for job_id, job in JOBS.items():
+            # Se sono passati troppi secondi dall'ultimo "colpo" (polling)
+            if now - job["last_heartbeat"] > TIMEOUT_SECONDS:
+                print(f"Job {job_id} scaduto (timeout). Pulizia in corso...")
+                
+                # Se il processo sta ancora girando, lo uccidiamo
+                process = job["process"]
+                if process.is_alive():
+                    process.terminate()
+                    process.join()
+                    print(f"Processo {process.pid} terminato forzatamente.")
+                
+                jobs_to_remove.append(job_id)
+        
+        # Rimuovi dal dizionario
+        for job_id in jobs_to_remove:
+            del JOBS[job_id]
 
-origins = [
-    "http://localhost:3000", # L'indirizzo del tuo frontend React
-    "http://localhost",
-]
+# --- LIFESPAN (Gestione Avvio/Arresto Server) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # All'avvio del server, lanciamo il task di pulizia
+    cleaner_task = asyncio.create_task(cleanup_stale_jobs())
+    yield
+    # Alla chiusura del server, cancelliamo il task
+    cleaner_task.cancel()
 
+app = FastAPI(lifespan=lifespan)
+
+# --- Configurazione CORS ---
+origins = ["http://localhost:3000", "http://localhost"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Permetti tutti i metodi (GET, POST, ecc.)
-    allow_headers=["*"], # Permetti tutti gli header
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# --- Caricamento Dati ---
 try:
     with open("example_dict.json", "r") as f:
-        # Store the loaded data in a global variable
         examples_dict = json.load(f)
-except FileNotFoundError:
-    examples_dict = {"error": "File not found. Please create 'my_data.json'."}
-except json.JSONDecodeError:
-    examples_dict = {"error": "Failed to decode JSON from 'my_data.json'."}
-# -----------------------------------------------
+except (FileNotFoundError, json.JSONDecodeError):
+    examples_dict = {}
 
 
-# --- ENDPOINT DI CALCOLO ---
-# Questo è l'URL che il tuo frontend chiamerà!
-# # È un POST perché inviamo dati (n, k, ecc.)
-# @app.post("/calculate")
-# async def run_calculation(input_data: StabilizerInput):
-#     # input_data ora contiene i dati inviati da React
-#     # (es. input_data.n, input_data.stabilizers)
-    
-#     try:
-#         # --- QUI CHIAMI IL TUO PACCHETTO ---
-#         # Esegui la logica complessa del tuo pacchetto Python
-#         # passando i dati ricevuti dal frontend.
-#         result = mio_pacchetto_personale.mia_funzione_principale(
-#             n=input_data.n,
-#             k=input_data.k,
-#             example=input_data.selectedExample,
-#             stabilizers=input_data.stabilizers
-#         )
-        
-#         # Invia il risultato al frontend
-#         return {"success": True, "data": result}
-        
-#     except Exception as e:
-#         # In caso di errore nel tuo pacchetto, invia un messaggio chiaro
-#         return {"success": False, "error": str(e)}
-    
-# async def pyzx_graph_to_pyvis(d):
+# --- FUNZIONE WORKER ---
+def run_computation_task(stabilizers, n, k, result_queue):
+    try:
+        d = from_tableau(stabilizers, n, k)
+        up_bound = distance_upper_bound(d)
+        circuit = implement_encoder(d)
+        qasmEncoder = circuit.to_qasm()
+        d["qasmEncoder"] = qasmEncoder
+        d["distance_lower_bound"] = up_bound
+        result_queue.put({"success": True, "data": d})
+    except Exception as e:
+        result_queue.put({"success": False, "error": str(e)})
 
-#     nxg = nx.Graph()
-#     bounds = []
-#     for v in range(len(d["adjacency_list"])):
-#         # v_type = v["t"]
-#         if v in d["inputs"]:
-#             color = "green"
-#         else:
-#             color = "blue"
-#         # if v_type != VertexType.BOUNDARY:
-#         nxg.add_node(v, 
-#                     color=color, 
-#                     )
-#         # else:
-#         # bounds.append(v["id"])
 
-#     adj = d["adjacency_list"]
-
-#     for i in range(len(adj)):
-#         for j in adj[i]:
-#             if i < j:
-#                 nxg.add_edge(i, j)
-#                 nxg[i][j]['color'] = "black"
-            
-#     # for e in d["edges"]:
-#     #     vertexes = d["vertices"]
-#     #     edge_type = e[2]
-#     #     edge_color = "red" if edge_type == EdgeType.HADAMARD else "black"
-#     #     if e[0] not in bounds and e[1] not in bounds:
-#     #         nxg.add_edge(e[0], e[1])
-#     #         nxg[e[0]][e[1]]['color'] = edge_color
-
-#     pos = nx.spring_layout(nxg, seed=42)  # nice spacing
-
-#     node_colors = [nxg.nodes[n]['color'] for n in nxg.nodes()]
-#     edge_colors = [nxg[u][v]['color'] for u,v in nxg.edges()]
-
-#     # Draw the graph
-#     # plt.figure(figsize=(10,8))
-#     nx.draw_networkx_nodes(nxg, pos, node_color=node_colors, node_size=700)
-#     nx.draw_networkx_edges(nxg, pos, edge_color=edge_colors, width=2)
-#     # nx.draw_networkx_labels(nxg, pos, font_size=10, font_color='white')
-
-#     # Add title to the plot
-#     # plt.title("5 qubit code", fontsize=16, pad=20)
-
-#     # plt.axis('off')
-#     # plt.show()
-
-#     net = Network(notebook=True, directed=False)
-#     net.from_nx(nxg)
-#     return net
-
+# --- ENDPOINT 1: START ---
 @app.post("/run")
-async def tableau_to_graph(input_data: StabilizerInput):
-
+async def start_job(input_data: StabilizerInput):
+    # ... (logica di preparazione dati uguale a prima) ...
     random = input_data.random
     selectedExample = input_data.selectedExample
-
     stabilizers = []
+    n = 0
+    k = 0
 
     try:
-        print(selectedExample)
-
         if random:
             n = int(input_data.n)
             k = int(input_data.k)
-            stabilizers = []
             tableau = stim.Tableau.random(n)
             for i in range(n - k):
                 s = tableau.to_stabilizers()[i]
                 stabilizers.append(str(s))
         elif selectedExample:
             example_data = examples_dict.get(selectedExample)
-            # print(example_data)
+            if not example_data:
+                return {"success": False, "error": "Example not found"}
             n = example_data["n"]
             k = example_data["k"]
             stabilizers = example_data["stabilizers"]
-            # print(stabilizers)
         else:
             stabilizers = input_data.stabilizers
             n = int(input_data.n)
             k = int(input_data.k)
-
-    # print("Stabilizers:", stabilizers)
-    # print("n:", n)
-    # print("k:", k)
-
-        d = from_tableau(stabilizers, n, k)
-        print(d)
-        up_bound =  distance_upper_bound(d)
-        circuit = implement_encoder(d)
-        qasmEconder = circuit.to_qasm()
-        d["qasmEncoder"] = qasmEconder
-        d["distance_lower_bound"] = up_bound
-        print(d)
-        return {"success" : True, "data" : d}
     except Exception as e:
-        print("error", e)
-        return {"success" : False, "data" : str(e)}
+        return {"success": False, "error": str(e)}
+
+    job_id = str(uuid.uuid4())
+    queue = Queue()
+    process = Process(target=run_computation_task, args=(stabilizers, n, k, queue))
+    process.start()
+
+    # SALVIAMO IL TIMESTAMP DI ADESSO
+    JOBS[job_id] = {
+        "process": process,
+        "queue": queue,
+        "status": "processing",
+        "result": None,
+        "last_heartbeat": time.time()  # <--- IMPORTANTE: Inizia il conto alla rovescia
+    }
+
+    return {"success": True, "job_id": job_id}
+
+
+# --- ENDPOINT 2: STATUS (Con Heartbeat) ---
+@app.get("/status/{job_id}")
+async def check_status(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        # Se il job non esiste più (magari cancellato dal timeout), diamo 404
+        raise HTTPException(status_code=404, detail="Job not found or expired")
+
+    # AGGIORNIAMO IL BATTITO CARDIACO
+    # Ogni volta che il frontend chiama questo endpoint, resettiamo il timer
+    job["last_heartbeat"] = time.time()
+
+    if job["status"] == "completed":
+        return job["result"]
+
+    process = job["process"]
+    queue = job["queue"]
+
+    if process.is_alive():
+        return {"success": True, "status": "processing"}
+    
+    if not queue.empty():
+        result = queue.get()
+        job["status"] = "completed"
+        job["result"] = result
+        process.join()
+        return result
+    else:
+        job["status"] = "failed"
+        return {"success": False, "status": "failed", "error": "Process died unexpectedly"}
+
+
+# --- ENDPOINT 3: CANCEL ---
+@app.post("/cancel/{job_id}")
+async def cancel_job(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        return {"success": False, "error": "Job not found"}
+
+    process = job["process"]
+    if process.is_alive():
+        process.terminate()
+        process.join()
+    
+    del JOBS[job_id]
+    return {"success": True, "status": "cancelled"}
