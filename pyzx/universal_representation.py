@@ -4,7 +4,7 @@ Universal representation module
 
 
 __all__ = [
-"to_universal_representation", "implement_encoder", "from_graph_state", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound", "from_tableau"
+"graph_to_universal_representation", "implement_encoder", "graph_state_to_universal_representation", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound", "tableau_to_universal_representation"
 ]
 
 
@@ -17,7 +17,7 @@ from .drawing import draw_d3, draw, draw_matplotlib
 from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
 from .graph import Graph
 from .extract import connectivity_from_biadj, bi_adj
-from typing import List, Tuple, Dict, Generic, cast
+from typing import List, Tuple, Dict, Generic, cast, TypeVar
 import itertools
 from .circuit import Circuit
 import pprint
@@ -27,9 +27,26 @@ import stim
 import re
 
 
+VT = TypeVar('VT', bound=int)
+ET = TypeVar('ET')
+
+class UniversalGraphRepresentation():
+
+    def __init__(self, inputs : List[int], adj : List[List[int]], pivots : List[int], local_cliffords : Dict[int, str]):
+        self.inputs = inputs
+        self.adj = adj
+        self.pivots = pivots
+        self.local_cliffords = local_cliffords
 
 
-def get_node_from_boundary(g : BaseGraph, v : VT) -> VT:
+class ZXCF(Generic[VT, ET]):
+    
+    def __init__(self, graph: BaseGraph[VT, ET], pivots : List[VT]):
+        self.graph = graph
+        self.pivots = pivots
+
+
+def get_node_from_boundary(g : BaseGraph[VT, ET], v : VT) -> VT:
     """
     Get the internal node connected to a boundary vertex.
 
@@ -45,7 +62,7 @@ def get_node_from_boundary(g : BaseGraph, v : VT) -> VT:
 
     return ns[0]
 
-def get_neighbors(g, v: VT) -> List[VT]:
+def get_neighbors(g : BaseGraph[VT, ET], v: VT) -> List[VT]:
     """
     Get the neighbors of an iternal vertex.
     
@@ -64,7 +81,7 @@ def get_neighbors(g, v: VT) -> List[VT]:
 
     return neighbors
 
-def get_internal_inputs(g) -> List[VT]:
+def get_internal_inputs(g : BaseGraph[VT, ET]) -> List[VT]:
     """
     Get the internal input vertices.
 
@@ -73,7 +90,7 @@ def get_internal_inputs(g) -> List[VT]:
     """
     return [get_node_from_boundary(g, s) for s in g.inputs()]
 
-def get_internal_outputs(g) -> List[VT]:
+def get_internal_outputs(g : BaseGraph[VT, ET]) -> List[VT]:
     """
     Get the internal output vertices.
 
@@ -82,7 +99,7 @@ def get_internal_outputs(g) -> List[VT]:
     """
     return [get_node_from_boundary(g, s) for s in g.outputs()]
 
-def to_RRREF(g : BaseGraph, quiet : bool = True) -> List[VT]:
+def to_RRREF(g : BaseGraph[VT, ET], quiet : bool = True) -> List[VT]:
     """
     Transform the graph to a reduced row echelon form.
     
@@ -121,7 +138,7 @@ def to_RRREF(g : BaseGraph, quiet : bool = True) -> List[VT]:
     return pivots
 
 
-def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
+def remove_unitaries_input(g : BaseGraph[VT, ET], quiet : bool = True) -> None:
     """
     Remove unitary operations from input vertices.
     """
@@ -143,7 +160,7 @@ def remove_unitaries_input(g : BaseGraph, quiet : bool = True) -> None:
     if not quiet:
         print(f"Step: --- Removed unitaries from inputs")
 
-def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
+def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = True) -> None:
     """
     Remove local complementation pivot operations.
     
@@ -182,7 +199,7 @@ def remove_pivot_phases(g, pivots, quiet : bool = True) -> None:
                 go_on = True
                 break
 
-def pivot(g, x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
+def pivot(g : BaseGraph[VT, ET], x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
     """
     Perform a pivot operation between vertices x and y in the graph state.
     
@@ -224,7 +241,7 @@ def pivot(g, x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
 
 
 
-def remove_pivot_edges(g, pivots, quiet : bool = True) -> None:
+def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = True) -> None:
     """
     Remove edges between pivot vertices.
     
@@ -240,7 +257,7 @@ def remove_pivot_edges(g, pivots, quiet : bool = True) -> None:
                 pivot(g, x, y, quiet = quiet, step=9)
 
 
-def from_graph_state(g: GraphState, inputs) -> BaseGraph:
+def graph_state_to_universal_representation(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
     """Convert a GraphState to its uinversal representation.
 
     Args:
@@ -252,31 +269,22 @@ def from_graph_state(g: GraphState, inputs) -> BaseGraph:
         BaseGraph: The converted BaseGraph.
     """
     g.to_canonical_form(quiet=True)
-    # draw(g, labels=True)
-    print(inputs)
+    # print(inputs)
     state_to_map(g, inputs)
-    # draw(g, labels=True)
     # print("Exporting to universal circuit...")
     remove_unitaries_input(g)
-    # draw(g, labels=True)
     # print("to RRREF...")
     pivots = to_RRREF(g, quiet = True)
-    # draw(g, labels=True)
     # print("Removing pivot phases...")
     remove_pivot_phases(g, pivots, quiet = True)
-    # draw(g, labels=True)
     # print("Removing pivot edges...")
     remove_pivot_edges(g, pivots, quiet = True)
-    # draw(g, labels=True)
     # print("Removing unitaries from inputs...")
     remove_unitaries_input(g)
-    # draw(g, labels=True)
 
-    # draw(g, labels=True)
+    return ZXCF(g, pivots)
 
-    return g
-
-def benchmark_from_graph_state(g: GraphState) -> Tuple[float, float, float]:
+def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, float]:
 
     g.to_canonical_form(quiet=True)
     g = g.state_to_map()
@@ -297,7 +305,7 @@ def benchmark_from_graph_state(g: GraphState) -> Tuple[float, float, float]:
     time_remove_unitaries = end4 - end3
     return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
 
-def to_universal_graph_representation(g: BaseGraph, inputs, quiet : bool = True) -> Dict:
+def to_universal_graph_representation(g: ZXCF[VT, ET], inputs : List[VT], quiet : bool = True) -> UniversalGraphRepresentation:
     """
     
     Convert a Clifford ZX diagram to its universal representation.
@@ -310,14 +318,31 @@ def to_universal_graph_representation(g: BaseGraph, inputs, quiet : bool = True)
     Returns:
         BaseGraph: The adjacency matrix of the universal representation.
     """
-    g = to_universal_representation(g, inputs)
     d = g.to_dict()
 
     inputs = get_internal_inputs(g)
-    outputs = get_internal_outputs(g)
+    internal_outputs = get_internal_outputs(g)
 
+    local_cliffords = {v : "" for v in internal_outputs}
+
+    for b in g.outputs():
+        v = get_node_from_boundary(g, b)
+        if g.edge_type(g.edge(v, b)) == EdgeType.HADAMARD:
+            local_cliffords[v] = "H"
+    
+    for v in internal_outputs:
+        phase = g.phase(v)
+        if phase == Fraction(1,2):
+            local_cliffords[v] += "S"
+        elif phase == 1:
+            local_cliffords[v] += "Z"
+        elif phase == Fraction(3,2):
+            local_cliffords[v] += "SZ"
+
+
+    # d["local_cliffords"] = local_cliffords
     d["inputs"] = inputs
-    d["outputs"] = outputs
+    d["outputs"] = internal_outputs
 
     g_filtered = d
 
@@ -334,18 +359,11 @@ def to_universal_graph_representation(g: BaseGraph, inputs, quiet : bool = True)
     vertex_map = {}
     adjacency_list = [[] for _ in range(len(d["vertices"]))]
 
-
-    # print(inputs)
-    # print(outputs)
-
-
     for i in range(len(inputs)):
         vertex_map[inputs[i]] = i
 
-    # outputs = [v for v in d["vertices"] if v["id"] not in inputs]
-
-    for i in range(len(inputs), len(outputs) + len(inputs)):
-        vertex_map[outputs[i - len(inputs)]] = i
+    for i in range(len(inputs), len(internal_outputs) + len(inputs)):
+        vertex_map[internal_outputs[i - len(inputs)]] = i
 
     for e in d["edges"]:
         v1 = vertex_map[e[0]]
@@ -356,9 +374,11 @@ def to_universal_graph_representation(g: BaseGraph, inputs, quiet : bool = True)
 
     inp =[vertex_map[x] for x in  d["inputs"]]
     # print(g_filtered["edges"])
-    return {"inputs" : inp, "adjacency_list" : adjacency_list}
+    export = UniversalGraphRepresentation(inp, adjacency_list, g.pivots, local_cliffords)
+    return export
 
-def state_to_map(g, inputs) -> BaseGraph[VT, ET]:
+
+def state_to_map(g : GraphState[VT, ET], inputs : List[VT]) -> BaseGraph[VT, ET]:
     """
     Export graph state to a ZX-diagram.
     """
@@ -401,10 +421,12 @@ def stim_qasm_comply(qasm: str) -> str:
     q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
     return q
 
-def from_tableau(code, n, k):
+def tableau_to_graph_encoder(code : List[str]) -> BaseGraph:
+ 
+    n = len(code[0]) 
+    k = n - len(code)
 
     code = [stim.PauliString(x) for x in code]
-
 
     tableau = stim.Tableau.from_stabilizers(code, allow_underconstrained=True)
 
@@ -418,27 +440,28 @@ def from_tableau(code, n, k):
         stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
 
     state = stim.TableauSimulator()
-    # print(stabilizers)
     state.set_state_from_stabilizers(stabilizers)
     state.do_tableau(tableau, range(n))
     t = state.current_inverse_tableau().inverse()
-
-    # print("YEE2")
 
     qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
     pyzx_circ2 = Circuit.from_qasm(stim_qasm_comply(qasm_random2))
     g2 = pyzx_circ2.to_graph()
     input_state = "0"*(n+k)
-    inputs = g2.outputs()[n:n+k]
     g2.apply_state(input_state)
-    d = to_universal_graph_representation(g2, inputs)
-    return d
+
+    g2.set_inputs(g2.outputs()[n:n+k])
+    # d = graph_to_universal_graph_representation(g2)
+    # return d
+    return g2
+    
 
 
 
 
-def to_universal_representation(g: BaseGraph, inputs) -> BaseGraph:
-    """Convert a Clifford ZX diagram to its universal representation.
+def graph_to_universal_representation(g: BaseGraph[VT, ET]) -> ZXCF:
+    """
+    Convert a Clifford ZX diagram to its universal representation.
 
     Args:
         g : The Clifford ZX diagram as a BaseGraph.
@@ -446,9 +469,9 @@ def to_universal_representation(g: BaseGraph, inputs) -> BaseGraph:
     Returns:
         BaseGraph: The universal representation of the GraphState.
     """
+    inputs = g.inputs()
     g = GraphState(g)
-    # draw(g, labels=True)
-    return from_graph_state(g, inputs)
+    return graph_state_to_universal_representation(g, inputs)
 
 class Pauli:
 
@@ -472,33 +495,31 @@ class Pauli:
 
 
 
-def implement_encoder(d : Dict) -> Circuit:
+def implement_encoder(d : UniversalGraphRepresentation) -> Circuit:
 
-    inputs = d["inputs"]
-    adj = d["adjacency_list"]
+    inputs = d.inputs
+    adj = d.adj
+    local_cliffords = d.local_cliffords
+    pivots = d.pivots
 
-    pivots = {i : -1 for i in inputs}
-
+    # pivots = {i : -1 for i in inputs}
     out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
 
-    # print(inputs)
-    # print(adj)
-
-    for i in range(len(adj)):
-        if i not in inputs:
-            # print()
-            neigh = adj[i]
-            count = 0
-            input = -1
-            for n in neigh:
-                if n in inputs:
-                    count += 1
-                    input = n
-                    # print(n)
-                    out_to_in[i] = n
-            if count == 1:
-                if pivots[input] == -1:
-                    pivots[input] = i 
+    # for i in range(len(adj)):
+    #     if i not in inputs:
+    #         # print()
+    #         neigh = adj[i]
+    #         count = 0
+    #         input = -1
+    #         for n in neigh:
+    #             if n in inputs:
+    #                 count += 1
+    #                 input = n
+    #                 # print(n)
+    #                 out_to_in[i] = n
+    #         if count == 1:
+    #             if pivots[input] == -1:
+    #                 pivots[input] = i 
 
     
     n = len(adj)
@@ -525,6 +546,9 @@ def implement_encoder(d : Dict) -> Circuit:
             for u in adj[v]:
                 if u not in inputs:
                     c.add_gate("CZ", v, u)
+
+    # for v in range(n):
+
     
     # draw(c, labels=True)
 
