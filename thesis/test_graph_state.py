@@ -16,17 +16,16 @@ from pyzx.circuit import Circuit
 from pyzx import draw
 from pyzx.graph import Graph
 from pyzx.graph_states import GraphState
-from pyzx.universal_representation import to_universal_representation, get_internal_inputs, get_internal_outputs
+from pyzx.universal_representation import graph_to_universal_representation, UGR, get_internal_inputs, get_internal_outputs
+import re
+import stim as stim
+from pyzx.tensor import tensorfy, compare_tensors
 
 np: Optional[ModuleType]
 try:
     import numpy as np
-    import stim as stim
-    import re
-    from pyzx.tensor import tensorfy, compare_tensors
 except ImportError:
     np = None
-    stim = None
 
 SEED = 1337
 
@@ -48,7 +47,7 @@ class TestCircuit(unittest.TestCase):
         q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
         return q
     
-    @unittest.skip("Skipping graph state method test for now")
+    # @unittest.skip("Skipping graph state method test for now")
     def test_graph_state(self):
         for i in range(0,self.num_subtseps):
             with self.subTest(i=i):
@@ -64,7 +63,7 @@ class TestCircuit(unittest.TestCase):
                 g1 = GraphState(g1)
                 g1.to_canonical_form()
 
-                t1 = tensorfy(g1)
+                t1 = tensorfy(g1.get_graph())
 
                 n = self.n 
                 k = self.k
@@ -81,7 +80,7 @@ class TestCircuit(unittest.TestCase):
 
                 state = stim.TableauSimulator()
                 state.set_state_from_stabilizers(stabilizers)
-                state.do_tableau(tableau, range(n))
+                state.do_tableau(tableau, list(range(n)))
                 t = state.current_inverse_tableau().inverse()
 
                 qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
@@ -92,7 +91,7 @@ class TestCircuit(unittest.TestCase):
                 g2 = GraphState(g2)
                 g2.to_canonical_form()
                 # g2.validate_canonical_form()
-                t2 = tensorfy(g2)
+                t2 = tensorfy(g2.get_graph())
                 self.assertTrue(compare_tensors(t1, t2, preserve_scalar=False) and g2.validate_canonical_form(), f"Graph state failed for {i}")
     
 
@@ -117,45 +116,45 @@ class TestCircuit(unittest.TestCase):
                 input_state = "0"*(self.n-self.k) + "/"*self.k
                 g.apply_state(input_state)
                 g = GraphState(g)
-                t1 = tensorfy(g)
+                t1 = tensorfy(g.get_graph())
                 g.to_canonical_form(quiet=True)
-                t2 = tensorfy(g)
+                t2 = tensorfy(g.get_graph())
                 self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {i}")
 
-    @unittest.skip("Skipping universal representation test for now")
-    def test_universal_representation(self):
-        for i in range(0,self.num_subtseps):
-            with self.subTest(i=i):
-                s = f"test_{i}"
-                print(f"Testing universal representation for {s}")
-                tableau = stim.Tableau.random(self.n)
+    # @unittest.skip("Skipping universal representation test for now")
+    # def test_universal_representation(self):
+    #     for i in range(0,self.num_subtseps):
+    #         with self.subTest(i=i):
+    #             s = f"test_{i}"
+    #             print(f"Testing universal representation for {s}")
+    #             tableau = stim.Tableau.random(self.n)
 
-                n = self.n 
-                k = self.k
+    #             n = self.n 
+    #             k = self.k
 
-                code_stab = tableau.to_stabilizers()
+    #             code_stab = tableau.to_stabilizers()
             
-                stabilizers = []
+    #             stabilizers = []
 
-                for i in range (n - k):
-                    stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
+    #             for i in range (n - k):
+    #                 stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
 
-                for i in range(n-k, n): 
-                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
-                    stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+    #             for i in range(n-k, n): 
+    #                 stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
+    #                 stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
 
 
-                state = stim.TableauSimulator()
-                state.set_state_from_stabilizers(stabilizers)
-                state.do_tableau(tableau, range(n))
-                t = state.current_inverse_tableau().inverse()
-                qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
-                pyzx_circ2 = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
-                g = pyzx_circ2.to_graph()
-                input_state = "0"*(n+k)
-                inputs = g.outputs()[n:n+k]
-                g.apply_state(input_state)
-                g_ur = to_universal_representation(g, inputs)
+    #             state = stim.TableauSimulator()
+    #             state.set_state_from_stabilizers(stabilizers)
+    #             state.do_tableau(tableau, range(n))
+    #             t = state.current_inverse_tableau().inverse()
+    #             qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
+    #             pyzx_circ2 = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
+    #             g = pyzx_circ2.to_graph()
+    #             input_state = "0"*(n+k)
+    #             inputs = g.outputs()[n:n+k]
+    #             g.apply_state(input_state)
+    #             g_ur = to_universal_representation(g, inputs)
                 
 
 

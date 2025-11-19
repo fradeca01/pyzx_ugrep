@@ -4,7 +4,18 @@ Universal representation module
 
 
 __all__ = [
-"graph_to_universal_representation", "implement_encoder", "graph_state_to_universal_representation", "benchmark_from_graph_state", "to_universal_graph_representation", "distance_upper_bound", "tableau_to_universal_representation"
+
+    "graph_state_to_universal_representation",
+    "to_universal_graph_representation",  
+    "implement_encoder",
+    "distance_upper_bound",
+    "to_stabilizer_tableau",
+    "stim_qasm_comply",
+    "tableau_to_graph_encoder",
+    "graph_to_universal_representation",
+    "benchmark_from_graph_state",
+    "UGR",
+    "ZXCF"
 ]
 
 
@@ -30,7 +41,7 @@ import re
 VT = TypeVar('VT', bound=int)
 ET = TypeVar('ET')
 
-class UniversalGraphRepresentation():
+class UGR():
 
     def __init__(self, inputs : List[int], adj : List[List[int]], pivots : List[int], local_cliffords : Dict[int, str]):
         self.inputs = inputs
@@ -41,7 +52,8 @@ class UniversalGraphRepresentation():
 
 class ZXCF(Generic[VT, ET]):
     
-    def __init__(self, graph: BaseGraph[VT, ET], pivots : List[VT]):
+    def __init__(self, graph: BaseGraph[VT, ET], inputs : List[VT],  pivots : List[VT]):
+        self.inputs = inputs
         self.graph = graph
         self.pivots = pivots
 
@@ -57,6 +69,9 @@ def get_node_from_boundary(g : BaseGraph[VT, ET], v : VT) -> VT:
     Returns:
         int: the state vertex corresponding to the state.
     """
+
+    # print("Getting internal node from boundary", v)
+    # draw(g)
 
     ns = list(g.neighbors(v))
 
@@ -270,33 +285,33 @@ def graph_state_to_universal_representation(g: GraphState[VT, ET], inputs : List
     """
     g.to_canonical_form(quiet=True)
     # print(inputs)
-    state_to_map(g, inputs)
+    g2 = state_to_map(g, inputs)
     # print("Exporting to universal circuit...")
-    remove_unitaries_input(g)
+    remove_unitaries_input(g2)
     # print("to RRREF...")
-    pivots = to_RRREF(g, quiet = True)
+    pivots = to_RRREF(g2, quiet = True)
     # print("Removing pivot phases...")
-    remove_pivot_phases(g, pivots, quiet = True)
+    remove_pivot_phases(g2, pivots, quiet = True)
     # print("Removing pivot edges...")
-    remove_pivot_edges(g, pivots, quiet = True)
+    remove_pivot_edges(g2, pivots, quiet = True)
     # print("Removing unitaries from inputs...")
-    remove_unitaries_input(g)
+    remove_unitaries_input(g2)
 
-    return ZXCF(g, pivots)
+    return ZXCF(g2, inputs, pivots)
 
-def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, float]:
+def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, float, float]:
 
     g.to_canonical_form(quiet=True)
-    g = g.state_to_map()
+    g2 = g.state_to_map()
 
     start = time.perf_counter()
-    pivots = to_RRREF(g, quiet = True)
+    pivots = to_RRREF(g2, quiet = True)
     end1 = time.perf_counter()
-    remove_pivot_phases(g, pivots, quiet = True)
+    remove_pivot_phases(g2, pivots, quiet = True)
     end2 = time.perf_counter()
-    remove_pivot_edges(g, pivots, quiet = True)
+    remove_pivot_edges(g2, pivots, quiet = True)
     end3 = time.perf_counter()
-    remove_unitaries_input(g)
+    remove_unitaries_input(g2)
     end4 = time.perf_counter()
 
     time_rref = end1 - start
@@ -305,7 +320,7 @@ def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, flo
     time_remove_unitaries = end4 - end3
     return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
 
-def to_universal_graph_representation(g: ZXCF[VT, ET], inputs : List[VT], quiet : bool = True) -> UniversalGraphRepresentation:
+def to_universal_graph_representation(g: ZXCF[VT, ET], quiet : bool = True) -> UGR:
     """
     
     Convert a Clifford ZX diagram to its universal representation.
@@ -318,52 +333,40 @@ def to_universal_graph_representation(g: ZXCF[VT, ET], inputs : List[VT], quiet 
     Returns:
         BaseGraph: The adjacency matrix of the universal representation.
     """
-    d = g.to_dict()
+    g2 = g.graph.clone()
 
-    inputs = get_internal_inputs(g)
-    internal_outputs = get_internal_outputs(g)
+    internal_inputs = get_internal_inputs(g2)
+    internal_outputs = get_internal_outputs(g2)
 
-    local_cliffords = {v : "" for v in internal_outputs}
+    for v in g2.vertex_set():
+        if g2.type(v) == VertexType.BOUNDARY:
+            g2.remove_vertex(v)
 
-    for b in g.outputs():
-        v = get_node_from_boundary(g, b)
-        if g.edge_type(g.edge(v, b)) == EdgeType.HADAMARD:
-            local_cliffords[v] = "H"
-    
-    for v in internal_outputs:
-        phase = g.phase(v)
-        if phase == Fraction(1,2):
-            local_cliffords[v] += "S"
-        elif phase == 1:
-            local_cliffords[v] += "Z"
-        elif phase == Fraction(3,2):
-            local_cliffords[v] += "SZ"
+    g2.set_inputs(tuple(internal_inputs))
+    g2.set_outputs(tuple(internal_outputs))
 
+    d = g2.to_dict()
 
     # d["local_cliffords"] = local_cliffords
-    d["inputs"] = inputs
-    d["outputs"] = internal_outputs
+    
+    # d["inputs"] = internal_inputs
+    # d["outputs"] = internal_outputs
+    
 
-    g_filtered = d
+    # g_filtered = d
 
-    # 1. collect IDs of boundary vertices
-    boundary_ids = {v["id"] for v in d["vertices"] if v["t"] == VertexType.BOUNDARY}
-
-    # 2. filter vertices
-    g_filtered["vertices"] = [v for v in d["vertices"] if v["id"] not in boundary_ids]
-
-    # 3. filter edges (remove any edge touching a boundary vertex)
-    g_filtered["edges"] = [e for e in d["edges"] if e[0] not in boundary_ids and e[1] not in boundary_ids]
-    # pprint.pprint(g_filtered)
+    # boundary_ids = {v["id"] for v in d["vertices"] if v["t"] == VertexType.BOUNDARY}
+    # g_filtered["vertices"] = [v for v in d["vertices"] if v["id"] not in boundary_ids]
+    # g_filtered["edges"] = [e for e in d["edges"] if e[0] not in boundary_ids and e[1] not in boundary_ids]
 
     vertex_map = {}
     adjacency_list = [[] for _ in range(len(d["vertices"]))]
 
-    for i in range(len(inputs)):
-        vertex_map[inputs[i]] = i
+    for i in range(len(internal_inputs)):
+        vertex_map[internal_inputs[i]] = i
 
-    for i in range(len(inputs), len(internal_outputs) + len(inputs)):
-        vertex_map[internal_outputs[i - len(inputs)]] = i
+    for i in range(len(internal_inputs), len(internal_outputs) + len(internal_inputs)):
+        vertex_map[internal_outputs[i - len(internal_inputs)]] = i
 
     for e in d["edges"]:
         v1 = vertex_map[e[0]]
@@ -372,9 +375,29 @@ def to_universal_graph_representation(g: ZXCF[VT, ET], inputs : List[VT], quiet 
         adjacency_list[v1].append(v2)
         adjacency_list[v2].append(v1)
 
-    inp =[vertex_map[x] for x in  d["inputs"]]
+    local_cliffords = {vertex_map[v] : "" for v in internal_outputs}
+
+    for v in internal_outputs:
+        phase = g2.phase(v)
+        if phase == Fraction(1,2):
+            local_cliffords[vertex_map[v]] += "S"
+        elif phase == 1:
+            local_cliffords[vertex_map[v]] += "Z"
+        elif phase == Fraction(3,2):
+            local_cliffords[vertex_map[v]] += "SZ"
+
+    for b in g.graph.outputs():
+        v = get_node_from_boundary(g.graph, b)
+        if g.graph.edge_type(g.graph.edge(v, b)) == EdgeType.HADAMARD:
+            local_cliffords[vertex_map[v]] = "H"
+    
+
+    new_inputs =[vertex_map[x] for x in  d["inputs"]]
+
+    pivots = [vertex_map[x] for x in g.pivots]
+
     # print(g_filtered["edges"])
-    export = UniversalGraphRepresentation(inp, adjacency_list, g.pivots, local_cliffords)
+    export = UGR(new_inputs, adjacency_list, pivots, local_cliffords)
     return export
 
 
@@ -382,13 +405,21 @@ def state_to_map(g : GraphState[VT, ET], inputs : List[VT]) -> BaseGraph[VT, ET]
     """
     Export graph state to a ZX-diagram.
     """
+
+    # expo
+    export_g = g.get_graph().clone()
     outputs = [i for i in g.outputs() if i not in inputs]
-    g.set_inputs(inputs)
-    g.set_outputs(outputs)
-    g.normalize()
+    export_g.set_inputs(tuple(inputs))
+    export_g.set_outputs(tuple(outputs))
+        
+    # g.get_graph().auto_detect_io()
+    
+    export_g.normalize()
+
+    return export_g
 
 
-def distance_upper_bound(d: Dict) -> int:
+def distance_upper_bound(d: UGR) -> int:
     """
     Compute an upper bound on the distance of the code represented by the graph state.
 
@@ -399,8 +430,8 @@ def distance_upper_bound(d: Dict) -> int:
         int: The upper bound on the distance.
     """
 
-    adj = d["adjacency_list"]
-    inp = d["inputs"]    
+    adj = d.adj
+    inp = d.inputs    
 
     mindeg = len(adj)
 
@@ -421,14 +452,21 @@ def stim_qasm_comply(qasm: str) -> str:
     q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
     return q
 
+
+
+# [stim.PauliString("+_Z_Z_"), stim.PauliString("+_ZXZX"), stim.PauliString("+_ZX_X")]
+# [stim.PauliString("-_XY_X"), stim.PauliString("-_XYXX"), stim.PauliString("-YXXXY")]
+
 def tableau_to_graph_encoder(code : List[str]) -> BaseGraph:
- 
-    n = len(code[0]) 
-    k = n - len(code)
+    
 
-    code = [stim.PauliString(x) for x in code]
+    code2 = [stim.PauliString(x) for x in code]
+    print(code2)
+    n = len(code2[0])
+    k = n - len(code2)
 
-    tableau = stim.Tableau.from_stabilizers(code, allow_underconstrained=True)
+    print(n, k)
+    tableau = stim.Tableau.from_stabilizers(code2, allow_underconstrained=True)
 
     stabilizers = []
 
@@ -441,7 +479,7 @@ def tableau_to_graph_encoder(code : List[str]) -> BaseGraph:
 
     state = stim.TableauSimulator()
     state.set_state_from_stabilizers(stabilizers)
-    state.do_tableau(tableau, range(n))
+    state.do_tableau(tableau, list(range(n)))
     t = state.current_inverse_tableau().inverse()
 
     qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
@@ -469,9 +507,9 @@ def graph_to_universal_representation(g: BaseGraph[VT, ET]) -> ZXCF:
     Returns:
         BaseGraph: The universal representation of the GraphState.
     """
-    inputs = g.inputs()
-    g = GraphState(g)
-    return graph_state_to_universal_representation(g, inputs)
+    inputs = list(g.inputs())
+    g2 = GraphState(g)
+    return graph_state_to_universal_representation(g2, inputs)
 
 class Pauli:
 
@@ -495,7 +533,7 @@ class Pauli:
 
 
 
-def implement_encoder(d : UniversalGraphRepresentation) -> Circuit:
+def implement_encoder(d : UGR) -> Circuit:
 
     inputs = d.inputs
     adj = d.adj
@@ -535,7 +573,7 @@ def implement_encoder(d : UniversalGraphRepresentation) -> Circuit:
     
     for i in inputs:
         for j in adj[i]:
-            if j not in pivots.values():
+            if j not in pivots:
                 c.add_gate("CZ", i, j)
         
     for i in inputs:
@@ -554,64 +592,64 @@ def implement_encoder(d : UniversalGraphRepresentation) -> Circuit:
 
     return c
 
-def to_stabilizer_tableau (d : Dict, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
-    """
-    Convert a graph to a stabilizer tableau.
+# def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
+#     """
+#     Convert a graph to a stabilizer tableau.
     
-    Returns:
-        A list of stabilizers representing the graph state
-    """
+#     Returns:
+#         A list of stabilizers representing the graph state
+#     """
 
-    inputs = d["inputs"]
-    adj = d["adjacency_list"]
+#     inputs = d.inputs
+#     adj = d.adj
 
-    pivots = {i : -1 for i in inputs}
+#     pivots = d.pivots
 
-    out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
+#     out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
 
-    print(inputs)
-    print(adj)
+#     print(inputs)
+#     print(adj)
 
-    for i in range(len(adj)):
-        if i not in inputs:
-            # print()
-            neigh = adj[i]
-            count = 0
-            input = -1
-            for n in neigh:
-                if n in inputs:
-                    count += 1
-                    input = n
-                    # print(n)
-                    out_to_in[i] = n
-            if count == 1:
-                if pivots[input] == -1:
-                    pivots[input] = i 
+#     for i in range(len(adj)):
+#         if i not in inputs:
+#             # print()
+#             neigh = adj[i]
+#             count = 0
+#             input = -1
+#             for n in neigh:
+#                 if n in inputs:
+#                     count += 1
+#                     input = n
+#                     # print(n)
+#                     out_to_in[i] = n
+#             if count == 1:
+#                 if pivots[input] == -1:
+#                     pivots[input] = i 
 
 
-    stabilizers = [[Pauli(0,0,0) for _ in range(len(adj) - len(inputs)) ] for _ in range(len(adj) - 2 * len(inputs))]
+#     stabilizers = [[Pauli(0,0,0) for _ in range(len(adj) - len(inputs)) ] for _ in range(len(adj) - 2 * len(inputs))]
 
-    k = 0
-    for i in range(len(inputs), len(adj)):
-        if i not in pivots.values():
-            # print("Scanning vertex", i)
-            # print(k, i)
-            stabilizers[k][i - len(inputs)] *= Pauli(0,1,0)
-            # print(stabilizers[k])
-            for x in adj[i]:
-                if x not in inputs:
-                    stabilizers[k][x - len(inputs)] *= Pauli(0,0,1)
-            # print(stabilizers[k])
-            y = pivots[out_to_in[i]] 
-            stabilizers[k][y - len(inputs)] *= Pauli(0,1,0)
-            # print(stabilizers[k])
-            for x in adj[y]:
-                if x not in inputs:
-                    stabilizers[k][x- len(inputs)] *= Pauli(0,0,1)
-            # print(stabilizers[k])
-            k += 1
+#     k = 0
+#     for i in range(len(inputs), len(adj)):
+#         if i not in pivots:
+#             # print("Scanning vertex", i)
+#             # print(k, i)
+#             stabilizers[k][i - len(inputs)] *= Pauli(0,1,0)
+#             # print(stabilizers[k])
+#             for x in adj[i]:
+#                 if x not in inputs:
+#                     stabilizers[k][x - len(inputs)] *= Pauli(0,0,1)
+#             # print(stabilizers[k])
+#             y = pivots[out_to_in[i]] 
+#             stabilizers[k][y - len(inputs)] *= Pauli(0,1,0)
+#             # print(stabilizers[k])
+#             for x in adj[y]:
+#                 if x not in inputs:
+#                     stabilizers[k][x- len(inputs)] *= Pauli(0,0,1)
+#             # print(stabilizers[k])
+#             k += 1
 
-    return stabilizers
+#     return stabilizers
 
 def to_distance_mzn(inputs, adj) -> str:
     dzn = ""

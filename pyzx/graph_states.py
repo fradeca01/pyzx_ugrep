@@ -245,6 +245,35 @@ class GraphState(Generic[VT, ET]):
             self.set_qubit(bound, len(qs) - len(state_inputs) + j )
 
 
+    def fix_boundaries(self, graph ) -> None:
+        my_v = graph.vertex_set().copy()
+        for v in my_v:
+            if graph.type(v) == VertexType.BOUNDARY:
+                neighbors = list(graph.neighbors(v))
+                for x in neighbors:
+                    if graph.type(x) == VertexType.BOUNDARY:
+                        n1 = graph.add_vertex(VertexType.Z)
+                        n2 = graph.add_vertex(VertexType.Z)
+                        graph.add_edge((v, n1), EdgeType.HADAMARD)
+                        graph.add_edge((n2, n1), EdgeType.HADAMARD)
+                        graph.add_edge((x, n2), EdgeType.HADAMARD)
+
+                        if v in graph.inputs():
+                            graph.set_row(n1, graph.row(v) + 1)
+                        else:
+                            graph.set_row(n1, graph.row(v) - 1)
+
+                        if x in graph.inputs():
+                            graph.set_row(n2, graph.row(x) + 1)
+                        else:
+                            graph.set_row(n2, graph.row(x) - 1)
+
+                        graph.set_qubit(n1, graph.qubit(v))
+                        graph.set_qubit(n2, graph.qubit(x))
+
+                        graph.remove_edge(graph.edge(v, x))
+    
+                
     
 
     def __init__(self, graph: BaseGraph[VT, ET], quiet : bool = True) -> None:
@@ -271,8 +300,11 @@ class GraphState(Generic[VT, ET]):
                 raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
 
         graph.auto_detect_io()
-
-        clifford_simp(graph, quiet=quiet) # O(n)
+        clifford_simp(graph, quiet=False) # O(n)
+        # draw(graph)
+        # print(graph.is_well_formed())
+        self.fix_boundaries(graph)
+        # draw(graph)
         graph.normalize()
         
         self._graph = graph
@@ -306,8 +338,9 @@ class GraphState(Generic[VT, ET]):
             bound = self.get_bound(i)
             print(f"State {i}: Phase = {self.get_graph().phase(i)}, Type = {self.get_graph().type(i)}, Bound: {bound}, Type: {self.get_graph().type(bound)}, Phase: {self.get_graph().phase(bound)}")
 
-        if draw:
-            draw(self.get_graph(), labels=True)
+        # if draw:
+            # g = self.get_graph()
+            # draw(g, labels=True)
 
 
 
@@ -352,7 +385,7 @@ class GraphState(Generic[VT, ET]):
                     print(f"Z-spiders {v1} and {v2} are not connected by a Hadamard edge")
                 return False
 
-            g.num_edges(v1, v2) == 1  # no parallel edges
+            # g.num_edges(v1, v2) == 1  # no parallel edges
 
         # no self-loops
         for v in self.get_states():

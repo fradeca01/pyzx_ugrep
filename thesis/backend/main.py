@@ -42,6 +42,10 @@ class JobResponse(BaseModel):
     success: bool
     job_id: str
 
+class ErrorResponse(BaseModel):
+    success: bool
+    error: str
+
 class GraphData(BaseModel):
     inputs : List[int]
     adjacency_list : List[List[int]]
@@ -50,9 +54,9 @@ class GraphData(BaseModel):
 
 class Job(BaseModel):
     process : Process
-    queue : Queue
     status : str
-    result : GraphData
+    result : GraphData | None
+    queue : Any
     last_heartbeat : float
 
     model_config = {
@@ -74,10 +78,10 @@ async def cleanup_stale_jobs():
         jobs_to_remove = []
         
         for job_id, job in JOBS.items():
-            if now - job["last_heartbeat"] > TIMEOUT_SECONDS:
+            if now - job.last_heartbeat > TIMEOUT_SECONDS:
                 print(f"Job {job_id} scaduto (timeout). Pulizia in corso...")
                 
-                process = job["process"]
+                process = job.process
                 if process.is_alive():
                     process.terminate()
                     process.join()
@@ -115,105 +119,143 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 def run_generate_graph(stabilizers, n, k, rq):
     try:
-        d = from_tableau(stabilizers, n, k)
-        distance_up_bound = distance_upper_bound(d)
-        encoder_circuit = implement_encoder(d)
+        print("HERRE")
+        enc = tableau_to_graph_encoder(stabilizers)
+        z = graph_to_universal_representation(enc)
+        u = to_universal_graph_representation(z)
+        distance_up_bound = distance_upper_bound(u)
+        encoder_circuit = implement_encoder(u)
         qasmEncoder = encoder_circuit.to_qasm()
+        
+        d = {}
+
+        d["inputs"] = u.inputs
+        d["adjacency_list"] = u.adj
         d["qasmEncoder"] = qasmEncoder
         d["distance_upper_bound"] = distance_up_bound
 
         rq.put({"success": True, "status" : "completed", "data": d})
     except Exception as e:
+        print(e)
         rq.put({"success": False, "status": "failed", "error": str(e)})
 
 
-@app.post("/get_graph")
-async def start_job(input_data: StabilizerInput) -> JobResponse:
+@app.post("/get_graph", response_model=JobResponse | ErrorResponse)
+async def start_job(input_data: StabilizerInput):
     random = input_data.random
     selectedExample = input_data.selectedExample
     stabilizers = []
     n = 0
     k = 0
 
-    if random:
-        n = int(input_data.n)
-        k = int(input_data.k)
-        tableau = stim.Tableau.random(n)
-        for i in range(n - k):
-            s = tableau.to_stabilizers()[i]
-            stabilizers.append(str(s))
-    elif selectedExample:
-        example_data = examples_dict.get(selectedExample)
-        if not example_data:
-            return {"success": False, "error": "Example not found"}
-        n = example_data["n"]
-        k = example_data["k"]
-        stabilizers = example_data["stabilizers"]
-    else:
-        stabilizers = input_data.stabilizers
-        n = int(input_data.n)
-        k = int(input_data.k)
+    try:
+        if random:
+            if input_data.n:
+                n = int(input_data.n)
+            else:
+                raise HTTPException(status_code=400, detail="Parameter 'n' is required for random generation")
+            
+            if input_data.k:
+                k = int(input_data.k)
+            else:
+                raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
+            
+            tableau = stim.Tableau.random(n)
+            # print(tableau)
+            for i in range(n - k):
+                s = tableau.to_stabilizers()[i]
+                stabilizers.append(str(s))
+        elif selectedExample:
+            example_data = examples_dict.get(selectedExample)
+            if not example_data:
+                raise HTTPException(status_code=400, detail="Selected example not found")
+            n = example_data["n"]
+            k = example_data["k"]
+            stabilizers = example_data["stabilizers"]
+        else:
+            
+            if stabilizers != []:
+                stabilizers = input_data.stabilizers
+            else:
+                raise HTTPException(status_code=400, detail="Stabilizers are required if no example is selected and random is false")
+            
+            if input_data.n:
+                n = int(input_data.n)
+            else:
+                raise HTTPException(status_code=400, detail="Parameter 'n' is required for random generation")
+            
+            if input_data.k:
+                k = int(input_data.k)
+            else:
+                raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
+            
+    except Exception as e:
 
-    
+        return ErrorResponse(success=False, error=f"Error processing input: {str(e)}")
+        # return {"success": False, "error": f"Error processing input: {str(e)}"}
+
+    # print("Stabilizers:", stabilizers)
     try:
         job_id = str(uuid.uuid4())
         queue = Queue() # For IPC
         process = Process(target=run_generate_graph, args=(stabilizers, n, k, queue))
-        JOBS[job_id] = {
-            "process": process,
-            "status": "processing",
-            "result": None,
-            "last_heartbeat": time.time(),
-            "queue" : queue
-        }
+        JOBS[job_id] = Job(
+            process = process,
+            status ="processing",
+            result = None,
+            last_heartbeat = time.time(),
+            queue = queue
+        )
+        print("Process created:", process)
         print(JOBS)
         result = process.start()
         print(result)
 
-
+        
         return {"success": True, "job_id": job_id}
     except Exception as e:
+        print(e)
         return {"success": False, "error": str(e)}
 
 
 
 
-@app.get("/status/{job_id}")
-async def check_status(job_id: str) -> DataResponse:
+@app.get("/status/{job_id}", response_model=DataResponse)
+async def check_status(job_id: str):
 
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found or expired")
 
-    job["last_heartbeat"] = time.time()
-    queue = job["queue"]
+    job.last_heartbeat = time.time()
+    queue = job.queue
 
     if not queue.empty():
         job_result = queue.get()
-        job["status"] = job_result["status"]
-        job["result"] = job_result["data"]
+        job.status = job_result["status"]
+        job.result = job_result.get("data", None) 
 
     print(job)
 
-    if job["status"] == "completed" or job["status"] == "failed":
-        return { "success" : True, "status" : job["status"], "data" :  job["result"] } 
+    if job.status == "completed" or job.status == "failed":
+        return { "success" : True, "status" : job.status, "data" :  job.result } 
 
-    process = job["process"]
+    process = job.process
 
     if process.is_alive():
         return {"success": True, "status": "processing"}
     else:
-        job["status"] = "failed"
+        job.status= "failed"
         return {"success": False, "status": "failed", "error": "Process died unexpectedly"}
 
 
-@app.post("/cancel/{job_id}")
-async def cancel_job(job_id: str) -> DataResponse:
+@app.post("/cancel/{job_id}", response_model=DataResponse)
+async def cancel_job(job_id: str):
     job = JOBS.get(job_id)
     if not job:
         return {"success": False, "status" : "failed" , "error": "Job not found"}
 
-    process = job["process"]
+    process = job.process
     if process.is_alive():
         process.terminate()
         process.join()
@@ -275,8 +317,8 @@ def run_minizinc_solver(inputs, adjacency_list, result_queue):
         print("Error in MiniZinc solver:", str(e))
         result_queue.put({"success": False, "status" : "failed",  "error": str(e)})
 
-@app.post("/solve")
-async def solve_minizinc(input_data: SolveInput) -> JobResponse:
+@app.post("/solve", response_model=JobResponse | ErrorResponse)
+async def solve_minizinc(input_data: SolveInput):
     job_id = str(uuid.uuid4())
     
     # --- STIMA DEL TEMPO ---
@@ -290,16 +332,15 @@ async def solve_minizinc(input_data: SolveInput) -> JobResponse:
     print("Starting MiniZinc solver1...")
     process.start()
 
-    JOBS[job_id] = {
-        "process": process,
-        "status": "processing",
-        "result": None,
-        "last_heartbeat": time.time(),
-        "queue": queue,
-    }
+    JOBS[job_id] = Job(
+        process = process,
+        status = "processing",
+        result = None,
+        last_heartbeat = time.time(),
+        queue =  queue,
+    )
 
     return {
         "success": True, 
         "job_id": job_id, 
-        # "estimated_time": estimated_time
     }

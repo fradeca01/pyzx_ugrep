@@ -33,7 +33,7 @@ from .circuit.qasmparser import qasm
 from .circuit.sqasm import sqasm
 from .graph_states import *
 from .generate import *
-from .universal_representation import to_universal_representation, implement_encoder, graph_state_to_universal_representation, benchmark_from_graph_state, distance_upper_bound, tableau_to_universal_graph_representation, graph_to_universal_graph_representation
+from .universal_representation import *
 from . import graph_states
 from . import generate
 from . import todd

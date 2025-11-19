@@ -29,6 +29,7 @@ __all__ = ['bialg_simp','spider_simp', 'id_simp', 'phase_free_simp', 'pivot_simp
 
 from ast import Mult
 from functools import reduce
+from .drawing import draw
 from optparse import Option
 from typing import List, Callable, Optional, Union, Generic, Tuple, Dict, Iterator, cast
 
