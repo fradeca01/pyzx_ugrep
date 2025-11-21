@@ -602,12 +602,15 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     inputs = d.inputs
     adj = d.adj
-
     pivots = d.pivots
+    outputs_no_pivots = list(set(range(len(adj))) - set(pivots) - set(inputs))
 
-    outputs_no_pivots = set(range(len(adj))) - set(pivots)
+    print(inputs)
+    print(pivots)
+    print(outputs_no_pivots)
 
     out_to_in = {i : set() for i in range(len(adj)) if i not in inputs}
+
 
     for o in range(len(adj)):
         if o not in inputs:
@@ -615,25 +618,35 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
                 if x in inputs:
                     out_to_in[o].add(x)
 
+
     n = len(adj) - len(inputs)
     k = len(inputs)
+    print(out_to_in, n, k)
 
     stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
+    # print(stabilizers)
+    s = 0
     for i in outputs_no_pivots:
-        stabilizers[i - k] *= stim.PauliString(f"X{i-k}")
+        # print("HERE", f"X{i+2}")
+        stabilizers[s] *= stim.PauliString(f"X{i - k}")
         for j in adj[i]:
             if j not in inputs:
-                stabilizers[i - k] *= stim.PauliString(f"Z{j-k}")
+                stabilizers[s] *= stim.PauliString(f"Z{j-k}")
 
+        print(stabilizers[s])
         inp = out_to_in[i]
         for a in inp:
             p = pivots[a]
-            stabilizers[i - k] *= stim.PauliString(f"X{p-k}")
+            stabilizers[s] *= stim.PauliString(f"X{p-k}")
 
             for q in adj[p]:
                 if q not in inputs:
-                    stabilizers[i-k] *= stim.PauliString(f"Z{q-k}")
+                    stabilizers[s] *= stim.PauliString(f"Z{q-k}")
+
+        s += 1
+
+
 
     stabilizers = [str(x) for x in stabilizers]
 

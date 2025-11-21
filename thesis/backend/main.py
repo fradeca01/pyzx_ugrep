@@ -16,7 +16,6 @@ import math
 from pyzx import *
 
 
-# Timeout for killing jobs
 TIMEOUT_SECONDS = 15  
 
 
@@ -41,6 +40,7 @@ class DataResponse(BaseModel):
 class JobResponse(BaseModel):
     success: bool
     job_id: str
+    estimated_time: Optional[float] = None
 
 class ErrorResponse(BaseModel):
     success: bool
@@ -49,7 +49,7 @@ class ErrorResponse(BaseModel):
 class GraphData(BaseModel):
     inputs : List[int]
     stabilizers : List[str]
-    adjacency_list : List[List[int]]
+    adjacencyList : List[List[int]]
     qasmEncoder : str
     distance_upper_bound : int
 
@@ -161,7 +161,9 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         d["inputs"] = ugr.inputs
         d["adjacency_list"] = ugr.adj
         d["distance_upper_bound"] = dist
-        d["qasmEncoder"] = encoder
+        d["qasmEncoder"] = encoder.to_qasm()
+
+        print(d)
 
         rq.put({"success": True, "status" : "completed", "data": d})
 
@@ -170,15 +172,29 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         rq.put({"success": False, "status": "failed", "error": str(e)})
 
 @app.post("/from_dot", response_model=JobResponse | ErrorResponse)
-async def from_dot(input_data):
+async def from_dot(input_data : GraphInput):
     
-    print("AAAA")
+    # print("AAAA")
     
     try:
         inputs = input_data.inputs
         adjacency_list = input_data.adjacencyList
 
-        pivots = []    
+        pivots = [-1 for _ in range(len(inputs))]
+
+        for i in inputs:
+            n_i = adjacency_list[i]
+            for o in n_i:
+                n_o = adjacency_list[o]
+                ok = True
+                for j in n_o:
+                    if j != i and j in inputs:
+                        ok = False
+                if ok:
+                    pivots[i] = o
+                    break
+        
+        
         try:
             job_id = str(uuid.uuid4())
             queue = Queue() # For IPC
@@ -264,6 +280,7 @@ async def start_job(input_data: StabilizerInput):
 
     # print("Stabilizers:", stabilizers)
     try:
+        estimated_time = round(0.005 * (n ** 3), 1) 
         job_id = str(uuid.uuid4())
         queue = Queue() # For IPC
         process = Process(target=run_generate_graph, args=(stabilizers, n, k, queue))
@@ -280,7 +297,7 @@ async def start_job(input_data: StabilizerInput):
         print(result)
 
         
-        return {"success": True, "job_id": job_id}
+        return {"success": True, "job_id": job_id, "estimated_time": estimated_time}
     except Exception as e:
         print(e)
         return {"success": False, "error": str(e)}
@@ -389,10 +406,8 @@ def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], re
 async def solve_minizinc(input_data: SolveInput):
     job_id = str(uuid.uuid4())
     
-    # --- STIMA DEL TEMPO ---
-    # Una semplice euristica: N^2 o esponenziale a seconda della complessità
     n = len(input_data.adjacency_list)
-    estimated_time = round(0.005 * (n ** 2), 1) # Esempio: 100 nodi -> 50 secondi
+    estimated_time = round(0.005 * (2 ** n), 1) 
     if estimated_time < 1: estimated_time = 1
 
     queue = Queue()
@@ -411,4 +426,5 @@ async def solve_minizinc(input_data: SolveInput):
     return {
         "success": True, 
         "job_id": job_id, 
+        "estimated_time": estimated_time
     }
