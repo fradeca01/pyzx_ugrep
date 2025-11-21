@@ -9,13 +9,13 @@ __all__ = [
     "to_universal_graph_representation",  
     "implement_encoder",
     "distance_upper_bound",
-    "to_stabilizer_tableau",
     "stim_qasm_comply",
     "tableau_to_graph_encoder",
     "graph_to_universal_representation",
     "benchmark_from_graph_state",
     "UGR",
-    "ZXCF"
+    "ZXCF",
+    "to_stabilizer_tableau"
 ]
 
 
@@ -524,7 +524,7 @@ class Pauli:
         a = (self.a + other.a + 2*s) % 4 # phase
         b = (self.b + other.b) % 2 # X part
         c = (self.c + other.c) % 2 # Z part
-        return GraphState.Pauli(a, b, c)
+        return Pauli(a, b, c)
 
     def __repr__(self):
         phase = [1, 1j, -1, -1j][self.a]
@@ -592,64 +592,52 @@ def implement_encoder(d : UGR) -> Circuit:
 
     return c
 
-# def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[Tuple[VT, VT, int]]:
-#     """
-#     Convert a graph to a stabilizer tableau.
+def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
+    """
+    Convert a graph to a stabilizer tableau.
     
-#     Returns:
-#         A list of stabilizers representing the graph state
-#     """
+    Returns:
+        A list of stabilizers representing the graph state
+    """
 
-#     inputs = d.inputs
-#     adj = d.adj
+    inputs = d.inputs
+    adj = d.adj
 
-#     pivots = d.pivots
+    pivots = d.pivots
 
-#     out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
+    outputs_no_pivots = set(range(len(adj))) - set(pivots)
 
-#     print(inputs)
-#     print(adj)
+    out_to_in = {i : set() for i in range(len(adj)) if i not in inputs}
 
-#     for i in range(len(adj)):
-#         if i not in inputs:
-#             # print()
-#             neigh = adj[i]
-#             count = 0
-#             input = -1
-#             for n in neigh:
-#                 if n in inputs:
-#                     count += 1
-#                     input = n
-#                     # print(n)
-#                     out_to_in[i] = n
-#             if count == 1:
-#                 if pivots[input] == -1:
-#                     pivots[input] = i 
+    for o in range(len(adj)):
+        if o not in inputs:
+            for x in adj[o]:
+                if x in inputs:
+                    out_to_in[o].add(x)
 
+    n = len(adj) - len(inputs)
+    k = len(inputs)
 
-#     stabilizers = [[Pauli(0,0,0) for _ in range(len(adj) - len(inputs)) ] for _ in range(len(adj) - 2 * len(inputs))]
+    stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
-#     k = 0
-#     for i in range(len(inputs), len(adj)):
-#         if i not in pivots:
-#             # print("Scanning vertex", i)
-#             # print(k, i)
-#             stabilizers[k][i - len(inputs)] *= Pauli(0,1,0)
-#             # print(stabilizers[k])
-#             for x in adj[i]:
-#                 if x not in inputs:
-#                     stabilizers[k][x - len(inputs)] *= Pauli(0,0,1)
-#             # print(stabilizers[k])
-#             y = pivots[out_to_in[i]] 
-#             stabilizers[k][y - len(inputs)] *= Pauli(0,1,0)
-#             # print(stabilizers[k])
-#             for x in adj[y]:
-#                 if x not in inputs:
-#                     stabilizers[k][x- len(inputs)] *= Pauli(0,0,1)
-#             # print(stabilizers[k])
-#             k += 1
+    for i in outputs_no_pivots:
+        stabilizers[i - k] *= stim.PauliString(f"X{i-k}")
+        for j in adj[i]:
+            if j not in inputs:
+                stabilizers[i - k] *= stim.PauliString(f"Z{j-k}")
 
-#     return stabilizers
+        inp = out_to_in[i]
+        for a in inp:
+            p = pivots[a]
+            stabilizers[i - k] *= stim.PauliString(f"X{p-k}")
+
+            for q in adj[p]:
+                if q not in inputs:
+                    stabilizers[i-k] *= stim.PauliString(f"Z{q-k}")
+
+    stabilizers = [str(x) for x in stabilizers]
+
+    return stabilizers
 
 def to_distance_mzn(inputs, adj) -> str:
     dzn = ""

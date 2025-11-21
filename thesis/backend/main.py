@@ -26,8 +26,8 @@ class SolveInput(BaseModel):
 
 class StabilizerInput(BaseModel):
     selectedExample: Optional[str] = None
-    n: Optional[int] = None
-    k: Optional[int] = None
+    n: int 
+    k: int 
     random: bool = False
     stabilizers: Optional[List[str]] = []
 
@@ -51,6 +51,10 @@ class GraphData(BaseModel):
     adjacency_list : List[List[int]]
     qasmEncoder : str
     distance_upper_bound : int
+
+class GraphInput(BaseModel):
+    inputs : List[int]
+    adjacencyList : List[List[int]]
 
 class Job(BaseModel):
     process : Process
@@ -140,6 +144,62 @@ def run_generate_graph(stabilizers, n, k, rq):
         rq.put({"success": False, "status": "failed", "error": str(e)})
 
 
+def run_from_graph(ugr: UGR, rq):
+    try:
+        stabilizers = to_stabilizer_tableau(ugr)
+        dist  = distance_upper_bound(ugr)
+        encoder = implement_encoder(ugr)
+
+        d = {}
+
+        d["stabilizers"] = stabilizers
+        d["distance_upper_bound"] = dist
+        d["qasmEncoder"] = encoder
+
+        rq.put({"success": True, "status" : "completed", "data": d})
+
+    except Exception as e:
+        print(e)
+        rq.put({"success": False, "status": "failed", "error": str(e)})
+
+@app.post("/from_dot", response_model=JobResponse | ErrorResponse)
+async def from_dot(input_data : GraphInput):
+    
+    
+    try:
+        inputs = input_data.inputs
+        adjacency_list = input_data.adjacencyList
+
+        pivots = []
+
+        ugr = UGR(inputs, adjacency_list, pivots, local_cliffords = {})
+    
+        try:
+            job_id = str(uuid.uuid4())
+            queue = Queue() # For IPC
+            process = Process(target=run_from_graph, args=(ugr, queue))
+            JOBS[job_id] = Job(
+                process = process,
+                status ="processing",
+                result = None,
+                last_heartbeat = time.time(),
+                queue = queue
+            )
+            print("Process created:", process)
+            print(JOBS)
+            result = process.start()
+            print(result)
+
+            
+            return {"success": True, "job_id": job_id}
+        except Exception as e:
+            print(e)
+            return {"success": False, "error": str(e)}
+    except Exception as e:
+        return ErrorResponse(success=False, error=f"Error processing input: {str(e)}")
+
+
+
 @app.post("/get_graph", response_model=JobResponse | ErrorResponse)
 async def start_job(input_data: StabilizerInput):
     random = input_data.random
@@ -173,8 +233,11 @@ async def start_job(input_data: StabilizerInput):
             k = example_data["k"]
             stabilizers = example_data["stabilizers"]
         else:
+
             
-            if stabilizers != []:
+            # print(input_data.stabilizers)
+
+            if input_data.stabilizers != []:
                 stabilizers = input_data.stabilizers
             else:
                 raise HTTPException(status_code=400, detail="Stabilizers are required if no example is selected and random is false")
@@ -263,8 +326,8 @@ async def cancel_job(job_id: str):
     del JOBS[job_id]
     return {"success": True, "status": "cancelled"}
 
-def run_minizinc_solver(inputs, adjacency_list, result_queue):
-    try:
+def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], result_queue : Queue):
+    # try:
         # 1. Preparazione Dati per MiniZinc
         # Convertiamo liste Python in formati compatibili con MiniZinc (1-based index spesso richiesto)
         # Ma il tuo modello usa indici interi, assumiamo che 1..N sia meglio per MZN.
@@ -309,13 +372,13 @@ def run_minizinc_solver(inputs, adjacency_list, result_queue):
 
         if result:
             min_weight = result["objective"]
-            result_queue.put({"success": True, "data": min_weight})
+            result_queue.put({"success": True, "status" : "completed", "data": min_weight})
         else:
-            result_queue.put({"success": False, "error": "Unsatisfiable"})
+            result_queue.put({"success": False, "status" : "completed", "error": "Unsatisfiable"})
 
-    except Exception as e:
-        print("Error in MiniZinc solver:", str(e))
-        result_queue.put({"success": False, "status" : "failed",  "error": str(e)})
+    # except Exception as e:
+        # print("Error in MiniZinc solver:", str(e))
+        # result_queue.put({"success": False, "status" : "failed",  "error": str(e)})
 
 @app.post("/solve", response_model=JobResponse | ErrorResponse)
 async def solve_minizinc(input_data: SolveInput):
