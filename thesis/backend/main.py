@@ -144,8 +144,11 @@ def run_generate_graph(stabilizers, n, k, rq):
         rq.put({"success": False, "status": "failed", "error": str(e)})
 
 
-def run_from_graph(ugr: UGR, rq):
+def run_from_graph(inputs, adjacency_list, pivots, rq):
     try:
+
+        ugr = UGR(inputs, adjacency_list, pivots, local_cliffords = {})
+
         stabilizers = to_stabilizer_tableau(ugr)
         dist  = distance_upper_bound(ugr)
         encoder = implement_encoder(ugr)
@@ -170,14 +173,11 @@ async def from_dot(input_data : GraphInput):
         inputs = input_data.inputs
         adjacency_list = input_data.adjacencyList
 
-        pivots = []
-
-        ugr = UGR(inputs, adjacency_list, pivots, local_cliffords = {})
-    
+        pivots = []    
         try:
             job_id = str(uuid.uuid4())
             queue = Queue() # For IPC
-            process = Process(target=run_from_graph, args=(ugr, queue))
+            process = Process(target=run_from_graph, args=(inputs, adjacency_list, pivots, queue))
             JOBS[job_id] = Job(
                 process = process,
                 status ="processing",
