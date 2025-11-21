@@ -48,6 +48,7 @@ class ErrorResponse(BaseModel):
 
 class GraphData(BaseModel):
     inputs : List[int]
+    stabilizers : List[str]
     adjacency_list : List[List[int]]
     qasmEncoder : str
     distance_upper_bound : int
@@ -135,6 +136,7 @@ def run_generate_graph(stabilizers, n, k, rq):
 
         d["inputs"] = u.inputs
         d["adjacency_list"] = u.adj
+        d["stabilizers"] = stabilizers
         d["qasmEncoder"] = qasmEncoder
         d["distance_upper_bound"] = distance_up_bound
 
@@ -156,6 +158,8 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         d = {}
 
         d["stabilizers"] = stabilizers
+        d["inputs"] = ugr.inputs
+        d["adjacency_list"] = ugr.adj
         d["distance_upper_bound"] = dist
         d["qasmEncoder"] = encoder
 
@@ -166,8 +170,9 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         rq.put({"success": False, "status": "failed", "error": str(e)})
 
 @app.post("/from_dot", response_model=JobResponse | ErrorResponse)
-async def from_dot(input_data : GraphInput):
+async def from_dot(input_data):
     
+    print("AAAA")
     
     try:
         inputs = input_data.inputs
