@@ -165,10 +165,10 @@ def run_generate_graph(stabilizers, n, k, rq):
         d["qasmEncoder"] = qasmEncoder
         d["distance_upper_bound"] = distance_up_bound
 
-        rq.put({"status" : "completed", "error" : None, "data": d})
+        rq.put({"success" : True, "status" : "completed", "error" : None, "data": d})
     except Exception as e:
         print(e)
-        rq.put({"status": "failed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
+        rq.put({"success" : False  , "status": "completed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
 
 
 def run_from_graph(inputs, adjacency_list, pivots, rq):
@@ -187,10 +187,10 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         d["distance_upper_bound"] = dist
         d["qasmEncoder"] = encoder.to_qasm()
 
-        rq.put({"status" : "completed", "error" : None, "data": d})
+        rq.put({"success" : False, "status" : "completed", "error" : None, "data": d})
 
     except Exception as e:
-        rq.put({"status": "failed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
+        rq.put({"success" : False, "status": "completed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
 
 
 @app.post("/from_dot", response_model=JobResponse | ErrorResponse)
