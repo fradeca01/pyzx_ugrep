@@ -1,6 +1,7 @@
 .mypy_cache
 local-scratchpads
 venv
+venv-thesis
 .venv
 .idea
 .vs

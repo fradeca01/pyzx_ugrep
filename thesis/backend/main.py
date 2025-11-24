@@ -19,6 +19,9 @@ from pyzx import *
 TIMEOUT_SECONDS = 15  
 
 
+# success: True request completed correctly -> Workflow is running appropiately
+# status: Failed -> Returning an error
+
 class SolveInput(BaseModel):
     inputs: List[int]
     adjacency_list: List[List[int]]
@@ -34,8 +37,6 @@ class DataResponse(BaseModel):
     success: bool
     status: str
     data: Optional[Any] = None
-    error: Optional[str] = None
-
 
 class JobResponse(BaseModel):
     success: bool
@@ -57,19 +58,20 @@ class GraphInput(BaseModel):
     inputs : List[int]
     adjacencyList : List[List[int]]
 
+class JobResult(BaseModel):
+    status : str
+    error : str | None
+    data : GraphData | None
+
 class Job(BaseModel):
     process : Process
     status : str
-    result : GraphData | None
-    queue : Any
+    queue : Queue
     last_heartbeat : float
-
     model_config = {
         "arbitrary_types_allowed": True
     }
 
-
-# --- JOBS RUNNING ---
 JOBS: Dict[str, Job] = {}
 
 def kill_process_tree(pid: int):
@@ -80,17 +82,14 @@ def kill_process_tree(pid: int):
         parent = psutil.Process(pid)
         children = parent.children(recursive=True)
         
-        # 1. Terminate children (Gecode/MiniZinc)
         for child in children:
             print(f"Killing child process: {child.pid}")
             child.terminate()
         
-        # Wait for children to actually die
         _, alive = psutil.wait_procs(children, timeout=3)
         for p in alive:
-            p.kill() # Force kill if they are still stuck
+            p.kill() 
 
-        # 2. Terminate the main Python worker
         print(f"Killing parent process: {parent.pid}")
         parent.terminate()
         parent.wait(timeout=3)
@@ -122,7 +121,6 @@ async def cleanup_stale_jobs():
                 
                 jobs_to_remove.append(job_id)
         
-        # Rimuovi dal dizionario
         for job_id in jobs_to_remove:
             del JOBS[job_id]
 
@@ -144,7 +142,7 @@ app.add_middleware(
 )
 
 try:
-    with open("example_dict.json", "r") as f:
+    with open("./example_dict.json", "r") as f:
         examples_dict = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
     examples_dict = {}
@@ -152,7 +150,6 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 def run_generate_graph(stabilizers, n, k, rq):
     try:
-        print("HERRE")
         enc = tableau_to_graph_encoder(stabilizers)
         z = graph_to_universal_representation(enc)
         u = to_universal_graph_representation(z)
@@ -168,15 +165,14 @@ def run_generate_graph(stabilizers, n, k, rq):
         d["qasmEncoder"] = qasmEncoder
         d["distance_upper_bound"] = distance_up_bound
 
-        rq.put({"success": True, "status" : "completed", "data": d})
+        rq.put({"status" : "completed", "error" : None, "data": d})
     except Exception as e:
         print(e)
-        rq.put({"success": False, "status": "failed", "error": str(e)})
+        rq.put({"status": "failed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
 
 
 def run_from_graph(inputs, adjacency_list, pivots, rq):
     try:
-
         ugr = UGR(inputs, adjacency_list, pivots, local_cliffords = {})
 
         stabilizers = to_stabilizer_tableau(ugr)
@@ -191,19 +187,15 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         d["distance_upper_bound"] = dist
         d["qasmEncoder"] = encoder.to_qasm()
 
-        print(d)
-
-        rq.put({"success": True, "status" : "completed", "data": d})
+        rq.put({"status" : "completed", "error" : None, "data": d})
 
     except Exception as e:
-        print(e)
-        rq.put({"success": False, "status": "failed", "error": str(e)})
+        rq.put({"status": "failed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
+
 
 @app.post("/from_dot", response_model=JobResponse | ErrorResponse)
 async def from_dot(input_data : GraphInput):
-    
-    # print("AAAA")
-    
+      
     try:
         inputs = input_data.inputs
         adjacency_list = input_data.adjacencyList
@@ -222,10 +214,9 @@ async def from_dot(input_data : GraphInput):
                     pivots[i] = o
                     break
         
-        
         try:
             job_id = str(uuid.uuid4())
-            queue = Queue() # For IPC
+            queue = Queue() 
             process = Process(target=run_from_graph, args=(inputs, adjacency_list, pivots, queue))
             JOBS[job_id] = Job(
                 process = process,
@@ -242,10 +233,9 @@ async def from_dot(input_data : GraphInput):
             
             return {"success": True, "job_id": job_id}
         except Exception as e:
-            print(e)
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": f"Error spawning the process: {str(e)}"}
     except Exception as e:
-        return ErrorResponse(success=False, error=f"Error processing input: {str(e)}")
+        return {"success": False, "error": f"Error processing the input: {str(e)}"}
 
 
 
@@ -253,9 +243,11 @@ async def from_dot(input_data : GraphInput):
 async def start_job(input_data: StabilizerInput):
     random = input_data.random
     selectedExample = input_data.selectedExample
+    print(selectedExample)
     stabilizers = []
     n = 0
     k = 0
+
 
     try:
         if random:
@@ -270,7 +262,7 @@ async def start_job(input_data: StabilizerInput):
                 raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
             
             tableau = stim.Tableau.random(n)
-            # print(tableau)
+
             for i in range(n - k):
                 s = tableau.to_stabilizers()[i]
                 stabilizers.append(str(s))
@@ -282,10 +274,6 @@ async def start_job(input_data: StabilizerInput):
             k = example_data["k"]
             stabilizers = example_data["stabilizers"]
         else:
-
-            
-            # print(input_data.stabilizers)
-
             if input_data.stabilizers != []:
                 stabilizers = input_data.stabilizers
             else:
@@ -302,15 +290,11 @@ async def start_job(input_data: StabilizerInput):
                 raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
             
     except Exception as e:
-
-        return ErrorResponse(success=False, error=f"Error processing input: {str(e)}")
-        # return {"success": False, "error": f"Error processing input: {str(e)}"}
-
-    # print("Stabilizers:", stabilizers)
+        return {"success" : False, "error" : f"Error processing input: {str(e)}"}
     try:
         estimated_time = round(0.005 * (n ** 3), 1) 
         job_id = str(uuid.uuid4())
-        queue = Queue() # For IPC
+        queue = Queue() 
         process = Process(target=run_generate_graph, args=(stabilizers, n, k, queue))
         JOBS[job_id] = Job(
             process = process,
@@ -319,18 +303,12 @@ async def start_job(input_data: StabilizerInput):
             last_heartbeat = time.time(),
             queue = queue
         )
-        print("Process created:", process)
-        print(JOBS)
         result = process.start()
-        print(result)
 
         
         return {"success": True, "job_id": job_id, "estimated_time": estimated_time}
     except Exception as e:
-        print(e)
         return {"success": False, "error": str(e)}
-
-
 
 
 @app.get("/status/{job_id}", response_model=DataResponse)
@@ -345,13 +323,15 @@ async def check_status(job_id: str):
 
     if not queue.empty():
         job_result = queue.get()
-        job.status = job_result["status"]
+        job.status = job_result.get("status", None)
         job.result = job_result.get("data", None) 
+        error = job_result.get("error", None)
 
-    print(job)
-
-    if job.status == "completed" or job.status == "failed":
+    if job.status == "completed": 
         return { "success" : True, "status" : job.status, "data" :  job.result } 
+    elif job.status == "failed":
+        print("here")
+        return { "success" : False, "status" : job.status, "error" :  error } 
 
     process = job.process
 
@@ -377,59 +357,43 @@ async def cancel_job(job_id: str):
     del JOBS[job_id]
     return {"success": True, "status": "cancelled"}
 
-def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], result_queue : Queue):
-    # try:
-        # 1. Preparazione Dati per MiniZinc
-        # Convertiamo liste Python in formati compatibili con MiniZinc (1-based index spesso richiesto)
-        # Ma il tuo modello usa indici interi, assumiamo che 1..N sia meglio per MZN.
-
-        print("Starting MiniZinc solver2...")
-        
+def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], result_queue : Queue):   
         num_nodes = len(adjacency_list)
-        # Mappa 0-based index (Python) a 1-based index (MiniZinc)
         I_nodes = {i + 1 for i in inputs}
         all_nodes = set(range(1, num_nodes + 1))
         O_P_nodes = all_nodes - I_nodes
         
-        # Matrice di adiacenza
         adj = [[False for _ in range(num_nodes)] for _ in range(num_nodes)]
         for i, neighbors in enumerate(adjacency_list):
             for neighbor in neighbors:
-                # Adiacenza non diretta
                 adj[i][neighbor] = True
                 adj[neighbor][i] = True
                 
-        # Initial lights (tutti 0 per trovare la distanza minima del codice stesso)
-        initial_lights = [0] * (num_nodes + 1) # Padding per 1-based indexing
+        initial_lights = [0] * (num_nodes + 1) 
 
-        # 2. Caricamento Modello
-        print("Starting MiniZinc solver3...")
-        model = Model("qlo.mzn") 
-        solver = Solver.lookup("gecode") # O "coin-bc", "chuffed"
-        print("Starting MiniZinc solver4...")
-        instance = Instance(solver, model)
+        try:
+            model = Model("qlo.mzn") 
+            solver = Solver.lookup("gecode")
+            instance = Instance(solver, model)
 
-        instance["I_nodes"] = I_nodes
-        instance["O_P_nodes"] = O_P_nodes
-        instance["adj"] = adj
-        # instance["initial_lights"] è un array su O_P_nodes. 
-        # Dobbiamo passarlo correttamente. MiniZinc si aspetta un array indicizzato.
-        # Per semplicità, passiamo una lista della lunghezza corretta se l'enum è int.
-        instance["initial_lights"] = [0] * len(O_P_nodes) 
+            instance["I_nodes"] = I_nodes
+            instance["O_P_nodes"] = O_P_nodes
+            instance["adj"] = adj
+            instance["initial_lights"] = [0] * len(O_P_nodes) 
 
-        print("Starting MiniZinc solver...")
-        # 3. Risoluzione
-        result = instance.solve()
 
-        if result:
-            min_weight = result["objective"]
-            result_queue.put({"success": True, "status" : "completed", "data": min_weight})
-        else:
-            result_queue.put({"success": False, "status" : "completed", "error": "Unsatisfiable"})
+            print("Starting MiniZinc solver...")
+            result = instance.solve()
 
-    # except Exception as e:
-        # print("Error in MiniZinc solver:", str(e))
-        # result_queue.put({"success": False, "status" : "failed",  "error": str(e)})
+            if result:
+                min_weight = result["objective"]
+                result_queue.put({"success": True, "status" : "completed", "data": min_weight})
+            else:
+                result_queue.put({"success": False, "status" : "completed", "error": "Unsatisfiable"})
+        except Exception as e:
+            print("EXPE")
+            result_queue.put({"success" : False, "error" : "Unable to start the solver"})
+  
 
 @app.post("/solve", response_model=JobResponse | ErrorResponse)
 async def solve_minizinc(input_data: SolveInput):
