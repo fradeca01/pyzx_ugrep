@@ -6,7 +6,7 @@ import stim
 from contextlib import asynccontextmanager
 from multiprocessing import Process, Queue
 from typing import Dict, Any, Optional, List
-
+import psutil
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,6 +72,33 @@ class Job(BaseModel):
 # --- JOBS RUNNING ---
 JOBS: Dict[str, Job] = {}
 
+def kill_process_tree(pid: int):
+    """
+    Kills a process and all its children (e.g. the Gecode solver).
+    """
+    try:
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        
+        # 1. Terminate children (Gecode/MiniZinc)
+        for child in children:
+            print(f"Killing child process: {child.pid}")
+            child.terminate()
+        
+        # Wait for children to actually die
+        _, alive = psutil.wait_procs(children, timeout=3)
+        for p in alive:
+            p.kill() # Force kill if they are still stuck
+
+        # 2. Terminate the main Python worker
+        print(f"Killing parent process: {parent.pid}")
+        parent.terminate()
+        parent.wait(timeout=3)
+        
+    except psutil.NoSuchProcess:
+        print("Process already dead.")
+    except Exception as e:
+        print(f"Error killing process tree: {e}")
 
 async def cleanup_stale_jobs():
     """Controlla periodicamente se ci sono job abbandonati."""
@@ -88,7 +115,8 @@ async def cleanup_stale_jobs():
                 
                 process = job.process
                 if process.is_alive():
-                    process.terminate()
+                    if process.pid:
+                        kill_process_tree(process.pid)
                     process.join()
                     print(f"Processo {process.pid} terminato forzatamente.")
                 
@@ -342,7 +370,8 @@ async def cancel_job(job_id: str):
 
     process = job.process
     if process.is_alive():
-        process.terminate()
+        if process.pid:
+            kill_process_tree(process.pid)
         process.join()
     
     del JOBS[job_id]
