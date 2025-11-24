@@ -66,7 +66,7 @@ class JobResult(BaseModel):
 class Job(BaseModel):
     process : Process
     status : str
-    queue : Queue
+    queue : Any
     last_heartbeat : float
     model_config = {
         "arbitrary_types_allowed": True
@@ -308,38 +308,42 @@ async def start_job(input_data: StabilizerInput):
         
         return {"success": True, "job_id": job_id, "estimated_time": estimated_time}
     except Exception as e:
+        print(str(e))
         return {"success": False, "error": str(e)}
 
 
-@app.get("/status/{job_id}", response_model=DataResponse)
+@app.get("/status/{job_id}", response_model=DataResponse | ErrorResponse)
 async def check_status(job_id: str):
+    print("CALLED")
+    try: 
+        job = JOBS.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found or expired")
 
-    job = JOBS.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found or expired")
+        job.last_heartbeat = time.time()
+        queue = job.queue
 
-    job.last_heartbeat = time.time()
-    queue = job.queue
+        if not queue.empty():
+            print("aa")
+            job_result = queue.get()
+            succ = job_result.get("success")
+            result = job_result.get("data", None) 
+            error = job_result.get("error", None)
 
-    if not queue.empty():
-        job_result = queue.get()
-        job.status = job_result.get("status", None)
-        job.result = job_result.get("data", None) 
-        error = job_result.get("error", None)
+            if succ == True: 
+                return { "success" : True, "status" : "completed", "data" :  result } 
+            elif succ==False:
+                return { "success" : False, "error" : error } 
 
-    if job.status == "completed": 
-        return { "success" : True, "status" : job.status, "data" :  job.result } 
-    elif job.status == "failed":
-        print("here")
-        return { "success" : False, "status" : job.status, "error" :  error } 
+        process = job.process
 
-    process = job.process
-
-    if process.is_alive():
-        return {"success": True, "status": "processing"}
-    else:
-        job.status= "failed"
-        return {"success": False, "status": "failed", "error": "Process died unexpectedly"}
+        if process.is_alive():
+            return {"success": True, "status": "processing", "data" : None}
+        else:
+            return {"success": False, "error": "Process is dead and cannot retieve status"}
+    except Exception as e:
+        print(e)
+        return {"success": False, "error": f"Error retrieving status: {str(e)}"}
 
 
 @app.post("/cancel/{job_id}", response_model=DataResponse)
