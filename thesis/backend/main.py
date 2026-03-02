@@ -56,7 +56,7 @@ class GraphData(BaseModel):
 
 class GraphInput(BaseModel):
     inputs : List[int]
-    adjacencyList : List[List[int]]
+    adjacencyList : List[tuple[int, List[int]]]
 
 class JobResult(BaseModel):
     status : str
@@ -187,7 +187,7 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
         d["distance_upper_bound"] = dist
         d["qasmEncoder"] = encoder.to_qasm()
 
-        rq.put({"success" : False, "status" : "completed", "error" : None, "data": d})
+        rq.put({"success" : True, "status" : "completed", "error" : None, "data": d})
 
     except Exception as e:
         rq.put({"success" : False, "status": "completed", "error": f"Cannot generate graph: {str(e)}", "data" : None})
@@ -197,8 +197,29 @@ def run_from_graph(inputs, adjacency_list, pivots, rq):
 async def from_dot(input_data : GraphInput):
       
     try:
-        inputs = input_data.inputs
-        adjacency_list = input_data.adjacencyList
+        old_inputs = input_data.inputs
+        old_adjacency_list = {item[0]: set(item[1]) for item in input_data.adjacencyList}
+
+        print("OLD INPUTS:", old_inputs)
+        print("OLD ADJACENCY LIST:", old_adjacency_list)
+
+        input_set = set(old_inputs)
+        all_nodes_set = set(old_adjacency_list.keys())
+        others_set = all_nodes_set - input_set
+
+        new_order = list(input_set) + list(others_set)
+
+        old_to_new_map = {node : i for i, node in enumerate(new_order)}
+
+        inputs = [old_to_new_map[i] for i in old_inputs]
+
+        adjacency_list = [[] for _ in range(len(old_adjacency_list))]
+
+        for old_node, old_neigh in old_adjacency_list.items():
+            new_node = old_to_new_map[old_node]
+            for neigh in old_neigh:
+                new_neigh = old_to_new_map[neigh]
+                adjacency_list[new_node].append(new_neigh)
 
         pivots = [-1 for _ in range(len(inputs))]
 
@@ -221,14 +242,15 @@ async def from_dot(input_data : GraphInput):
             JOBS[job_id] = Job(
                 process = process,
                 status ="processing",
-                result = None,
                 last_heartbeat = time.time(),
                 queue = queue
             )
-            print("Process created:", process)
+            # print("Process created:", process)
             print(JOBS)
             result = process.start()
-            print(result)
+            # print(result)
+
+            # print("Process started:", process)
 
             
             return {"success": True, "job_id": job_id}
@@ -299,7 +321,6 @@ async def start_job(input_data: StabilizerInput):
         JOBS[job_id] = Job(
             process = process,
             status ="processing",
-            result = None,
             last_heartbeat = time.time(),
             queue = queue
         )
@@ -324,8 +345,9 @@ async def check_status(job_id: str):
         queue = job.queue
 
         if not queue.empty():
-            print("aa")
+            print("RESULT IN QUEUE")
             job_result = queue.get()
+            print("JOB RESULT:", job_result)
             succ = job_result.get("success")
             result = job_result.get("data", None) 
             error = job_result.get("error", None)
@@ -415,7 +437,6 @@ async def solve_minizinc(input_data: SolveInput):
     JOBS[job_id] = Job(
         process = process,
         status = "processing",
-        result = None,
         last_heartbeat = time.time(),
         queue =  queue,
     )

@@ -34,5 +34,53 @@
             "XXXXXXIII",
             "IIIXXXXXX"
         ]
+    },
+    "r3x3": {
+        "n": 9,
+        "k": 1,
+        "stabilizers": [
+            "IZZIIIIII",
+            "ZZIZZIIII",
+            "IIIIIIZZI",
+            "IIIIZZIZZ",
+            "XIIXIIIII",
+            "IXXIXXIII",
+            "IIIXXIXXI",
+            "IIIIIXIIX"
+        ]
+    },
+    "t2x2": {
+        "n": 8,
+        "k": 2,
+        "stabilizers": [
+            "XXIXIIIX",
+            "IIXIXXXI",
+            "IIIXXXIX",
+            "ZIZZZIII",
+            "IZZZIZII",
+            "ZIIIZIZZ"
+        ]
+    },
+    "t3x3": {
+        "n": 18,
+        "k": 2,
+        "stabilizers": [
+            "XXIIXIIIIIIIIIIIXI",
+            "IXXIIXIIIIIIIIIIIX",
+            "IIIXIIXIXXIIIIIIII",
+            "IIIIXIXXIIXIIIIIII",
+            "IIIIIXIXXIIXIIIIII",
+            "IIIIIIIIIXIIXIXXII",
+            "IIIIIIIIIIXIXXIIXI",
+            "IIIIIIIIIIIXIXXIIX",
+            "IZIIZZIZIIIIIIIIII",
+            "IIZZIZIIZIIIIIIIII",
+            "IIIIIIZIIZZIZIIIII",
+            "IIIIIIIZIIZZIZIIII",
+            "IIIIIIIIZZIZIIZIII",
+            "ZIIIIIIIIIIIZIIZZI",
+            "IZIIIIIIIIIIIZIIZZ",
+            "IIZIIIIIIIIIIIZZIZ"
+        ]
     }
 }
