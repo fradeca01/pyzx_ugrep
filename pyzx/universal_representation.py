@@ -1,17 +1,39 @@
 """
-Universal representation module
+Universal Representation Module
+-------------------------------
+This module provides functionality for converting stabilizer codes into a Universal 
+Graph Representation (UGR). 
+
 """
 
 
-__all__ = [
+import itertools
+import pprint
+import re
+import time
+from fractions import Fraction
+from typing import List, Tuple, Dict, Generic, TypeVar, Set, cast
 
-    "graph_state_to_universal_representation",
-    "to_universal_graph_representation",  
+import stim
+from pyzx.circuit import Circuit
+from pyzx.graph.base import BaseGraph, EdgeType, VertexType
+from pyzx.symbolic import Poly
+
+from .graph_states import GraphState
+from .linalg import Mat2
+from .extract import connectivity_from_biadj, bi_adj
+
+VT = TypeVar('VT', bound=int)
+ET = TypeVar('ET')
+
+__all__ = [
+    "graph_state_to_ZXCF",
+    "ZXCF_to_UGR",
     "implement_encoder",
     "distance_upper_bound",
     "stim_qasm_comply",
-    "tableau_to_graph_encoder",
-    "graph_to_universal_representation",
+    "stabilizers_to_ZX_graph",
+    "graph_to_ZXCF",
     "benchmark_from_graph_state",
     "UGR",
     "ZXCF",
@@ -19,31 +41,19 @@ __all__ = [
 ]
 
 
-
-from pyzx.symbolic import Poly
-from .graph_states import GraphState
-from .simplify import is_graph_like, spider_simp, id_simp, clifford_simp
-from fractions import Fraction
-from .drawing import draw_d3, draw, draw_matplotlib
-from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
-from .graph import Graph
-from .extract import connectivity_from_biadj, bi_adj
-from typing import List, Tuple, Dict, Generic, cast, TypeVar
-import itertools
-from .circuit import Circuit
-import pprint
-from .linalg import Mat2
-import time
-import stim
-import re
-
-
-VT = TypeVar('VT', bound=int)
-ET = TypeVar('ET')
-
 class UGR():
+    """
+    Data class representing the Universal Graph Representation of a stabilizer code.
+    
+    Attributes:
+        inputs: Input vertices.
+        adj: Adjacency list of the graph.
+        pivots: Vertices identified as pivots during RREF reduction.
+        local_cliffords: Dictionary mapping vertex to Clifford gate strings.
+    """
 
-    def __init__(self, inputs : List[int], adj : List[List[int]], pivots : List[int], local_cliffords : Dict[int, str]):
+    def __init__(self, inputs : List[int], adj : List[List[int]], 
+                 pivots : List[int], local_cliffords : Dict[int, str]):
         self.inputs = inputs
         self.adj = adj
         self.pivots = pivots
@@ -51,7 +61,14 @@ class UGR():
 
 
 class ZXCF(Generic[VT, ET]):
-    
+    """
+    Data class representing the ZX canonical form of a stabilizer code.
+
+    Attributes:
+        inputs: Input vertices.
+        graph: The ZX diagram representing the code.
+        pivots: Vertices identified as pivots during RREF reduction.
+    """
     def __init__(self, graph: BaseGraph[VT, ET], inputs : List[VT],  pivots : List[VT]):
         self.inputs = inputs
         self.graph = graph
@@ -63,18 +80,24 @@ def get_node_from_boundary(g : BaseGraph[VT, ET], v : VT) -> VT:
     Get the internal node connected to a boundary vertex.
 
     Args:
-        g (BaseGraph): The graph.
+        g (BaseGraph): A ZX diagram.
         v (VT): The vertex.
 
     Returns:
-        int: the state vertex corresponding to the state.
+        VT: the state vertex corresponding to the state.
+
+    Raises: 
+        ValueError: If the vertex is not a boundary vertex 
+        ValueError: If g is not well formed
     """
 
-    # print("Getting internal node from boundary", v)
-    # draw(g)
+    if not g.is_well_formed():
+        raise ValueError(f"{g} is not well formed")
 
+    if g.type(v) != VertexType.BOUNDARY:
+        raise ValueError(f"{v} is not a boundary vertex.")
+    
     ns = list(g.neighbors(v))
-
     return ns[0]
 
 def get_neighbors(g : BaseGraph[VT, ET], v: VT) -> List[VT]:
@@ -82,58 +105,100 @@ def get_neighbors(g : BaseGraph[VT, ET], v: VT) -> List[VT]:
     Get the neighbors of an iternal vertex.
     
     Args:
-        v: The internal vertex
+        g (BaseGraph): A ZX diagram.
+        v (VT): The internal vertex
     
     Returns:
-        List of neighboring internal vertices
+        List[VT]: List of neighboring internal vertices
         
     Raises:
-        ValueError: If the vertex is not a state vertex
+        ValueError: If the vertex is not a state vertex.
+        ValueError: If g is not well formed
     """
-    
+
+
+    if not g.is_well_formed():
+        raise ValueError(f"{g} is not well formed")
+
+    if g.type(v) == VertexType.BOUNDARY:
+        raise ValueError(f"{v} is not an internal vertex.")
 
     neighbors = [x for x in g.neighbors(v) if g.type(x) != VertexType.BOUNDARY]
 
     return neighbors
 
-def get_internal_inputs(g : BaseGraph[VT, ET]) -> List[VT]:
+def get_inputs(g : BaseGraph[VT, ET]) -> List[VT]:
     """
-    Get the internal input vertices.
+    Get the (non boundary) input vertices.
+
+    Args:
+        g (BaseGraph): A ZX diagram.
 
     Returns:
-        List[int]: The list of input vertices.
-    """
-    return [get_node_from_boundary(g, s) for s in g.inputs()]
+        List[VT]: The list of input vertices.
 
-def get_internal_outputs(g : BaseGraph[VT, ET]) -> List[VT]:
+    Raises:
+        ValueError: If g is not well formed
     """
-    Get the internal output vertices.
+
+    if not g.is_well_formed():
+        raise ValueError(f"{g} is not well formed")
+
+    boundary_inputs = g.inputs()   
+    
+    return [get_node_from_boundary(g, s) for s in boundary_inputs]
+
+def get_outputs(g : BaseGraph[VT, ET]) -> List[VT]:
+    """
+    Get the (non boundary) output vertices.
+
+    Args:
+        g (BaseGraph): A ZX diagram.
 
     Returns:
-        List[int]: The list of output vertices.
+        List[VT]: The list of output vertices.
+
+    Raises:
+        ValueError: If the graph g is not well formed.
     """
-    return [get_node_from_boundary(g, s) for s in g.outputs()]
+
+    if not g.is_well_formed():
+        raise ValueError(f"{g} is not well formed")
+
+    boundary_outputs = g.outputs()
+
+
+    
+    return [get_node_from_boundary(g, s) for s in boundary_outputs]
+    # return [get_node_from_boundary(g, s) for s in g.outputs()]
 
 def to_RRREF(g : BaseGraph[VT, ET], quiet : bool = True) -> List[VT]:
     """
-    Transform the graph to a reduced row echelon form.
-    
+    Transform the graph so the partial adjacency matrix between inputs and outputs is in row reduced echelon form by applying unitaries only on input vertices.
+
+    Args:
+        g (BaseGraph): A ZX diagram. 
+        quiet (bool): If false display debug informations
+       
     Returns:
-        List of pivot vertices after gauss elimination
+        List[VT]: List of pivot vertices after gauss elimination.
     """
-    inputs = get_internal_inputs(g)
-    outputs = get_internal_outputs(g)
+ 
+    inputs = get_inputs(g)
+    outputs = get_outputs(g)
 
     mat = bi_adj(g, inputs, outputs)
     mat = mat.transpose()
 
     if not quiet:
-        print(f"Step {7}: --- Reducing the matrix to RREF:")
+        print(f"Step {7}: --- Reducing the partial adjacency matrix to RREF:")
         print(mat)
         print(">>>>>>>>>")
 
     mat.gauss(full_reduce=True)
+
     pivots = []
+
     for i in range(mat.rows()):
         for j in range(mat.cols()):
             if mat[i, j] != 0:
@@ -141,8 +206,10 @@ def to_RRREF(g : BaseGraph[VT, ET], quiet : bool = True) -> List[VT]:
                 break
 
     pivots = [outputs[j] for j in pivots]
+
     if not quiet:
         print(mat)
+        
     mat = mat.transpose()
 
     connectivity_from_biadj(g, mat, inputs, outputs)
@@ -155,7 +222,11 @@ def to_RRREF(g : BaseGraph[VT, ET], quiet : bool = True) -> List[VT]:
 
 def remove_unitaries_input(g : BaseGraph[VT, ET], quiet : bool = True) -> None:
     """
-    Remove unitary operations from input vertices.
+    Remove unitary operations from input vertices by applying unitaries only on input vertices. This is equivalent to remove phases from input spiders.
+
+    Args:
+        g (BaseGraph): A ZX diagram. 
+        quiet (bool): If false display debug informations
     """
     ins = list(g.inputs())
 
@@ -177,12 +248,13 @@ def remove_unitaries_input(g : BaseGraph[VT, ET], quiet : bool = True) -> None:
 
 def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = True) -> None:
     """
-    Remove local complementation pivot operations.
+    Eliminates phases on pivot vertices via local complementation.
     
     Args:
-        pivots: List of pivot vertices
+        g (BaseGraph): A ZX diagram. 
+        pivots (List[VT]): List of pivot vertices.
+        quiet (bool): If false display debug informations.
     """
-
 
     if not quiet:
         print(f"Step {8}: --- Removing pivot phases for pivots: {pivots}")
@@ -193,16 +265,14 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
         for v in pivots:
             if g.phase(v) != 0:
                 neighbors = get_neighbors(g, v)
-                inputs_states = get_internal_inputs(g)
-                outputs_states = get_internal_outputs(g)
+                inputs_states = get_inputs(g)
+                outputs_states = get_outputs(g)
 
                 vin = -1
 
                 for x in neighbors:
                     if x in inputs_states:
                         vin = x
-
-                # self.get_graph().set_phase(vin, 0)
 
                 neighborsin = [x for x in get_neighbors(g, vin) if x in outputs_states]
 
@@ -214,7 +284,7 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
                 go_on = True
                 break
 
-def pivot(g : BaseGraph[VT, ET], x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
+def pivot_operation(g : BaseGraph[VT, ET], x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
     """
     Perform a pivot operation between vertices x and y in the graph state.
     
@@ -269,32 +339,25 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
             if x != y and g.connected(x, y):
                 if not quiet:
                     print(f"Step {9}:  --- Removing pivot-pivot edges from pivots: {pivots}")
-                pivot(g, x, y, quiet = quiet, step=9)
+                pivot_operation(g, x, y, quiet = quiet, step=9)
 
 
-def graph_state_to_universal_representation(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
+def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
     """Convert a GraphState to its uinversal representation.
 
     Args:
         g (GraphState): The GraphState to convert.
-        inputs: List of input vertices
-        outputs: List of output vertices
+        inputs (list[VT]): List of input vertices
 
     Returns:
-        BaseGraph: The converted BaseGraph.
+        ZXCF: The ZX canonical form.
     """
     g.to_canonical_form(quiet=True)
-    # print(inputs)
     g2 = state_to_map(g, inputs)
-    # print("Exporting to universal circuit...")
     remove_unitaries_input(g2)
-    # print("to RRREF...")
     pivots = to_RRREF(g2, quiet = True)
-    # print("Removing pivot phases...")
     remove_pivot_phases(g2, pivots, quiet = True)
-    # print("Removing pivot edges...")
     remove_pivot_edges(g2, pivots, quiet = True)
-    # print("Removing unitaries from inputs...")
     remove_unitaries_input(g2)
 
     return ZXCF(g2, inputs, pivots)
@@ -320,23 +383,22 @@ def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, flo
     time_remove_unitaries = end4 - end3
     return time_rref, time_remove_phases, time_remove_edges, time_remove_unitaries
 
-def to_universal_graph_representation(g: ZXCF[VT, ET], quiet : bool = True) -> UGR:
+def ZXCF_to_UGR(g: ZXCF[VT, ET], quiet : bool = True) -> UGR:
     """
     
-    Convert a Clifford ZX diagram to its universal representation.
+    Convert a ZX diagram canonical form to its universal graph representation.
 
     Args:
-        g : The Clifford ZX diagram as a BaseGraph.
-        inputs : List of input vertices
-        quiet : If True, suppresses output messages.
+        g (ZXCF) : The ZX canonical form diagram.
+        quiet (bool) : If false display debug informations.
 
     Returns:
-        BaseGraph: The adjacency matrix of the universal representation.
+        UGR: The correspondent universal graph representation.
     """
     g2 = g.graph.clone()
 
-    internal_inputs = get_internal_inputs(g2)
-    internal_outputs = get_internal_outputs(g2)
+    internal_inputs = get_inputs(g2)
+    internal_outputs = get_outputs(g2)
 
     for v in g2.vertex_set():
         if g2.type(v) == VertexType.BOUNDARY:
@@ -346,18 +408,6 @@ def to_universal_graph_representation(g: ZXCF[VT, ET], quiet : bool = True) -> U
     g2.set_outputs(tuple(internal_outputs))
 
     d = g2.to_dict()
-
-    # d["local_cliffords"] = local_cliffords
-    
-    # d["inputs"] = internal_inputs
-    # d["outputs"] = internal_outputs
-    
-
-    # g_filtered = d
-
-    # boundary_ids = {v["id"] for v in d["vertices"] if v["t"] == VertexType.BOUNDARY}
-    # g_filtered["vertices"] = [v for v in d["vertices"] if v["id"] not in boundary_ids]
-    # g_filtered["edges"] = [e for e in d["edges"] if e[0] not in boundary_ids and e[1] not in boundary_ids]
 
     vertex_map = {}
     adjacency_list = [[] for _ in range(len(d["vertices"]))]
@@ -396,7 +446,6 @@ def to_universal_graph_representation(g: ZXCF[VT, ET], quiet : bool = True) -> U
 
     pivots = [vertex_map[x] for x in g.pivots]
 
-    # print(g_filtered["edges"])
     export = UGR(new_inputs, adjacency_list, pivots, local_cliffords)
     return export
 
@@ -457,7 +506,7 @@ def stim_qasm_comply(qasm: str) -> str:
 # [stim.PauliString("+_Z_Z_"), stim.PauliString("+_ZXZX"), stim.PauliString("+_ZX_X")]
 # [stim.PauliString("-_XY_X"), stim.PauliString("-_XYXX"), stim.PauliString("-YXXXY")]
 
-def tableau_to_graph_encoder(code : List[str]) -> BaseGraph:
+def stabilizers_to_ZX_graph(code : List[str]) -> BaseGraph:
     
 
     code2 = [stim.PauliString(x) for x in code]
@@ -497,7 +546,7 @@ def tableau_to_graph_encoder(code : List[str]) -> BaseGraph:
 
 
 
-def graph_to_universal_representation(g: BaseGraph[VT, ET]) -> ZXCF:
+def graph_to_ZXCF(g: BaseGraph[VT, ET]) -> ZXCF:
     """
     Convert a Clifford ZX diagram to its universal representation.
 
@@ -509,7 +558,7 @@ def graph_to_universal_representation(g: BaseGraph[VT, ET]) -> ZXCF:
     """
     inputs = list(g.inputs())
     g2 = GraphState(g)
-    return graph_state_to_universal_representation(g2, inputs)
+    return graph_state_to_ZXCF(g2, inputs)
 
 class Pauli:
 
@@ -532,7 +581,7 @@ class Pauli:
         return f"{phase}*{label}"
 
 
-
+#CHECK!!!!
 def implement_encoder(d : UGR) -> Circuit:
 
     inputs = d.inputs
@@ -542,22 +591,6 @@ def implement_encoder(d : UGR) -> Circuit:
 
     # pivots = {i : -1 for i in inputs}
     out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
-
-    # for i in range(len(adj)):
-    #     if i not in inputs:
-    #         # print()
-    #         neigh = adj[i]
-    #         count = 0
-    #         input = -1
-    #         for n in neigh:
-    #             if n in inputs:
-    #                 count += 1
-    #                 input = n
-    #                 # print(n)
-    #                 out_to_in[i] = n
-    #         if count == 1:
-    #             if pivots[input] == -1:
-    #                 pivots[input] = i 
 
     
     n = len(adj)
