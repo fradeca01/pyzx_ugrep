@@ -31,10 +31,10 @@ __all__ = [
     "ZXCF_to_UGR",
     "implement_encoder",
     "distance_upper_bound",
-    "stim_qasm_comply",
+    # "stim_qasm_comply",
     "stabilizers_to_ZX_graph",
     "graph_to_ZXCF",
-    "benchmark_from_graph_state",
+    "benchmark_graph_state_to_ZXCF",
     "UGR",
     "ZXCF",
     "to_stabilizer_tableau"
@@ -73,7 +73,7 @@ class ZXCF(Generic[VT, ET]):
         self.inputs = inputs
         self.graph = graph
         self.pivots = pivots
-
+        
 
 def get_node_from_boundary(g : BaseGraph[VT, ET], v : VT) -> VT:
     """
@@ -342,8 +342,9 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
                 pivot_operation(g, x, y, quiet = quiet, step=9)
 
 
-def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
-    """Convert a GraphState to its uinversal representation.
+
+def stabilizers_to_UGR(code : List[str]) -> UGR:
+    """Convert a stabilizer code to its uinversal graph representation.
 
     Args:
         g (GraphState): The GraphState to convert.
@@ -351,6 +352,21 @@ def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
 
     Returns:
         ZXCF: The ZX canonical form.
+    """
+
+    zx_graph = stabilizers_to_ZX_graph(code)
+    zxcf = graph_to_ZXCF(zx_graph)
+    ugr = ZXCF_to_UGR(zxcf)
+    return ugr
+
+def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
+    """Convert a GraphState to its uinversal representation.
+
+    Args:
+        code (List[str]): A list of stabilizers.
+
+    Returns:
+        UGR: The universal graph representation.
     """
     g.to_canonical_form(quiet=True)
     g2 = state_to_map(g, inputs)
@@ -362,7 +378,7 @@ def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
 
     return ZXCF(g2, inputs, pivots)
 
-def benchmark_from_graph_state(g: GraphState[VT, ET]) -> Tuple[float, float, float, float]:
+def benchmark_graph_state_to_ZXCF(g: GraphState[VT, ET]) -> Tuple[float, float, float, float]:
 
     g.to_canonical_form(quiet=True)
     g2 = g.state_to_map()
@@ -453,16 +469,21 @@ def ZXCF_to_UGR(g: ZXCF[VT, ET], quiet : bool = True) -> UGR:
 def state_to_map(g : GraphState[VT, ET], inputs : List[VT]) -> BaseGraph[VT, ET]:
     """
     Export graph state to a ZX-diagram.
+
+    Args:
+        g (GraphState) : A GraphState ZX diagram.
+        inputs (List[VT]) : List of vertices of the graph state that should become inputs.
+
+    Returns:
+        BaseGraph: The ZX diagram which is the graph state after converting output vertices to input vertices.
+
     """
 
-    # expo
     export_g = g.get_graph().clone()
     outputs = [i for i in g.outputs() if i not in inputs]
     export_g.set_inputs(tuple(inputs))
-    export_g.set_outputs(tuple(outputs))
-        
-    # g.get_graph().auto_detect_io()
-    
+    export_g.set_outputs(tuple(outputs))        
+  
     export_g.normalize()
 
     return export_g
@@ -473,10 +494,10 @@ def distance_upper_bound(d: UGR) -> int:
     Compute an upper bound on the distance of the code represented by the graph state.
 
     Args:
-        g (BaseGraph): The graph state.
+        d (UGR): A universal graph representation.
 
     Returns:
-        int: The upper bound on the distance.
+        int: The upper bound on the distance of the stabilizer codes relative to this UGR.
     """
 
     adj = d.adj
@@ -494,27 +515,31 @@ def distance_upper_bound(d: UGR) -> int:
 
     return mindeg
 
-def stim_qasm_comply(qasm: str) -> str:
-    q = qasm
-    q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
-    q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
-    q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
-    return q
-
-
-
-# [stim.PauliString("+_Z_Z_"), stim.PauliString("+_ZXZX"), stim.PauliString("+_ZX_X")]
-# [stim.PauliString("-_XY_X"), stim.PauliString("-_XYXX"), stim.PauliString("-YXXXY")]
 
 def stabilizers_to_ZX_graph(code : List[str]) -> BaseGraph:
-    
+    """
+    Given a list of stabilizer for a code, return a ZX diagram that correspond to an encoder for the code. The encoder is in extended graph state form.
+
+    Args:
+        code (List[str]): A list of stabilizers.
+
+    Returns:
+        BaseGraph: A ZX diagram.
+    """
+
+    def stim_qasm_comply(qasm: str) -> str:
+        q = qasm
+        q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
+        q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
+        q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
+        return q
 
     code2 = [stim.PauliString(x) for x in code]
-    print(code2)
+    # print(code2)
     n = len(code2[0])
     k = n - len(code2)
 
-    print(n, k)
+    # print(n, k)
     tableau = stim.Tableau.from_stabilizers(code2, allow_underconstrained=True)
 
     stabilizers = []
@@ -543,12 +568,9 @@ def stabilizers_to_ZX_graph(code : List[str]) -> BaseGraph:
     return g2
     
 
-
-
-
 def graph_to_ZXCF(g: BaseGraph[VT, ET]) -> ZXCF:
     """
-    Convert a Clifford ZX diagram to its universal representation.
+    Convert a Clifford ZX diagram to its ZX canonical form.
 
     Args:
         g : The Clifford ZX diagram as a BaseGraph.
@@ -560,25 +582,25 @@ def graph_to_ZXCF(g: BaseGraph[VT, ET]) -> ZXCF:
     g2 = GraphState(g)
     return graph_state_to_ZXCF(g2, inputs)
 
-class Pauli:
+# class Pauli:
 
-    # (a,b,c) represents i^a * X^b * Z^c
-    def __init__ (self, a, b, c):
-        self.a = a % 4
-        self.b = b % 2
-        self.c = c % 2
+#     # (a,b,c) represents i^a * X^b * Z^c
+#     def __init__ (self, a, b, c):
+#         self.a = a % 4
+#         self.b = b % 2
+#         self.c = c % 2
 
-    def __mul__(self, other):
-        s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
-        a = (self.a + other.a + 2*s) % 4 # phase
-        b = (self.b + other.b) % 2 # X part
-        c = (self.c + other.c) % 2 # Z part
-        return Pauli(a, b, c)
+#     def __mul__(self, other):
+#         s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
+#         a = (self.a + other.a + 2*s) % 4 # phase
+#         b = (self.b + other.b) % 2 # X part
+#         c = (self.c + other.c) % 2 # Z part
+#         return Pauli(a, b, c)
 
-    def __repr__(self):
-        phase = [1, 1j, -1, -1j][self.a]
-        label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
-        return f"{phase}*{label}"
+#     def __repr__(self):
+#         phase = [1, 1j, -1, -1j][self.a]
+#         label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
+#         return f"{phase}*{label}"
 
 
 #CHECK!!!!

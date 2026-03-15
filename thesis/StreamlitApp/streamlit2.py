@@ -36,7 +36,7 @@ def tableau_to_graph(list, quiet = True):
     g = pyzx_circ.to_graph()
     input_state = "0"*(n-k) + "/"*k
     g.apply_state(input_state)
-    d = to_universal_graph_representation(g)
+    d = ZXCF_to_UGR(g)
     # g = GraphState.from_circuit(pyzx_circ, k)
     # g.to_canonical_form(quiet = quiet)
     return d

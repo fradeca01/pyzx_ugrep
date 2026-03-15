@@ -150,9 +150,9 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 def run_generate_graph(stabilizers, n, k, rq):
     try:
-        enc = tableau_to_graph_encoder(stabilizers)
-        z = graph_to_universal_representation(enc)
-        u = to_universal_graph_representation(z)
+        enc = stabilizers_to_ZX_graph(stabilizers)
+        z = graph_to_ZXCF(enc)
+        u = ZXCF_to_UGR(z)
         distance_up_bound = distance_upper_bound(u)
         encoder_circuit = implement_encoder(u)
         qasmEncoder = encoder_circuit.to_qasm()

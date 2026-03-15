@@ -24,7 +24,7 @@ def measure_all(g):
     end1 = time.perf_counter()
     g2.to_canonical_form(quiet=True)
     end2 = time.perf_counter()
-    graph_state_to_universal_representation(g2)
+    graph_state_to_ZXCF(g2)
     end3 = time.perf_counter()
 
     return (end1 - start, end2 - end1, end3 - end2, end3 - start)
