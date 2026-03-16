@@ -45,11 +45,16 @@ class UGR():
     """
     Data class representing the Universal Graph Representation of a stabilizer code.
     
-    Attributes:
-        inputs: Input vertices.
-        adj: Adjacency list of the graph.
-        pivots: Vertices identified as pivots during RREF reduction.
-        local_cliffords: Dictionary mapping vertex to Clifford gate strings.
+    Attributes
+    -----------
+    inputs : List[int] 
+        Input vertices.
+    adj : List[List[int]] 
+        Adjacency list of the graph.
+    pivots : List[int] 
+        Vertices identified as pivots during RREF reduction.
+    local_cliffords : Dict[int, str] 
+        Dictionary mapping vertex to Clifford gate strings.
     """
 
     def __init__(self, inputs : List[int], adj : List[List[int]], 
@@ -64,11 +69,17 @@ class ZXCF(Generic[VT, ET]):
     """
     Data class representing the ZX canonical form of a stabilizer code.
 
-    Attributes:
-        inputs: Input vertices.
-        graph: The ZX diagram representing the code.
-        pivots: Vertices identified as pivots during RREF reduction.
+    Attributes
+    -----------
+    inputs : List[VT] 
+        Input vertices.
+    graph : BaseGraph[VT, ET] 
+        The ZX diagram representing the code.
+    pivots : List[VT]  
+        Vertices identified as pivots during RREF reduction.
     """
+
+    
     def __init__(self, graph: BaseGraph[VT, ET], inputs : List[VT],  pivots : List[VT]):
         self.inputs = inputs
         self.graph = graph

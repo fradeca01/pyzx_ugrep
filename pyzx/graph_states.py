@@ -27,6 +27,21 @@ class GraphState(Generic[VT, ET]):
     A class representing a graph state.
     
     It is a wrapper for BaseGraph and provides additional functionality for graph state operations.
+
+    Attributes:
+    ----------
+    
+    Methods:
+    --------
+    get_graph(): 
+        get the underlying ZX diagram
+    get_states(): 
+        get the list of state vertices.
+    validate_canonical_form(): 
+        check if the graph is in canonical form.
+    to_canonical_form(): 
+        Convert the graph state in its canonical form
+
     """
 
     to_canonical_steps = {
@@ -37,25 +52,25 @@ class GraphState(Generic[VT, ET]):
     }
 
     
-    class Pauli:
+    # class Pauli:
 
-        # (a,b,c) represents i^a * X^b * Z^c
-        def __init__ (self, a, b, c):
-            self.a = a % 4
-            self.b = b % 2
-            self.c = c % 2
+    #     # (a,b,c) represents i^a * X^b * Z^c
+    #     def __init__ (self, a, b, c):
+    #         self.a = a % 4
+    #         self.b = b % 2
+    #         self.c = c % 2
 
-        def __mul__(self, other):
-            s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
-            a = (self.a + other.a + 2*s) % 4 # phase
-            b = (self.b + other.b) % 2 # X part
-            c = (self.c + other.c) % 2 # Z part
-            return GraphState.Pauli(a, b, c)
+    #     def __mul__(self, other):
+    #         s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
+    #         a = (self.a + other.a + 2*s) % 4 # phase
+    #         b = (self.b + other.b) % 2 # X part
+    #         c = (self.c + other.c) % 2 # Z part
+    #         return GraphState.Pauli(a, b, c)
 
-        def __repr__(self):
-            phase = [1, 1j, -1, -1j][self.a]
-            label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
-            return f"{phase}*{label}"
+    #     def __repr__(self):
+    #         phase = [1, 1j, -1, -1j][self.a]
+    #         label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
+    #         return f"{phase}*{label}"
 
 
     def __getattr__(self, name):
@@ -67,8 +82,9 @@ class GraphState(Generic[VT, ET]):
         Get the list of state vertices.
         
         Returns:
-            List of state vertices
+            List[VT]: List of state vertices
         """
+
         return self._states
     
     def get_graph(self) -> BaseGraph[VT, ET]:
@@ -76,7 +92,7 @@ class GraphState(Generic[VT, ET]):
         Get the underlying ZX diagram.
         
         Returns:
-            The underlying ZX diagram
+            BaseGraph: The underlying ZX diagram
         """
         return self._graph
 
@@ -132,10 +148,10 @@ class GraphState(Generic[VT, ET]):
         Get the edge connecting a state vertex to its boundary vertex.
         
         Args:
-            v: The state vertex
+            v (VT): The state vertex
         
         Returns:
-            The edge connecting v to its boundary vertex
+            ET: The edge connecting v to its boundary vertex
             
         Raises:
             ValueError: If the vertex is not a state vertex
@@ -155,10 +171,10 @@ class GraphState(Generic[VT, ET]):
         Get the neighbors of a state vertex.
         
         Args:
-            v: The state vertex
+            v (VT): The state vertex
         
         Returns:
-            List of neighboring state vertices
+            List[VT]: List of neighboring state vertices
             
         Raises:
             ValueError: If the vertex is not a state vertex
@@ -278,7 +294,7 @@ class GraphState(Generic[VT, ET]):
 
     def __init__(self, graph: BaseGraph[VT, ET], quiet : bool = True) -> None:
         """
-        Initialize an (extended) GraphState from a Clifford ZX-diagram.
+        Initialize an (extended) GraphState from a Clifford ZX-diagram using CJI isomorphism to convert the Clifford to a state.
 
         Inputs are moved on the bottom qubits, outputs on the top qubits.
         
@@ -356,10 +372,10 @@ class GraphState(Generic[VT, ET]):
          - Each Z-spider is connected to exactly one boundary. 
 
         Args:
-            quiet: If False, display intermediate steps
+            quiet (bool): If False, display debug information
 
         Returns:
-            True if valid graph state, False otherwise
+            Bool: True if valid graph state, False otherwise
         
         """
 
