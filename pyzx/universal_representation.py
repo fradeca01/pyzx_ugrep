@@ -31,7 +31,7 @@ __all__ = [
     "ZXCF_to_UGR",
     "implement_encoder",
     "distance_upper_bound",
-    # "stim_qasm_comply",
+    "stabilizers_to_UGR",
     "stabilizers_to_ZX_graph",
     "graph_to_ZXCF",
     "benchmark_graph_state_to_ZXCF",
