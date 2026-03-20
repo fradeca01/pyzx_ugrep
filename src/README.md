@@ -1,5 +1,3 @@
-# Thesis results
-
 This folder contains the experiments, configurations, and results for my thesis:
 *"Implementation through ZX
 calculus of a universal
