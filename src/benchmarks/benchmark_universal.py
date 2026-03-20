@@ -8,6 +8,8 @@ import random
 import argparse
 import plot
 import shutil
+from tqdm import tqdm
+
 
 try:
     from tqdm import tqdm
@@ -19,12 +21,13 @@ except ImportError:
 def measure_all(g):
     copy_g = g.copy()
     start = time.perf_counter()
-    print(copy_g)
+    # print(copy_g)
+    inputs = list(copy_g.inputs())
     g2 = GraphState(copy_g)
     end1 = time.perf_counter()
     g2.to_canonical_form(quiet=True)
     end2 = time.perf_counter()
-    graph_state_to_ZXCF(g2)
+    graph_state_to_ZXCF(g2, inputs)
     end3 = time.perf_counter()
 
     return (end1 - start, end2 - end1, end3 - end2, end3 - start)
@@ -65,6 +68,15 @@ def generate_instance(n, k, name, method = "graph_state"):
     base = "./test_graphs"
     file_path = f"{base}/{s}.qasm"
 
+    def stim_qasm_comply(qasm: str) -> str:
+        q = qasm
+        q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
+        q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
+        q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
+        return q
+    
+    qasm_random = ""
+
     if not os.path.exists(base):
         os.makedirs(base)
     
@@ -85,7 +97,7 @@ def generate_instance(n, k, name, method = "graph_state"):
 
             state = stim.TableauSimulator()
             state.set_state_from_stabilizers(stabilizers)
-            state.do_tableau(tableau, range(n))
+            state.do_tableau(tableau, list(range(n)))
             t = state.current_inverse_tableau().inverse()
             qasm_random = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)
 
@@ -102,6 +114,7 @@ def load_instance(n, k, name, method):
     g = pyzx_circ.to_graph()
     if method == "graph_state":
         input_state = "0"*(n + k)
+        # g.set_inputs(g.outputs()[n:n+k])
     else:
         input_state = "0"*(n - k) + "/"*k
     g.apply_state(input_state)
@@ -133,7 +146,7 @@ def run_test(i, n, k, num_iteration_per_test = 10, method = "elimination"):
 
     return result_time_graph, result_time_canonical, result_time_ur, result_total_time
 
-def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, method = "elimination"):
+def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, method = "graph_state"):
     
 
     print(f"Generating {num_tests} random tests ({num_iteration_per_test} iterations per test) starting from {start_n}...")
@@ -153,6 +166,8 @@ def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, metho
     graph_canonical_times = []
     graph_ur_times = []
 
+    
+    
     for i in tqdm(range(num_tests), desc="Benchmarking tests"):
 
         n = start_n + i
@@ -174,7 +189,7 @@ def test_k(n, num_iteration_per_test = 10, method = "elimination"):
         # print(f"Generating tests {i} with n={n}")
         for j in range(num_iteration_per_test):
             s = f"test_{i}_{j}"
-            generate_instance(n, s, method = method)
+            generate_instance(n, i, s, method = method)
 
 
     print(f"Running benchmark with fixed n and k =   ranging from 1 to {n-1}")
@@ -209,7 +224,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.test_n:
-        test_n(start_n = 5, k = 2, method="graph_state", num_tests=50, num_iteration_per_test=1)
+        test_n(start_n = 5, k = 5, method="graph_state", num_tests=50, num_iteration_per_test=1)
 
     if args.test_k:
         test_k(n = 50, num_iteration_per_test=5, method="elimination")

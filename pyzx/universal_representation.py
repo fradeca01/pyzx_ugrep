@@ -671,9 +671,9 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     pivots = d.pivots
     outputs_no_pivots = list(set(range(len(adj))) - set(pivots) - set(inputs))
 
-    print(inputs)
-    print(pivots)
-    print(outputs_no_pivots)
+    # print(inputs)
+    # print(pivots)
+    # print(outputs_no_pivots)
 
     out_to_in = {i : set() for i in range(len(adj)) if i not in inputs}
 
@@ -687,7 +687,7 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     n = len(adj) - len(inputs)
     k = len(inputs)
-    print(out_to_in, n, k)
+    # print(out_to_in, n, k)
 
     stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
