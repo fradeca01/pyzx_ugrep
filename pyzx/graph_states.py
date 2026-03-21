@@ -316,8 +316,7 @@ class GraphState(Generic[VT, ET]):
                 raise ValueError(f"Vertex {v} has a non-Clifford phase: {phase}")
 
         graph.auto_detect_io()
-        clifford_simp(graph, quiet=False) # O(n)
-        # draw(graph)
+        clifford_simp(graph, quiet=True) # O(n)
         # print(graph.is_well_formed())
         self.fix_boundaries(graph)
         # draw(graph)
@@ -330,7 +329,6 @@ class GraphState(Generic[VT, ET]):
         
         # self._inputs = graph.inputs()
         # self._outputs = graph.outputs()
-        
         self.fix_free_edges()
         # self.fix_ordering()
         self.cji()
@@ -484,7 +482,7 @@ class GraphState(Generic[VT, ET]):
 
         for x in neighbors:
             for y in neighbors:
-                if x >= y:
+                if self.get_graph().qubit(x) >= self.get_graph().qubit(y):
                     continue
                 connected = self._graph.connected(x, y)
                 if connected == 0:
@@ -545,7 +543,7 @@ class GraphState(Generic[VT, ET]):
         #Ss                
         for x in neighbors:
             for y in neighbors:
-                if x >= y:
+                if self.get_graph().qubit(x) >= self.get_graph().qubit(y):
                     continue
                 connected = self.get_graph().connected(x, y)
                 if connected == 0:
@@ -660,7 +658,9 @@ class GraphState(Generic[VT, ET]):
             bound = [x for x in self.get_graph().neighbors(v) if x not in self._states]
             if len(bound) > 1:
                 # print("Vertex:", v, "Phase:", g.phase(v), "Type:", g.types()[v])
-                for i in range(len(bound) - 1):
+                for i in range(len(bound)):
+                    if self.get_graph().qubit(bound[i]) == self.get_graph().qubit(v):
+                        continue
                     edge_type = self.get_graph().edge_type(self.get_graph().edge(bound[i], v))
                     new = self.get_graph().add_vertex(VertexType.Z)
                     self._states.append(new)
@@ -742,7 +742,7 @@ class GraphState(Generic[VT, ET]):
                 if self.get_graph().edge_type(edge) == EdgeType.HADAMARD:
                     neigh = [v for v in self.get_graph().neighbors(x) if v in self.get_states()]
                     for y in neigh:
-                        if y < x:
+                        if self.get_graph().qubit(y) < self.get_graph().qubit(x):
                             self.pivot(y, x, quiet = quiet)
                             go_on = True
                             break
@@ -788,7 +788,7 @@ class GraphState(Generic[VT, ET]):
     
         for s1, s2 in itertools.product(states, states):
             # print(s1, s2)
-            if s1 < s2 and self.connected(s1, s2):
+            if self.get_graph().qubit(s1) < self.get_graph().qubit(s2) and self.connected(s1, s2):
                 edge1 = self.edge_type(self.bound_edge(s1))
                 edge2 = self.edge_type(self.bound_edge(s2))
                 # print(edge2)
