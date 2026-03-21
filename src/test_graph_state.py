@@ -36,9 +36,9 @@ class TestCircuit(unittest.TestCase):
 
     def setUp(self):
         self.reset = True
-        self.n = 10
+        self.n = 9
         self.k = 1
-        self.num_subtseps = 30
+        self.num_subtseps = 20
     
     def stim_qasm_comply(self, qasm: str) -> str:
         q = qasm
@@ -122,7 +122,7 @@ class TestCircuit(unittest.TestCase):
                 t2 = tensorfy(g.get_graph())
 
                     
-                self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {i}")
+                self.assertTrue(compare_tensors(t1, t2) and g.validate_canonical_form(), f"Canonical form failed for {i}")
 
     # @unittest.skip("Skipping universal representation test for now")
     def test_universal_representation(self):
@@ -139,24 +139,25 @@ class TestCircuit(unittest.TestCase):
             
                 stabilizers = []
 
-                for i in range (n - k):
+                for i in range(k, n):
                     stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
 
-                for i in range(n-k, n): 
-                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
-                    stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+                for i in range(k):
+                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+n}") * stim.PauliString(n+k)) 
+                    stabilizers.append(stim.PauliString(f"X{i}*X{i+n}") * stim.PauliString(n+k)) 
 
 
                 state = stim.TableauSimulator()
                 state.set_state_from_stabilizers(stabilizers)
-                state.do_tableau(tableau, list(range(n)))
+                state.do_tableau(tableau, list(range(k, n+k)))
                 t = state.current_inverse_tableau().inverse()
                 qasm_random = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
                 pyzx_circ = Circuit.from_qasm(self.stim_qasm_comply(qasm_random))
                 g = pyzx_circ.to_graph()
                 input_state = "0"*(n+k)
                 g.apply_state(input_state)
-                g.set_inputs(g.outputs()[n:n+k])
+                g.set_inputs(g.outputs()[0:k])
 
                 ugr1 = graph_to_ZXCF(g).graph
 

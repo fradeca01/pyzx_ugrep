@@ -10,6 +10,8 @@ Graph Representation (UGR).
 import itertools
 import pprint
 import re
+from minizinc import Instance, Model, Solver
+
 import time
 from fractions import Fraction
 from typing import List, Tuple, Dict, Generic, TypeVar, Set, cast
@@ -555,16 +557,17 @@ def stabilizers_to_ZX_graph(code : List[str]) -> BaseGraph:
 
     stabilizers = []
 
-    for i in range (n - k):
+    for i in range(k, n):
         stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
 
-    for i in range(n-k, n): 
-        stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
-        stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+    for i in range(k):
+        stabilizers.append(stim.PauliString(f"Z{i}*Z{i+n}") * stim.PauliString(n+k)) 
+        stabilizers.append(stim.PauliString(f"X{i}*X{i+n}") * stim.PauliString(n+k)) 
 
     state = stim.TableauSimulator()
     state.set_state_from_stabilizers(stabilizers)
-    state.do_tableau(tableau, list(range(n)))
+    state.do_tableau(tableau, list(range(k,n+k)))
     t = state.current_inverse_tableau().inverse()
 
     qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
@@ -573,7 +576,7 @@ def stabilizers_to_ZX_graph(code : List[str]) -> BaseGraph:
     input_state = "0"*(n+k)
     g2.apply_state(input_state)
 
-    g2.set_inputs(g2.outputs()[n:n+k])
+    g2.set_inputs(g2.outputs()[0:k])
     # d = graph_to_universal_graph_representation(g2)
     # return d
     return g2
@@ -592,27 +595,6 @@ def graph_to_ZXCF(g: BaseGraph[VT, ET]) -> ZXCF:
     inputs = list(g.inputs())
     g2 = GraphState(g)
     return graph_state_to_ZXCF(g2, inputs)
-
-# class Pauli:
-
-#     # (a,b,c) represents i^a * X^b * Z^c
-#     def __init__ (self, a, b, c):
-#         self.a = a % 4
-#         self.b = b % 2
-#         self.c = c % 2
-
-#     def __mul__(self, other):
-#         s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
-#         a = (self.a + other.a + 2*s) % 4 # phase
-#         b = (self.b + other.b) % 2 # X part
-#         c = (self.c + other.c) % 2 # Z part
-#         return Pauli(a, b, c)
-
-#     def __repr__(self):
-#         phase = [1, 1j, -1, -1j][self.a]
-#         label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
-#         return f"{phase}*{label}"
-
 
 #CHECK!!!!
 def implement_encoder(d : UGR) -> Circuit:
@@ -746,3 +728,42 @@ def to_distance_mzn(inputs, adj) -> str:
     dzn += "]];\n"
 
     return dzn
+
+
+def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]]):   
+        num_nodes = len(adjacency_list)
+        I_nodes = {i + 1 for i in inputs}
+        all_nodes = set(range(1, num_nodes + 1))
+        O_P_nodes = all_nodes - I_nodes
+        
+        adj = [[False for _ in range(num_nodes)] for _ in range(num_nodes)]
+        for i, neighbors in enumerate(adjacency_list):
+            for neighbor in neighbors:
+                adj[i][neighbor] = True
+                adj[neighbor][i] = True
+                
+        initial_lights = [0] * (num_nodes + 1) 
+
+        try:
+            model = Model("qlo.mzn") 
+            solver = Solver.lookup("gecode")
+            instance = Instance(solver, model)
+
+            instance["I_nodes"] = I_nodes
+            instance["O_P_nodes"] = O_P_nodes
+            instance["adj"] = adj
+            instance["initial_lights"] = [0] * len(O_P_nodes) 
+
+
+            print("Starting MiniZinc solver...")
+            result = instance.solve()
+
+            if result:
+                min_weight = result["objective"]
+                return min_weight
+            else:
+                return -1
+        except Exception as e:
+            print("EXPE")
+            raise e
+  

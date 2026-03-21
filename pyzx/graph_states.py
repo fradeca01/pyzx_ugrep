@@ -51,26 +51,6 @@ class GraphState(Generic[VT, ET]):
         4 : "Injecting paulis",
     }
 
-    
-    # class Pauli:
-
-    #     # (a,b,c) represents i^a * X^b * Z^c
-    #     def __init__ (self, a, b, c):
-    #         self.a = a % 4
-    #         self.b = b % 2
-    #         self.c = c % 2
-
-    #     def __mul__(self, other):
-    #         s = (self.b * other.c - self.c * other.b) % 2 # commutation factor
-    #         a = (self.a + other.a + 2*s) % 4 # phase
-    #         b = (self.b + other.b) % 2 # X part
-    #         c = (self.c + other.c) % 2 # Z part
-    #         return GraphState.Pauli(a, b, c)
-
-    #     def __repr__(self):
-    #         phase = [1, 1j, -1, -1j][self.a]
-    #         label = { (0,0):"I", (1,0):"X", (0,1):"Z", (1,1):"Y" }[(self.b,self.c)]
-    #         return f"{phase}*{label}"
 
 
     def __getattr__(self, name):
@@ -257,8 +237,10 @@ class GraphState(Generic[VT, ET]):
 
         for j in range(len(state_inputs)):
             bound = self.get_bound(state_inputs[j])
-            self.set_qubit(state_inputs[j], len(qs) - len(state_inputs) + j  )
-            self.set_qubit(bound, len(qs) - len(state_inputs) + j )
+            # self.set_qubit(state_inputs[j], len(qs) - len(state_inputs) + j  )
+            # self.set_qubit(bound, len(qs) - len(state_inputs) + j )
+            self.set_qubit(state_inputs[j], - len(state_inputs) + j  )
+            self.set_qubit(bound, - len(state_inputs) + j )
 
 
     def fix_boundaries(self, graph ) -> None:
@@ -331,6 +313,7 @@ class GraphState(Generic[VT, ET]):
         # self._outputs = graph.outputs()
         self.fix_free_edges()
         # self.fix_ordering()
+        # draw(self.get_graph())
         self.cji()
         self.normalize_graph_state(quiet=quiet)
         self.auto_detect_io()
