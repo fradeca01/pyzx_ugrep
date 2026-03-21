@@ -11,6 +11,7 @@ if __name__ == '__main__':
 mydir = os.path.dirname(__file__)
 from pyzx.generate import cliffordT, cliffords
 from pyzx.simplify import clifford_simp
+from pyzx.graph import *
 from pyzx.extract import extract_circuit
 from pyzx.circuit import Circuit
 from pyzx import draw
@@ -35,9 +36,9 @@ class TestCircuit(unittest.TestCase):
 
     def setUp(self):
         self.reset = True
-        self.n = 8
+        self.n = 10
         self.k = 1
-        self.num_subtseps = 20
+        self.num_subtseps = 30
     
     def stim_qasm_comply(self, qasm: str) -> str:
         q = qasm
@@ -119,6 +120,8 @@ class TestCircuit(unittest.TestCase):
                 t1 = tensorfy(g.get_graph())
                 g.to_canonical_form(quiet=True)
                 t2 = tensorfy(g.get_graph())
+
+                    
                 self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {i}")
 
     # @unittest.skip("Skipping universal representation test for now")
@@ -152,8 +155,9 @@ class TestCircuit(unittest.TestCase):
                 pyzx_circ = Circuit.from_qasm(self.stim_qasm_comply(qasm_random))
                 g = pyzx_circ.to_graph()
                 input_state = "0"*(n+k)
-                inputs = g.outputs()[n:n+k]
                 g.apply_state(input_state)
+                g.set_inputs(g.outputs()[n:n+k])
+
                 ugr1 = graph_to_ZXCF(g).graph
 
                 qasm_random2 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
@@ -163,9 +167,13 @@ class TestCircuit(unittest.TestCase):
                 g2.apply_state(input_state2)
 
                 ugr2 = graph_to_ZXCF(g2).graph
+                # draw(ugr1)
                 t1 = tensorfy(ugr1)
                 t2 = tensorfy(ugr2)
-                self.assertTrue(compare_tensors(t1, t2), f"Canonical form failed for {i}")
+                # draw(ugr1)
+                # draw(ugr2)
+                # print(i)
+                self.assertTrue(compare_tensors(t1, t2), f"Universal representation form failed for {i}")
 
 
 
