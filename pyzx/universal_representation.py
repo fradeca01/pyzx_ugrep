@@ -39,6 +39,8 @@ __all__ = [
     "benchmark_graph_state_to_ZXCF",
     "UGR",
     "ZXCF",
+    "to_distance_mzn",
+    "compute_distance",
     "to_stabilizer_tableau"
 ]
 
@@ -707,7 +709,7 @@ def to_distance_mzn(inputs, adj) -> str:
     dzn += f"I_nodes = {{{', '.join(str(x+1) for x in inputs)}}};\n"
     dzn += f"O_P_nodes = {{{', '.join(str(x+1) for x in range(len(adj)) if x not in inputs)}}};\n"
 
-    dzn += f"[|"
+    dzn += f"adj = [|"
 
     for i in range(len(adj)):
         row = ""
@@ -720,17 +722,17 @@ def to_distance_mzn(inputs, adj) -> str:
 
     dzn += "|];\n"
 
-    dzn += "initial_lights = array1d[O_P_nodes, ["
+    dzn += "initial_lights = array1d(O_P_nodes, ["
     for i in range(len(adj)):
         if i not in inputs:
             row = "0, "
             dzn += row
-    dzn += "]];\n"
+    dzn += "]);\n"
 
     return dzn
 
 
-def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]]):   
+def compute_distance(inputs : List[int], adjacency_list : List[List[int]]):   
         num_nodes = len(adjacency_list)
         I_nodes = {i + 1 for i in inputs}
         all_nodes = set(range(1, num_nodes + 1))

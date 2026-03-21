@@ -36,8 +36,8 @@ class TestCircuit(unittest.TestCase):
 
     def setUp(self):
         self.reset = True
-        self.n = 9
-        self.k = 1
+        self.n = 6
+        self.k = 3
         self.num_subtseps = 20
     
     def stim_qasm_comply(self, qasm: str) -> str:

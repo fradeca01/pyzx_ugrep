@@ -4,9 +4,7 @@ import os
 from pyzx import *
 import matplotlib.pyplot as plt
 import time
-import random
 import argparse
-import plot
 import shutil
 from tqdm import tqdm
 
