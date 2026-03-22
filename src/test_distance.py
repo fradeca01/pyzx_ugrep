@@ -1,5 +1,6 @@
 import stim
 from pyzx import *
+from universal_representation import *
 import time
 from tqdm import tqdm
 

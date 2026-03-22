@@ -16,8 +16,8 @@ from pyzx.extract import extract_circuit
 from pyzx.circuit import Circuit
 from pyzx import draw
 from pyzx.graph import Graph
-from pyzx.graph_states import GraphState
-from pyzx.universal_representation import graph_to_ZXCF, UGR, get_inputs, get_outputs, graph_state_to_ZXCF
+from graph_states import GraphState
+from universal_representation import graph_to_ZXCF, UGR, get_inputs, get_outputs, graph_state_to_ZXCF
 import re
 import stim as stim
 from pyzx.tensor import tensorfy, compare_tensors

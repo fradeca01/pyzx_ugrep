@@ -10,15 +10,15 @@ __all__ = [
 
 from pyzx.symbolic import Poly
 
-from .simplify import is_graph_like, spider_simp, id_simp, clifford_simp
+from pyzx.simplify import is_graph_like, spider_simp, id_simp, clifford_simp
 from fractions import Fraction
-from .drawing import draw_d3, draw, draw_matplotlib
-from .graph.base import ET, VT, BaseGraph, EdgeType, VertexType
-from .graph import Graph
-from .extract import connectivity_from_biadj, bi_adj
+from pyzx.drawing import draw_d3, draw, draw_matplotlib
+from pyzx.graph.base import ET, VT, BaseGraph, EdgeType, VertexType
+from pyzx.graph import Graph
+from pyzx.extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast
 import itertools
-from .circuit import Circuit
+from pyzx.circuit import Circuit
 import time
 
 

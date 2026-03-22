@@ -18,12 +18,12 @@ from typing import List, Tuple, Dict, Generic, TypeVar, Set, cast
 
 import stim
 from pyzx.circuit import Circuit
-from pyzx.graph.base import BaseGraph, EdgeType, VertexType
+from pyzx.utils import EdgeType, VertexType
+from pyzx.graph.base import BaseGraph
 from pyzx.symbolic import Poly
 
-from .graph_states import GraphState
-from .linalg import Mat2
-from .extract import connectivity_from_biadj, bi_adj
+from graph_states import GraphState
+from pyzx.extract import connectivity_from_biadj, bi_adj
 
 VT = TypeVar('VT', bound=int)
 ET = TypeVar('ET')
