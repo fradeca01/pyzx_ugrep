@@ -3,16 +3,16 @@ from ugr import *
 import time
 from tqdm import tqdm
 
-k = 4
+k = 5
 
-num = 35
+num = 40
 
-iterations = 5
+iterations = 3
 
 times = []
-with open("mzn_times2", 'w') as f:
+with open("./mzn_times2", 'w') as f:
 
-    for n in tqdm(range(5,num), desc=f"test"):
+    for n in tqdm(range(6,num,2), desc=f"test"):
         sum = 0
         for i in range(iterations):
             tableau = stim.Tableau.random(n)

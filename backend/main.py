@@ -11,10 +11,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from minizinc import Instance, Model, Solver
-import math
 
-from pyzx import *
-
+from ugr import *
 
 TIMEOUT_SECONDS = 15  
 
