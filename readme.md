@@ -55,6 +55,12 @@ print("Distance Upper Bound:", distance_upper_bound(ugr))
 
 ## Web interface
 
-A web interface powered is available to interact with the library visually.
+A web interface is available to interact with the library visually.
 
-Accessible at the following link: [Hidden].
+The interface is available at the following link: [Hidden]
+
+To start it locally `docker` is required. It is sufficient to run the following command from the root of the repository:
+
+```bash
+docker compose up
+```
