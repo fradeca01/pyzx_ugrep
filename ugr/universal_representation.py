@@ -10,6 +10,7 @@ Graph Representation (UGR).
 import itertools
 import pprint
 import re
+import pathlib
 from minizinc import Instance, Model, Solver
 
 import time
@@ -733,7 +734,7 @@ def to_distance_mzn(inputs, adj) -> str:
     return dzn
 
 
-def compute_distance(inputs : List[int], adjacency_list : List[List[int]]):   
+def compute_distance(inputs : List[int], adjacency_list : List[List[int]]) -> int:   
         num_nodes = len(adjacency_list)
         I_nodes = {i + 1 for i in inputs}
         all_nodes = set(range(1, num_nodes + 1))
@@ -748,7 +749,9 @@ def compute_distance(inputs : List[int], adjacency_list : List[List[int]]):
         initial_lights = [0] * (num_nodes + 1) 
 
         try:
-            model = Model("qlo.mzn") 
+            current_dir = pathlib.Path(__file__).parent.resolve()
+            mzn_path = current_dir / "qlo.mzn"
+            model = Model(str(mzn_path)) 
             solver = Solver.lookup("gecode")
             instance = Instance(solver, model)
 
