@@ -1,9 +1,10 @@
 import stim
 import re
 import os
-from pyzx import *
+from ugr import *
 import matplotlib.pyplot as plt
 import time
+from pyzx.circuit import Circuit
 import argparse
 import shutil
 from tqdm import tqdm

@@ -13,7 +13,8 @@ from pyzx.symbolic import Poly
 from pyzx.simplify import is_graph_like, spider_simp, id_simp, clifford_simp
 from fractions import Fraction
 from pyzx.drawing import draw_d3, draw, draw_matplotlib
-from pyzx.graph.base import ET, VT, BaseGraph, EdgeType, VertexType
+from pyzx.utils import EdgeType, VertexType
+from pyzx.graph.base import ET, VT, BaseGraph
 from pyzx.graph import Graph
 from pyzx.extract import connectivity_from_biadj, bi_adj
 from typing import List, Tuple, Dict, Generic, cast

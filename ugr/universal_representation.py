@@ -22,7 +22,7 @@ from pyzx.utils import EdgeType, VertexType
 from pyzx.graph.base import BaseGraph
 from pyzx.symbolic import Poly
 
-from graph_states import GraphState
+from .graph_states import GraphState
 from pyzx.extract import connectivity_from_biadj, bi_adj
 
 VT = TypeVar('VT', bound=int)

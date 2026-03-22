@@ -7,10 +7,10 @@ types-tqdm~=4.66
 lark>=1.2.2
 networkx
 pyvis
+pyzx
 stim
 pydantic
 minizinc
 starlette
 psutil
 fastapi[standard]
--e .

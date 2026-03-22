@@ -1,11 +1,11 @@
 import stim
 import re
 import os
-from pyzx import *
 import matplotlib.pyplot as plt
 import time
 import argparse
 import random
+from ugr import *
 
 try:
     from tqdm import tqdm

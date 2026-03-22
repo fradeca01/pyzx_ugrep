@@ -11,13 +11,11 @@ if __name__ == '__main__':
 mydir = os.path.dirname(__file__)
 from pyzx.generate import cliffordT, cliffords
 from pyzx.simplify import clifford_simp
-from pyzx.graph import *
 from pyzx.extract import extract_circuit
 from pyzx.circuit import Circuit
 from pyzx import draw
 from pyzx.graph import Graph
-from graph_states import GraphState
-from universal_representation import graph_to_ZXCF, UGR, get_inputs, get_outputs, graph_state_to_ZXCF
+from ugr import *
 import re
 import stim as stim
 from pyzx.tensor import tensorfy, compare_tensors
