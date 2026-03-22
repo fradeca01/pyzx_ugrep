@@ -770,6 +770,6 @@ def compute_distance(inputs : List[int], adjacency_list : List[List[int]]) -> in
             else:
                 return -1
         except Exception as e:
-            print("EXPE")
+            # print("EXPE")
             raise e
   

@@ -382,42 +382,17 @@ async def cancel_job(job_id: str):
     return {"success": True, "status": "cancelled"}
 
 def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], result_queue : Queue):   
-        num_nodes = len(adjacency_list)
-        I_nodes = {i + 1 for i in inputs}
-        all_nodes = set(range(1, num_nodes + 1))
-        O_P_nodes = all_nodes - I_nodes
-        
-        adj = [[False for _ in range(num_nodes)] for _ in range(num_nodes)]
-        for i, neighbors in enumerate(adjacency_list):
-            for neighbor in neighbors:
-                adj[i][neighbor] = True
-                adj[neighbor][i] = True
-                
-        initial_lights = [0] * (num_nodes + 1) 
-
         try:
-            model = Model("qlo.mzn") 
-            solver = Solver.lookup("gecode")
-            instance = Instance(solver, model)
-
-            instance["I_nodes"] = I_nodes
-            instance["O_P_nodes"] = O_P_nodes
-            instance["adj"] = adj
-            instance["initial_lights"] = [0] * len(O_P_nodes) 
-
-
-            print("Starting MiniZinc solver...")
-            result = instance.solve()
-
-            if result:
-                min_weight = result["objective"]
+            result = compute_distance(inputs, adjacency_list)
+            if result != -1:
+                min_weight = result
                 result_queue.put({"success": True, "status" : "completed", "data": min_weight})
             else:
                 result_queue.put({"success": False, "status" : "completed", "error": "Unsatisfiable"})
         except Exception as e:
-            print("EXPE")
+            # print("EXPE")
             result_queue.put({"success" : False, "error" : "Unable to start the solver"})
-  
+            
 
 @app.post("/solve", response_model=JobResponse | ErrorResponse)
 async def solve_minizinc(input_data: SolveInput):
