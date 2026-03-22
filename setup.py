@@ -21,7 +21,9 @@ setup(
                       "tqdm>=4.56.0",
                       "ipywidgets>=7.5",
                       "lark>=1.2.2",
-                      "galois>=0.4.7"
+                      "galois>=0.4.7",
+                      "stim",
+                      "minizinc",
                       "pyzx"],
     
 )
