@@ -383,7 +383,8 @@ def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
     Returns:
         UGR: The universal graph representation.
     """
-    g.to_canonical_form(quiet=True)
+    if not g.validate_canonical_form():
+        g.to_canonical_form(quiet=True)
     g2 = state_to_map(g, inputs)
     remove_unitaries_input(g2)
     pivots = to_RRREF(g2, quiet = True)

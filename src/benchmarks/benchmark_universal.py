@@ -86,16 +86,17 @@ def generate_instance(n, k, name, method = "graph_state"):
             tableau = stim.Tableau.random(n)
             stabilizers = []
 
-            for i in range (n - k):
+            for i in range(k, n):
                 stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
 
-            for i in range(n-k, n): 
-                stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
-                stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
+
+            for i in range(k):
+                stabilizers.append(stim.PauliString(f"Z{i}*Z{i+n}") * stim.PauliString(n+k)) 
+                stabilizers.append(stim.PauliString(f"X{i}*X{i+n}") * stim.PauliString(n+k)) 
 
             state = stim.TableauSimulator()
             state.set_state_from_stabilizers(stabilizers)
-            state.do_tableau(tableau, list(range(n)))
+            state.do_tableau(tableau, list(range(k, n+k)))
             t = state.current_inverse_tableau().inverse()
             qasm_random = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)
 
@@ -112,10 +113,11 @@ def load_instance(n, k, name, method):
     g = pyzx_circ.to_graph()
     if method == "graph_state":
         input_state = "0"*(n + k)
-        # g.set_inputs(g.outputs()[n:n+k])
     else:
         input_state = "0"*(n - k) + "/"*k
     g.apply_state(input_state)
+    if method == "graph_state":
+        g.set_inputs(g.outputs()[0:k])
     return g
 
 def run_test(i, n, k, num_iteration_per_test = 10, method = "elimination"):
@@ -176,7 +178,7 @@ def test_n(start_n = 200, k =5, num_tests = 1, num_iteration_per_test = 1, metho
         graph_ur_times.append(result_time_ur)
         total_times.append(result_total_time)
 
-    save_results(total_times, graph_building_times, graph_canonical_times, graph_ur_times, path = "./test_n/")
+    save_results(total_times, graph_building_times, graph_canonical_times, graph_ur_times, path = f"./test_n_{method}/")
 
 
 def test_k(n, num_iteration_per_test = 10, method = "elimination"):
@@ -215,14 +217,20 @@ def test_k(n, num_iteration_per_test = 10, method = "elimination"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark Universal Representation")
+    parser.add_argument("--elimination", action="store_true", help="Plot after benchmarking")
     parser.add_argument("--test_n", action="store_true", help="Plot after benchmarking")
     parser.add_argument("--test_k", action="store_true", help="Plot after benchmarking")
     parser.add_argument("--clean", action="store_true", help="Clean instances")
     # parser.add_argument("--plot", action="store_true", help="Plot after benchmarking")
     args = parser.parse_args()
 
+    if args.elimination:
+        method = "elimination"
+    else:
+        method = "graph_state"
+
     if args.test_n:
-        test_n(start_n = 5, k = 5, method="graph_state", num_tests=50, num_iteration_per_test=1)
+        test_n(start_n = 5, k = 5, method=method, num_tests=50, num_iteration_per_test=5)
 
     if args.test_k:
         test_k(n = 50, num_iteration_per_test=5, method="elimination")

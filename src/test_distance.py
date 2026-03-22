@@ -3,28 +3,31 @@ from pyzx import *
 import time
 from tqdm import tqdm
 
-n = 10
-k = 5
+k = 4
 
-num = 40
+num = 35
 
+iterations = 5
 
 times = []
+with open("mzn_times2", 'w') as f:
 
-for n in tqdm(range(6,num), desc="test"):
-    tableau = stim.Tableau.random(n)
-    stabilizers = [str(s) for s in tableau.to_stabilizers()]
-    ugr = stabilizers_to_UGR(stabilizers[0:n-k])
-    model = to_distance_mzn(ugr.inputs, ugr.adj)
+    for n in tqdm(range(5,num), desc=f"test"):
+        sum = 0
+        for i in range(iterations):
+            tableau = stim.Tableau.random(n)
+            stabilizers = [str(s) for s in tableau.to_stabilizers()]
+            ugr = stabilizers_to_UGR(stabilizers[0:n-k])
+            model = to_distance_mzn(ugr.inputs, ugr.adj)
 
-    start = time.perf_counter()
-    a = compute_distance(ugr.inputs, ugr.adj) 
-    end =time.perf_counter()
+            start = time.perf_counter()
+            a = compute_distance(ugr.inputs, ugr.adj) 
+            end =time.perf_counter()
 
-    times.append(end-start)
-
-with open("mzn_times") as f:
-    for t in times:
+            sum += (end-start)
+        t = sum / iterations
         f.write(f"{t}\n")
+
+
 
 
