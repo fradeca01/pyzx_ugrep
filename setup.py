@@ -25,7 +25,7 @@ setup(
                       "stim",
                       "minizinc",
                       "psutil",
-                      "pathlib"
+                      "pathlib",
                       "pyzx",
                       "fastapi[standard]"
                       ],
