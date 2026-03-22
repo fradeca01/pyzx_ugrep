@@ -24,6 +24,9 @@ setup(
                       "galois>=0.4.7",
                       "stim",
                       "minizinc",
-                      "pyzx"],
+                      "psutil",
+                      "pyzx",
+                      "fastapi[standard]"
+                      ],
     
 )
