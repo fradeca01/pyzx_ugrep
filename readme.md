@@ -2,13 +2,6 @@
 
 `pyzx_ugrep` is a Python library and web tool designed to convert stabilizer codes into their Universal Graph Representation (UGR) using ZX-calculus. Built on top of `pyzx` and `stim`, this package allows for advanced diagrammatic reasoning, graph state manipulation, and distance computation.
 
-## Core Features
-
-* **Graph State Manipulation**: The `GraphState` class acts as a wrapper for PyZX's `BaseGraph` to support specialized local complementations (such as SH and HS rules), edge pivoting, and graph normalization.
-* **Canonical Form Transformation**: Automatically reduces extended graph states to their ZX Canonical Form (ZXCF) by extracting Paulis, removing HS local Clifford operations, and reordering Hadamard edges.
-* **Stabilizer to UGR Conversion**: Quickly convert stabilizer code tableaus into UGR objects (tracking inputs, adjacency lists and pivots), or convert UGRs back to stabilizer tableaus using `stim`.
-* **Distance Computation**: Computes upper bounds on the code distance of a UGR, and features an exact solver using a MiniZinc constraint solving model (`qlo.mzn` with the Gecode solver).
-
 ## Installation
 
 1. **Clone the repository**:
