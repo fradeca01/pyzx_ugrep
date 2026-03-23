@@ -5,7 +5,6 @@ import "@/app/globals.css";
 
 import dynamic from "next/dynamic";
 
-// Import dinamico con ssr: false per evitare errori lato server con la libreria 3D
 const ForceGraph3D = dynamic(() => import("react-force-graph-3d"), { ssr: false });
 
 interface BackendGraphData {
@@ -32,11 +31,9 @@ export default function MainView({ open, setOpen, backendGraphData }: MainViewPr
 
   const [graphData, setGraphData] = useState<ForceGraphData>({ nodes: [], links: [] });
 
-  // CORRETTO: useRef inizializzato con null
   const fgRef = useRef<any>(null);
   const angleRef = useRef(0);
 
-  // Dati statici per "Steane Code" (7 Qubit)
   const defaultSteaneGraph: ForceGraphData = {
     nodes: [
       { id: 0, group: 1 }, { id: 1, group: 1 }, { id: 2, group: 1 },
@@ -44,7 +41,6 @@ export default function MainView({ open, setOpen, backendGraphData }: MainViewPr
       { id: 6, group: 1 }
     ],
     links: [
-      // Connessioni che simulano la struttura del piano di Fano/Steane
       { source: 0, target: 1 }, { source: 1, target: 2 }, { source: 0, target: 2 }, // Triangolo 1
       { source: 3, target: 4 }, { source: 4, target: 5 }, { source: 3, target: 5 }, // Triangolo 2
       { source: 0, target: 3 }, { source: 1, target: 4 }, { source: 2, target: 5 }, // Connessioni tra i gruppi
@@ -56,15 +52,11 @@ export default function MainView({ open, setOpen, backendGraphData }: MainViewPr
     let animationFrameId: number;
 
     if (backendGraphData) {
-      // CASO 1: Abbiamo dati dal backend
       const transformedData = transformBackendData(backendGraphData);
       setGraphData(transformedData);
-      // Non avviamo la rotazione qui
     } else {
-      // CASO 2: Nessun dato, mostriamo la demo rotante (Steane Code)
       setGraphData(defaultSteaneGraph);
 
-      // Funzione loop per la rotazione
       const rotate = () => {
         if (fgRef.current) {
           angleRef.current += 0.002; // Velocità rotazione

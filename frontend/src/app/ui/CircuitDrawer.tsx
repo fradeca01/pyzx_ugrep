@@ -2,51 +2,44 @@
 
 import React, { useMemo } from "react";
 
-// --- Tipi per il nostro parser interno ---
 interface Gate {
     type: string;
-    qubits: number[]; // Indici dei qubit coinvolti
-    controls?: number[]; // Indici dei controlli (per CX, CZ)
+    qubits: number[]; 
+    controls?: number[]; 
     params?: string;
 }
 
 interface ParsedCircuit {
     numQubits: number;
-    columns: Gate[][]; // Organizziamo il circuito in colonne temporali
+    columns: Gate[][];
 }
 
-// --- Funzioni di Parsing ---
 const parseQASM = (qasm: string): ParsedCircuit => {
     const lines = qasm.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//') && !l.startsWith('OPENQASM') && !l.startsWith('include'));
 
     let numQubits = 0;
     const gates: Gate[] = [];
 
-    // Regex semplici per individuare i comandi
     const qregRegex = /qreg\s+\w+\[(\d+)\];/;
     const gateRegex = /(\w+)\s+([^;]+);/;
 
     lines.forEach(line => {
-        // 1. Trova il numero di qubit
         const qregMatch = line.match(qregRegex);
         if (qregMatch) {
             numQubits = Math.max(numQubits, parseInt(qregMatch[1], 10));
             return;
         }
 
-        // 2. Analizza le porte
         const match = line.match(gateRegex);
         if (match) {
             const type = match[1].toLowerCase();
             const args = match[2].split(',').map(s => s.trim());
 
-            // Estrai indici qubit (es. "q[0]" -> 0)
             const indices = args.map(arg => {
                 const idxMatch = arg.match(/\[(\d+)\]/);
                 return idxMatch ? parseInt(idxMatch[1], 10) : 0;
             });
 
-            // Gestione porte specifiche
             if (type === 'cx') {
                 gates.push({ type: 'X', qubits: [indices[1]], controls: [indices[0]] });
             } else if (type === 'cz') {
@@ -62,12 +55,10 @@ const parseQASM = (qasm: string): ParsedCircuit => {
         }
     });
 
-    // Fallback se non c'è qreg
     if (numQubits === 0 && gates.length > 0) {
         numQubits = Math.max(...gates.flatMap(g => [...g.qubits, ...(g.controls || [])])) + 1;
     }
 
-    // 3. Organizza in colonne
     const columns: Gate[][] = gates.map(g => [g]);
 
     return { numQubits, columns };
@@ -80,7 +71,6 @@ interface BackendGraphData {
     qasmEncoder: string;
 }
 
-// --- Componente Principale ---
 interface CircuitDrawerProps {
     isOpen: boolean;
     onClose: () => void;
@@ -99,13 +89,11 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
         }
     }, [qasmData]);
 
-    // Costanti grafiche
     const ROW_H = 40;
     const COL_W = 40;
     const START_X = 60;
     const START_Y = 40;
 
-    // if (!isOpen) return null;
 
     const handleDownload = () => {
         if (!qasmData?.qasmEncoder) return;
@@ -122,8 +110,6 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
 
     return (
         <>
-            {/* Overlay */}
-            {/* Modifica questo blocco nel tuo return */}
             <div
                 onClick={onClose}
                 className={`
@@ -132,7 +118,6 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
     `}
             />
 
-            {/* Drawer Panel */}
             <div
                 className={`
                     fixed bottom-0 left-0 right-0 
@@ -146,12 +131,10 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
                     ${isOpen ? 'translate-y-0' : 'translate-y-full'}
                 `}
             >
-                {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-primary rounded-t-2xl">
                     <h2 className="text-xl font-semibold font-mono">Quantum Circuit</h2>
 
                     <div className="flex items-center gap-2">
-                        {/* Download Button */}
                         <button
                             onClick={handleDownload}
                             disabled={!qasmData}

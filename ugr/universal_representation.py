@@ -58,8 +58,6 @@ class UGR():
         Adjacency list of the graph.
     pivots : List[int] 
         Vertices identified as pivots during RREF reduction.
-    local_cliffords : Dict[int, str] 
-        Dictionary mapping vertex to Clifford gate strings.
     """
 
     def __init__(self, inputs : List[int], adj : List[List[int]], 
@@ -67,7 +65,6 @@ class UGR():
         self.inputs = inputs
         self.adj = adj
         self.pivots = pivots
-        self.local_cliffords = local_cliffords
 
 
 class ZXCF(Generic[VT, ET]):
@@ -600,12 +597,10 @@ def graph_to_ZXCF(g: BaseGraph[VT, ET]) -> ZXCF:
     g2 = GraphState(g)
     return graph_state_to_ZXCF(g2, inputs)
 
-#CHECK!!!!
 def implement_encoder(d : UGR) -> Circuit:
 
     inputs = d.inputs
     adj = d.adj
-    local_cliffords = d.local_cliffords
     pivots = d.pivots
 
     # pivots = {i : -1 for i in inputs}
@@ -615,27 +610,46 @@ def implement_encoder(d : UGR) -> Circuit:
     n = len(adj)
     k = len(inputs)
 
+    print(inputs)
+    print(pivots)
+    print(list(range(n)))
+
     # print(inputs)
 
-    c = Circuit(n)
+    c = Circuit(n-1)
 
-    c.add_gate("H", n-1)
-    for i in range(n-2, k-1, -1):
-        c.add_gate("CNOT", n-1, i)
+    def to_qubit(x):
+        if x in inputs:
+            for v in adj[x]:
+                if v in pivots:
+                    return v - len(inputs)
+        else:
+            return x - len(inputs)
+
+    
+    for v in range(n):
+        if v not in pivots and v not in inputs:
+            # print(v)
+            # print(to_qubit(v))
+            c.add_gate("H", to_qubit(v))
+
+    # c.add_gate("H", n-1)
+    # for i in range(n-2, k-1, -1):
+    #     c.add_gate("CNOT", n-1, i)
     
     for i in inputs:
         for j in adj[i]:
             if j not in pivots:
-                c.add_gate("CZ", i, j)
+                c.add_gate("CZ", to_qubit(i), to_qubit(j))
         
     for i in inputs:
-        c.add_gate("H", i)
+        c.add_gate("H", to_qubit(i))
 
     for v in range(n):
         if v not in inputs:
             for u in adj[v]:
-                if u not in inputs:
-                    c.add_gate("CZ", v, u)
+                if u not in inputs and u < v:
+                    c.add_gate("CZ", to_qubit(u), to_qubit(v))
 
     # for v in range(n):
 

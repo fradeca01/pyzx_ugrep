@@ -8,12 +8,10 @@ setup(
     description="Universal Graph Representation tool based on PyZX",
     packages=find_packages(include=["ugr", "ugr.*"]),
 
-    # Crucial: This ensures your qlo.mzn file gets packaged and installed!
     package_data={
         "ugr": ["*.mzn"],
     },
     
-    # Read dependencies dynamically
     python_requires=">=3.9",
     install_requires=["typing_extensions>=4.5.0",
                       "numpy>=1.14",

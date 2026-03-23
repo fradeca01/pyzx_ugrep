@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Sidebar from "@/app/ui/Sidebar";
 import PropertyBar from "@/app/ui/PropertyBar";
 import MainView from "@/app/ui/MainView";
-import CircuitDrawer from "@/app/ui/CircuitDrawer"; // Importiamo il drawer
+import CircuitDrawer from "@/app/ui/CircuitDrawer"; 
 
 interface BackendGraphData {
     inputs: number[];

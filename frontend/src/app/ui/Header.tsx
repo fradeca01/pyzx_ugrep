@@ -10,18 +10,12 @@ type NavLink = {
 const navLinks: NavLink[] = [
     { name: "From stabilizers", href: "#theme-info" },
     { name: "From graph", href: "#our-team" },
-    // { name: "Blog", href: "#blog" },
-    // { name: "Style-Guide", href: "#style-guide" },
 ];
 
 export default function Header() {
 
     return (
-        // 1. Contenitore principale (Header)
-        // MODIFICHE CHIAVE:
-        // - 'absolute': Rimuove l'header dal flusso normale e lo fa "galleggiare".
-        // - 'top-0 left-0': Lo aggancia all'angolo superiore sinistro.
-        // - 'z-50': Assicura che stia "sopra" (z-index) al resto del contenuto.
+
         <>
             <header className="
             absolute 
@@ -37,7 +31,7 @@ export default function Header() {
             rounded-lg
         ">
 
-                {/* 2. Logo/Titolo (Button) */}
+
                 <button
                     onClick={() => window.location.reload()}
                     className="
@@ -57,27 +51,12 @@ export default function Header() {
                     Universal Graph Representation visualizer
                 </button>
 
-                {/* 3. Contenitore Navigazione */}
-                {/* <div className="flex items-center space-x-8"> */}
-
-                {/* Nav Links */}
-                {/* <nav className="hidden md:flex space-x-8 text-sm font-medium text-gray-700">
-                    {navLinks.map((link) => (
-                        <a 
-                            key={link.name} 
-                            href={link.href} 
-                            className="hover:text-blue-600 transition duration-150"
-                        >
-                            {link.name}
-                        </a>
-                    ))}
-                </nav> */}
 
 
 
-                {/* Pulsante "Github Link" */}
+
                 <a
-                    href="https://github.com/fradeca01/pyzx_ugrep" // Sostituisci con il link di Github
+                    href=""
                     target="_blank"
                     className="
                         bg-blue-600 

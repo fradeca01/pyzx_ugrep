@@ -46,54 +46,7 @@ class TestCircuit(unittest.TestCase):
         q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
         return q
     
-    @unittest.skip("Skipping graph state method test for now")
-    def test_graph_state(self):
-        for i in range(0,self.num_subtseps):
-            with self.subTest(i=i):
-                s = f"test_{i}"
-                print(f"Testing graph state for {s}")
-                tableau = stim.Tableau.random(self.n)
-
-                qasm_random1 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
-                pyzx_circ1 = Circuit.from_qasm(qasm_random1)
-                g1 = pyzx_circ1.to_graph()
-                input_state = "0"*(self.n-self.k) + "/"*self.k
-                g1.apply_state(input_state)
-                g1 = GraphState(g1)
-                g1.to_canonical_form()
-
-                t1 = tensorfy(g1.get_graph())
-
-                n = self.n 
-                k = self.k
-            
-                stabilizers = []
-
-                for i in range (n - k):
-                    stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
-
-                for i in range(n-k, n): 
-                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+k}") * stim.PauliString(n+k)) 
-                    stabilizers.append(stim.PauliString(f"X{i}*X{i+k}") * stim.PauliString(n+k)) 
-
-
-                state = stim.TableauSimulator()
-                state.set_state_from_stabilizers(stabilizers)
-                state.do_tableau(tableau, list(range(n)))
-                t = state.current_inverse_tableau().inverse()
-
-                qasm_random2 = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
-                pyzx_circ2 = Circuit.from_qasm(self.stim_qasm_comply(qasm_random2))
-                g2 = pyzx_circ2.to_graph()
-                input_state = "0"*(n+k)
-                g2.apply_state(input_state)
-                g2 = GraphState(g2)
-                g2.to_canonical_form()
-                # g2.validate_canonical_form()
-                t2 = tensorfy(g2.get_graph())
-                self.assertTrue(compare_tensors(t1, t2, preserve_scalar=False) and g2.validate_canonical_form(), f"Graph state failed for {i}")
-    
-
+   
     # @unittest.skip("Skipping canonical form test for now")
     def test_canonical_form(self):
     
