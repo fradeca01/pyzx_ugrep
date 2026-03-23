@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 
 RUN apt-get update && \
-    apt-get install -y minizinc && \
+    apt-get install -y minizinc build-essential python3 && \
     rm -rf /var/lib/apt/lists/*
     
 WORKDIR /app

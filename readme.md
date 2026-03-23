@@ -2,6 +2,29 @@
 
 `pyzx_ugrep` is a Python library and web tool designed to convert stabilizer codes into their Universal Graph Representation (UGR) using ZX-calculus. Built on top of `pyzx` and `stim`, this package allows for advanced diagrammatic reasoning, graph state manipulation, and distance computation.
 
+## Web interface
+
+A web interface is available to interact with the library visually.
+
+The interface is available at the following link: [Hidden]
+
+To start it locally `docker` is required. It is sufficient to run the following command from the root of the repository:
+
+```bash
+docker compose up
+```
+
+If everything worked, the following line should appear in the console:
+
+```bash
+frontend-1 | - Local: http://localhost:PORT
+```
+
+which indicate the URL to access the web interface,
+
+
+
+
 ## Installation
 
 1. **Clone the repository**:
@@ -46,14 +69,3 @@ print("Adjacency List:", ugr.adj)
 print("Distance Upper Bound:", distance_upper_bound(ugr))
 ```
 
-## Web interface
-
-A web interface is available to interact with the library visually.
-
-The interface is available at the following link: [Hidden]
-
-To start it locally `docker` is required. It is sufficient to run the following command from the root of the repository:
-
-```bash
-docker compose up
-```
