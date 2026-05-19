@@ -25,7 +25,9 @@ setup(
                       "psutil",
                       "pathlib",
                       "pyzx",
-                      "fastapi[standard]"
+                      "fastapi[standard]",
+                      "matplotlib",
+                      "networkx"
                       ],
     
 )
