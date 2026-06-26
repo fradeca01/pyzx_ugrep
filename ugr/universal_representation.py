@@ -12,6 +12,11 @@ import pprint
 import re
 import pathlib
 
+try:
+    from minizinc import Instance, Model, Solver
+except Exception:
+    Instance = Model = Solver = None
+
 import time
 from fractions import Fraction
 from typing import List, Tuple, Dict, Generic, TypeVar, Set, cast
@@ -893,6 +898,8 @@ def compute_distance(inputs : List[int], adjacency_list : List[List[int]]) -> in
         initial_lights = [0] * (num_nodes + 1) 
 
         try:
+            if Model is None or Solver is None or Instance is None:
+                raise ImportError("MiniZinc is not available; install a working MiniZinc CLI to compute distance.")
             current_dir = pathlib.Path(__file__).parent.resolve()
             mzn_path = current_dir / "qlo.mzn"
             model = Model(str(mzn_path)) 

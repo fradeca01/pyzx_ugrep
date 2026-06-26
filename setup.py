@@ -27,7 +27,8 @@ setup(
                       "pyzx",
                       "fastapi[standard]",
                       "matplotlib",
-                      "networkx"
+                      "networkx",
+                      "gymnasium"
                       ],
     
 )
