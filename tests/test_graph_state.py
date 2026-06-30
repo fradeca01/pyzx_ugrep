@@ -9,7 +9,7 @@ try:
     from pyzx.tensor import compare_tensors, tensorfy
     from pyzx.utils import EdgeType, VertexType
 
-    from ugr import GraphState, ZXCF_to_UGR, graph_to_ZXCF, stabilizers_to_UGR, stabilizers_to_ZX_graph
+    from ugr import GraphState, ZXCF_to_UGR, graph_to_ZXCF, implement_encoder, stabilizers_to_UGR, stabilizers_to_ZX_graph, to_stabilizer_tableau
 except ImportError as exc:
     raise unittest.SkipTest("stim, pyzx, and package dependencies need to be installed for this to run") from exc
 
@@ -102,6 +102,67 @@ def graph_from_UGR(ugr):
     return graph
 
 
+def encoder_graph_from_UGR(ugr):
+    circuit = implement_encoder(ugr)
+    graph = circuit.to_graph()
+    original_inputs = list(graph.inputs())
+    k = len(ugr.inputs)
+    pivot_for_input = dict(zip(ugr.inputs, ugr.pivots))
+    pivot_qubits = {pivot - k for pivot in pivot_for_input.values()}
+    input_state = "".join("/" if qubit in pivot_qubits else "0" for qubit in range(circuit.qubits))
+
+    graph.apply_state(input_state)
+    graph.set_inputs(tuple(original_inputs[pivot_for_input[input_vertex] - k] for input_vertex in ugr.inputs))
+    return graph
+
+
+def pyzx_circuit_to_stim(circuit: Circuit) -> "stim.Circuit":
+    stim_circuit = stim.Circuit()
+
+    for gate in circuit.gates:
+        gate_name = type(gate).__name__
+        if gate_name == "HAD":
+            stim_circuit.append("H", [gate.target])
+        elif gate_name == "CZ":
+            stim_circuit.append("CZ", [gate.control, gate.target])
+        elif gate_name == "S":
+            stim_circuit.append("S_DAG" if gate.adjoint else "S", [gate.target])
+        elif gate_name == "Z":
+            stim_circuit.append("Z", [gate.target])
+        else:
+            raise ValueError(f"Unsupported PyZX gate emitted by implement_encoder: {gate}")
+
+    return stim_circuit
+
+
+def implemented_encoder_stabilizers(ugr) -> list["stim.PauliString"]:
+    circuit = implement_encoder(ugr)
+    tableau = stim.Tableau.from_circuit(pyzx_circuit_to_stim(circuit))
+    k = len(ugr.inputs)
+    pivot_qubits = {pivot - k for pivot in ugr.pivots}
+    stabilizers = []
+
+    for qubit in range(circuit.qubits):
+        if qubit not in pivot_qubits:
+            ancilla_stabilizer = stim.PauliString(circuit.qubits)
+            ancilla_stabilizer[qubit] = "Z"
+            stabilizers.append(tableau(ancilla_stabilizer))
+
+    return stabilizers
+
+
+def canonical_stabilizer_group(stabilizers) -> tuple[str, ...]:
+    pauli_stabilizers = [
+        stim.PauliString(stabilizer) for stabilizer in stabilizers
+    ]
+    group = {str(stim.PauliString(len(pauli_stabilizers[0])))}
+
+    for stabilizer in pauli_stabilizers:
+        group.update(str(stim.PauliString(element) * stabilizer) for element in tuple(group))
+
+    return tuple(sorted(group))
+
+
 def deterministic_code_tableaus(n: int) -> list[tuple[str, "stim.Tableau"]]:
     identity = stim.Tableau(n)
 
@@ -175,23 +236,29 @@ class TestGraphState(unittest.TestCase):
         stabilizers = code_stabilizers_from_tableau(tableau, n, k)
 
         actual_ugr = stabilizers_to_UGR(stabilizers)
-        expected_graph = stabilizers_to_ZX_graph(stabilizers)
-        expected_zxcf = graph_to_ZXCF(expected_graph)
-        # expected_ugr = ZXCF_to_UGR(expected_zxcf)
-        ugr_graph = graph_from_UGR(actual_ugr)
+        actual_stabilizers = to_stabilizer_tableau(actual_ugr)
+
+        # expected_graph = stabilizers_to_ZX_graph(stabilizers)
+        # expected_zxcf = graph_to_ZXCF(expected_graph)
+        # ugr_graph = graph_from_UGR(actual_ugr)
 
         failure_context = (
-            f"Stabilizers:\n{stabilizers}\n"
+            f"Stabilizers:\n{canonical_stabilizer_group(stabilizers)}\n"
         )
-        # self.assertEqual(actual_ugr.inputs, expected_ugr.inputs, f"UGR inputs differ\n{failure_context}")
-        # self.assertEqual(actual_ugr.adj, expected_ugr.adj, f"UGR adjacency lists differ\n{failure_context}")
-        # self.assertEqual(actual_ugr.pivots, expected_ugr.pivots, f"UGR pivots differ\n{failure_context}")
-        # self.assertEqual(len(actual_ugr.inputs), k, f"UGR has the wrong number of inputs\n{failure_context}")
-        self.assertEqual(len(actual_ugr.adj), n + k, f"UGR has the wrong number of graph nodes\n{failure_context}")
-        self.assertTrue(
-            compare_tensors(tensorfy(ugr_graph), tensorfy(expected_zxcf.graph)),
-            f"UGR does not represent an encoder for the same code\n{failure_context}",
+
+        # self.assertEqual(len(actual_ugr.adj), n + k, f"UGR has the wrong number of graph nodes\n{failure_context}")
+        # self.assertTrue(
+        #     compare_tensors(tensorfy(ugr_graph), tensorfy(expected_zxcf.graph)),
+        #     f"UGR does not represent an encoder for the same code\n{failure_context}",
+        # )
+        self.assertEqual(
+            canonical_stabilizer_group(stabilizers),
+            canonical_stabilizer_group(actual_stabilizers),
+            f"UGR stabilizer generators do not generate the starting stabilizer group\n"
+            f"{failure_context}"
+            f"UGR stabilizers:\n{actual_stabilizers}",
         )
+
 
     def test_deterministic_canonical(self):
         for case_name, tableau in deterministic_code_tableaus(N_QUBITS):

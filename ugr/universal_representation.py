@@ -389,6 +389,7 @@ def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
     remove_pivot_phases(g2, pivots, quiet = True)
     remove_pivot_edges(g2, pivots, quiet = True)
     remove_unitaries_input(g2)
+    pivots = to_RRREF(g2, quiet = True)
 
     return ZXCF(g2, inputs, pivots)
 
@@ -602,59 +603,73 @@ def implement_encoder(d : UGR) -> Circuit:
     inputs = d.inputs
     adj = d.adj
     pivots = d.pivots
-
-    # pivots = {i : -1 for i in inputs}
-    out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
-
-    
-    n = len(adj)
     k = len(inputs)
+    num_qubits = len(adj) - k
 
-    print(inputs)
-    print(pivots)
-    print(list(range(n)))
+    if len(pivots) != k:
+        raise ValueError(f"Expected one pivot per input, got {len(pivots)} pivots for {k} inputs")
 
-    # print(inputs)
+    input_set = set(inputs)
+    pivot_set = set(pivots)
+    pivot_for_input = dict(zip(inputs, pivots))
 
-    c = Circuit(n-1)
+    if any(pivot in input_set for pivot in pivots):
+        raise ValueError("Pivots must be output vertices, not input vertices")
+
+    if any(pivot < k or pivot >= len(adj) for pivot in pivots):
+        raise ValueError("Pivots must be valid output vertices")
+
+    for input_vertex, pivot in pivot_for_input.items():
+        if pivot not in adj[input_vertex]:
+            raise ValueError("Input is not connected to its corresponding pivot")
+
+    c = Circuit(num_qubits)
 
     def to_qubit(x):
         if x in inputs:
-            for v in adj[x]:
-                if v in pivots:
-                    return v - len(inputs)
+            return pivot_for_input[x] - k
         else:
-            return x - len(inputs)
+            return x - k
 
-    
-    for v in range(n):
-        if v not in pivots and v not in inputs:
-            # print(v)
-            # print(to_qubit(v))
+    def apply_local_clifford(v: int) -> None:
+        q = to_qubit(v)
+        local_clifford = d.local_cliffords.get(v, "")
+        has_hadamard_boundary = local_clifford.startswith("H")
+        phase_label = local_clifford[1:] if has_hadamard_boundary else local_clifford
+
+        if phase_label == "S":
+            c.add_gate("S", q)
+        elif phase_label == "Z":
+            c.add_gate("Z", q)
+        elif phase_label == "SZ":
+            c.add_gate("S", q)
+            c.add_gate("Z", q)
+        elif phase_label != "":
+            raise ValueError(f"Unsupported local Clifford label: {local_clifford}")
+
+        if has_hadamard_boundary:
+            c.add_gate("H", q)
+
+    for v in range(len(adj)):
+        if v not in pivot_set and v not in input_set:
             c.add_gate("H", to_qubit(v))
 
-    # c.add_gate("H", n-1)
-    # for i in range(n-2, k-1, -1):
-    #     c.add_gate("CNOT", n-1, i)
-    
     for i in inputs:
         for j in adj[i]:
-            if j not in pivots:
+            if j not in input_set and j not in pivot_set:
                 c.add_gate("CZ", to_qubit(i), to_qubit(j))
         
     for i in inputs:
         c.add_gate("H", to_qubit(i))
 
-    for v in range(n):
-        if v not in inputs:
+    for v in range(len(adj)):
+        if v not in input_set:
             for u in adj[v]:
-                if u not in inputs and u < v:
+                if u not in input_set and u < v:
                     c.add_gate("CZ", to_qubit(u), to_qubit(v))
 
-    # for v in range(n):
-
-    
-    # draw(c, labels=True)
+    for v in range(k, len(adj)):
+        apply_local_clifford(v)
 
     return c
 
@@ -671,10 +686,6 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     pivots = d.pivots
     outputs_no_pivots = list(set(range(len(adj))) - set(pivots) - set(inputs))
 
-    # print(inputs)
-    # print(pivots)
-    # print(outputs_no_pivots)
-
     out_to_in = {i : set() for i in range(len(adj)) if i not in inputs}
 
 
@@ -687,20 +698,17 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     n = len(adj) - len(inputs)
     k = len(inputs)
-    # print(out_to_in, n, k)
 
     stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
-    # print(stabilizers)
     s = 0
     for i in outputs_no_pivots:
-        # print("HERE", f"X{i+2}")
         stabilizers[s] *= stim.PauliString(f"X{i - k}")
         for j in adj[i]:
             if j not in inputs:
                 stabilizers[s] *= stim.PauliString(f"Z{j-k}")
 
-        print(stabilizers[s])
+        # print(stabilizers[s])
         inp = out_to_in[i]
         for a in inp:
             p = pivots[a]
@@ -716,6 +724,68 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     stabilizers = [str(x) for x in stabilizers]
 
+    print(1,stabilizers)
+    print(2,d.local_cliffords)
+
+    def apply_gate_to_pauli(pauli: str, gate: str) -> tuple[int, str]:
+        if gate == "H":
+            if pauli == "X":
+                return 1, "Z"
+            if pauli == "Y":
+                return -1, "Y"
+            if pauli == "Z":
+                return 1, "X"
+        elif gate == "S":
+            if pauli == "X":
+                return 1, "Y"
+            if pauli == "Y":
+                return -1, "X"
+            if pauli == "Z":
+                return 1, "Z"
+        elif gate == "Z":
+            if pauli == "X":
+                return -1, "X"
+            if pauli == "Y":
+                return -1, "Y"
+            if pauli == "Z":
+                return 1, "Z"
+
+        return 1, pauli
+
+    def apply_local_clifford(stabilizer: str, qubit: int, local_clifford: str) -> str:
+        sign = 1 if stabilizer[0] == "+" else -1
+        paulis = list(stabilizer[1:])
+        has_hadamard_boundary = local_clifford.startswith("H")
+        phase_label = local_clifford[1:] if has_hadamard_boundary else local_clifford
+
+        gates = []
+        if phase_label == "S":
+            gates.append("S")
+        elif phase_label == "Z":
+            gates.append("Z")
+        elif phase_label == "SZ":
+            gates.extend(["S", "Z"])
+        elif phase_label != "":
+            raise ValueError(f"Unsupported local Clifford label: {local_clifford}")
+
+        if has_hadamard_boundary:
+            gates.append("H")
+
+        for gate in gates:
+            phase, paulis[qubit] = apply_gate_to_pauli(paulis[qubit], gate)
+            sign *= phase
+
+        return ("+" if sign == 1 else "-") + "".join(paulis)
+
+    for output in sorted(set(range(len(adj))) - set(inputs)):
+        local_clifford = d.local_cliffords.get(output, "")
+        if local_clifford == "":
+            continue
+        stabilizers = [
+            apply_local_clifford(stabilizer, output - k, local_clifford)
+            for stabilizer in stabilizers
+        ]
+    print(3,stabilizers)
     return stabilizers
 
 def to_distance_mzn(inputs, adj) -> str:
