@@ -356,13 +356,94 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
         pivots: List of pivot vertices
     """
 
-    for x in pivots:
-        for y in pivots:
-            if x != y and g.connected(x, y):
-                if not quiet:
-                    print(f"Step {9}:  --- Removing pivot-pivot edges from pivots: {pivots}")
-                pivot_operation(g, x, y, quiet = quiet, step=9)
+    inputs = set(get_inputs(g))
+    outputs = set(get_outputs(g))
 
+    def toggle_edge(x: VT, y: VT) -> None:
+        if x == y:
+            g.add_to_phase(x, 1)
+        elif g.connected(x, y):
+            g.remove_edge(g.edge(x, y))
+        else:
+            g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
+
+    def pivot_to_input() -> Dict[VT, VT]:
+        matching: Dict[VT, VT] = {}
+        for pivot in pivots:
+            input_neighbors = [v for v in get_neighbors(g, pivot) if v in inputs]
+            if len(input_neighbors) != 1:
+                raise ValueError(
+                    f"Pivot vertex {pivot} should be connected to exactly one input, "
+                    f"got {input_neighbors}"
+                )
+            matching[pivot] = input_neighbors[0]
+        return matching
+
+    def add_input_row(source: VT, target: VT) -> None:
+        for output in list(get_neighbors(g, source)):
+            if output in outputs:
+                toggle_edge(target, output)
+
+    def swap_input_rows(x: VT, y: VT) -> None:
+        add_input_row(x, y)
+        add_input_row(y, x)
+        add_input_row(x, y)
+
+    def phi(x: VT, y: VT) -> None:
+        # Eq. (101) is a pivot on an adjacent pair; the temporary input-input
+        # edge is an input-only unitary and is removed again below.
+        if not g.connected(x, y):
+            g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
+
+        nx = set(get_neighbors(g, x))
+        ny = set(get_neighbors(g, y))
+        nx.add(x)
+        ny.add(y)
+
+        for v in (nx & ny) - {x, y}:
+            g.add_to_phase(v, 1)
+
+        for a in nx:
+            for b in ny:
+                if a == b:
+                    continue
+                toggle_edge(a, b)
+
+        g.add_to_phase(x, 1)
+        g.add_to_phase(y, 1)
+        if g.connected(x, y):
+            g.remove_edge(g.edge(x, y))
+
+    while True:
+        pivot_edges = [
+            (x, y)
+            for x, y in itertools.combinations(pivots, 2)
+            if g.connected(x, y)
+        ]
+
+        if not pivot_edges:
+            return
+
+        before = len(pivot_edges)
+        matching = pivot_to_input()
+        x, y = pivot_edges[0]
+
+        if not quiet:
+            print(f"Step {9}:  --- Removing pivot-pivot edge ({x}, {y})")
+
+        phi(matching[x], matching[y])
+        swap_input_rows(matching[x], matching[y])
+
+        after = sum(
+            1
+            for a, b in itertools.combinations(pivots, 2)
+            if g.connected(a, b)
+        )
+
+        if after >= before:
+            raise ValueError(
+                "Pivot-edge removal did not reduce the number of pivot-pivot edges"
+            )
 
 
 def stabilizers_to_UGR(code : List[str]) -> UGR:
