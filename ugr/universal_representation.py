@@ -277,17 +277,26 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
         go_on = False
         for v in pivots:
             if g.phase(v) != 0:
-                neighbors = get_neighbors(g, v)
                 inputs_states = get_inputs(g)
                 outputs_states = get_outputs(g)
 
-                vin = -1
+                vin = None
 
-                for x in neighbors:
+                for x in get_neighbors(g, v):
                     if x in inputs_states:
                         vin = x
+                        break
+
+                if vin is None:
+                    raise ValueError(f"Pivot vertex {v} is not connected to an input vertex")
 
                 neighborsin = [x for x in get_neighbors(g, vin) if x in outputs_states]
+
+                for x, y in itertools.combinations(neighborsin, 2):
+                    if g.connected(x, y):
+                        g.remove_edge(g.edge(x, y))
+                    else:
+                        g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
 
                 for x in neighborsin:
                     g.add_to_phase(x, Fraction(1, 2))
@@ -699,6 +708,9 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     n = len(adj) - len(inputs)
     k = len(inputs)
 
+    pivot_for_input = dict(zip(inputs, pivots))
+
+
     stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
     s = 0
@@ -711,7 +723,7 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
         # print(stabilizers[s])
         inp = out_to_in[i]
         for a in inp:
-            p = pivots[a]
+            p = pivot_for_input[a]
             stabilizers[s] *= stim.PauliString(f"X{p-k}")
 
             for q in adj[p]:
