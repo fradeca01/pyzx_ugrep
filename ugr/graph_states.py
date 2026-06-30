@@ -98,31 +98,6 @@ class GraphState(Generic[VT, ET]):
         
         return bounds[0]
     
-
-    # def get_outputs(self) -> List[VT]:
-
-    #     """
-    #     Get the output vertices of the original ZX diagram.
-        
-    #     Returns:
-    #         List of output states
-    #     """
-    #     outputs = self._outputs
-    #     state_outputs = [list(self.get_graph().neighbors(v))[0] for v in outputs]
-    #     # print(state_outputs)
-    #     return state_outputs
-      
-    # def get_inputs(self) -> List[VT]:
-    #     """
-    #     Get the input vertices of the original ZX diagram.
-        
-    #     Returns:
-    #         List of inputs states
-    #     """
-    #     inputs = self.inputs()
-    #     state_inputs = [list(self.get_graph().neighbors(v))[0] for v in inputs]
-    #     # print(state_inputs)
-    #     return state_inputs   
     
     def bound_edge(self, v: VT) -> ET:
         """
@@ -167,69 +142,6 @@ class GraphState(Generic[VT, ET]):
         neighbors = [x for x in self.get_graph().neighbors(v) if x in self.get_states()]
 
         return neighbors
-    
-    # def fix_ordering(self) -> None:
-    #     g = Graph()
-    #     ty = self.types()
-    #     ph = self.phases()
-    #     qs = self.qubits()
-    #     rs = self.rows()
-    #     vtab = dict()
-    #     g.merge_vdata = self.merge_vdata 
-    #     # print(self.get_graph().inputs())
-    #     # print(self.get_inputs())
-    #     # print(self.get_graph().outputs())
-    #     # print(self.get_outputs())
-    #     for v in self.get_outputs():
-    #         i = g.add_vertex(ty[v],phase=ph[v])
-    #         if v in qs: g.set_qubit(i,qs[v])
-    #         if v in rs:
-    #             g.set_row(i, rs[v])
-    #         vtab[v] = i
-    #         for k in self.vdata_keys(v):
-    #             g.set_vdata(i, k, self.vdata(v, k))
-
-    #     for v in self.get_inputs():
-    #         i = g.add_vertex(ty[v],phase=ph[v])
-    #         if v in qs: g.set_qubit(i,qs[v])
-    #         if v in rs:
-    #             g.set_row(i, rs[v])
-    #         vtab[v] = i
-    #         for k in self.vdata_keys(v):
-    #             g.set_vdata(i, k, self.vdata(v, k))                        
-
-    #     for v in self.get_graph().outputs():
-    #         i = g.add_vertex(ty[v],phase=ph[v])
-    #         if v in qs: g.set_qubit(i,qs[v])
-    #         if v in rs:
-    #             g.set_row(i, rs[v])
-    #         vtab[v] = i
-    #         for k in self.vdata_keys(v):
-    #             g.set_vdata(i, k, self.vdata(v, k))
-
-    #     for v in self.get_graph().inputs():
-    #         i = g.add_vertex(ty[v],phase=ph[v])
-    #         if v in qs: g.set_qubit(i,qs[v])
-    #         if v in rs:
-    #             g.set_row(i, rs[v])
-    #         vtab[v] = i
-    #         for k in self.vdata_keys(v):
-    #             g.set_vdata(i, k, self.vdata(v, k))   
-
-    #     new_inputs = tuple(vtab[i] for i in self.inputs())
-    #     new_outputs = tuple(vtab[i] for i in self.outputs())
-    #     g.set_inputs(new_inputs)
-    #     g.set_outputs(new_outputs)
-        
-    #     for e in self.edges():
-    #         s, t = self.edge_st(e)
-    #         new_e = g.add_edge((vtab[s], vtab[t]), self.edge_type(e))
-    #         g.set_edata_dict(new_e, self.edata_dict(e))
-
-    #     self._graph = g
-    #     self._states = [vtab[v] for v in self._states]
-    #     self._inputs = [vtab[v] for v in self._inputs]
-    #     self._outputs = [vtab[v] for v in self._outputs]
 
     def cji(self) -> None:
         qs = self.get_states()
@@ -238,8 +150,6 @@ class GraphState(Generic[VT, ET]):
 
         for j in range(len(state_inputs)):
             bound = self.get_bound(state_inputs[j])
-            # self.set_qubit(state_inputs[j], len(qs) - len(state_inputs) + j  )
-            # self.set_qubit(bound, len(qs) - len(state_inputs) + j )
             self.set_qubit(state_inputs[j], - len(state_inputs) + j  )
             self.set_qubit(bound, - len(state_inputs) + j )
 
@@ -309,12 +219,7 @@ class GraphState(Generic[VT, ET]):
         
         states = [x for x in graph.vertex_set() if graph.types()[x] != VertexType.BOUNDARY]
         self._states = states
-        
-        # self._inputs = graph.inputs()
-        # self._outputs = graph.outputs()
         self.fix_free_edges()
-        # self.fix_ordering()
-        # draw(self.get_graph())
         self.cji()
         self.normalize_graph_state(quiet=quiet)
         self.auto_detect_io()

@@ -20,7 +20,16 @@ pyzx/js/d3.v5.js
 *.egg-info/
 .eggs/
 
-*/test_graphs/*
+notebook/_shor_code.ipynb
+
+.codex
+.agents
+.pytest_cache
+
+# */_*
+# !tests/__init__.py
+
+__pycache__/
 
 frontend/node_modules/
 frontend/dist/

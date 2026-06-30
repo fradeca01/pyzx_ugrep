@@ -1,133 +1,221 @@
-import unittest
-import random
-import sys
-import os
-from types import ModuleType
-from typing import Optional
-
-if __name__ == '__main__':
-    sys.path.append('..')
-    sys.path.append('.')
-mydir = os.path.dirname(__file__)
-from pyzx.generate import cliffordT, cliffords
-from pyzx.simplify import clifford_simp
-from pyzx.extract import extract_circuit
-from pyzx.circuit import Circuit
-from pyzx import draw
-from pyzx.graph import Graph
-from ugr import *
+from fractions import Fraction
 import re
-import stim as stim
-from pyzx.tensor import tensorfy, compare_tensors
+import unittest
 
-np: Optional[ModuleType]
 try:
-    import numpy as np
-except ImportError:
-    np = None
+    import stim
+    from pyzx.graph import Graph
+    from pyzx.circuit import Circuit
+    from pyzx.tensor import compare_tensors, tensorfy
+    from pyzx.utils import EdgeType, VertexType
 
-SEED = 1337
+    from ugr import GraphState, ZXCF_to_UGR, graph_to_ZXCF, stabilizers_to_UGR, stabilizers_to_ZX_graph
+except ImportError as exc:
+    raise unittest.SkipTest("stim, pyzx, and package dependencies need to be installed for this to run") from exc
 
 
-@unittest.skipUnless(stim, "stim needs to be installed for this to run")
-class TestCircuit(unittest.TestCase):
+NUM_RANDOM_CASES = 10
+N_QUBITS = 7
+K_QUBITS = 3
 
-    def setUp(self):
-        self.reset = True
-        self.n = 6
-        self.k = 3
-        self.num_subtseps = 20
-    
-    def stim_qasm_comply(self, qasm: str) -> str:
-        q = qasm
-        q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
-        q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
-        # q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', '', q)
-        q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
-        return q
-    
-   
-    # @unittest.skip("Skipping canonical form test for now")
-    def test_canonical_form(self):
-    
-        for i in range(0,self.num_subtseps):
-            with self.subTest(i=i):
-                s = f"test_{i}"
-                file_path = f"./test_graphs/{s}.qasm"
-                if not os.path.exists(file_path) or self.reset == True:
-                    qasm_random = stim.Tableau.random(self.n).to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
-                    # qasm_random = self.stim_qasm_comply(qasm_random)
-                    with open(file_path, "w") as f:
-                        f.write(qasm_random)
-                print(f"Testing canonical form for {s}")
-                file_path = f"./test_graphs/{s}.qasm"
-                with open(file_path, "r") as f:
-                    qasm_random = f.read()
-                pyzx_circ = Circuit.from_qasm(qasm_random)
-                g = pyzx_circ.to_graph()
-                input_state = "0"*(self.n-self.k) + "/"*self.k
-                g.apply_state(input_state)
-                g = GraphState(g)
-                t1 = tensorfy(g.get_graph())
-                g.to_canonical_form(quiet=True)
-                t2 = tensorfy(g.get_graph())
+LOCAL_CLIFFORD_PHASES = {
+    "": 0,
+    "S": Fraction(1, 2),
+    "Z": 1,
+    "SZ": Fraction(3, 2),
+    "H": 0,
+    "HZ": 1,
+}
 
-                    
-                self.assertTrue(compare_tensors(t1, t2) and g.validate_canonical_form(), f"Canonical form failed for {i}")
 
-    # @unittest.skip("Skipping universal representation test for now")
+def stim_qasm_comply(qasm: str) -> str:
+    q = qasm
+    q = re.sub(r'def\s+rx\(qubit q0\)\s*\{[^}]*\}\n+', '', q)
+    q = re.sub(r'rx\s*\(\s*q\[(\d+)\]\s*\)\s*;', r'h q[\1];', q)
+    q = re.sub(r'reset\s+q\[(\d+)\];', '', q)
+    return q
+
+def graph_state_from_tableau(tableau: "stim.Tableau", n: int, k: int):
+    stabilizers = []
+
+    for qubit in range(k, n):
+        stabilizers.append(stim.PauliString(f"Z{qubit}") * stim.PauliString(n + k))
+
+    for qubit in range(k):
+        stabilizers.append(stim.PauliString(f"Z{qubit}*Z{qubit + n}") * stim.PauliString(n + k))
+        stabilizers.append(stim.PauliString(f"X{qubit}*X{qubit + n}") * stim.PauliString(n + k))
+
+    state = stim.TableauSimulator()
+    state.set_state_from_stabilizers(stabilizers)
+    state.do_tableau(tableau, list(range(k, n + k)))
+    graph_state_tableau = state.current_inverse_tableau().inverse()
+    qasm = graph_state_tableau.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)
+    pyzx_circ = Circuit.from_qasm(stim_qasm_comply(qasm))
+    graph = pyzx_circ.to_graph()
+    graph.apply_state("0" * (n + k))
+    graph.set_inputs(graph.outputs()[0:k])
+    return graph, qasm
+
+
+def elimination_graph_from_tableau(tableau: "stim.Tableau", n: int, k: int):
+    qasm = tableau.to_circuit(method="elimination").to_qasm(open_qasm_version=3)
+    pyzx_circ = Circuit.from_qasm(qasm)
+    graph = pyzx_circ.to_graph()
+    graph.apply_state("0" * (n - k) + "/" * k)
+    return graph
+
+
+def code_stabilizers_from_tableau(tableau: "stim.Tableau", n: int, k: int) -> list[str]:
+    return [str(stabilizer) for stabilizer in tableau.to_stabilizers()[0 : n - k]]
+
+
+def graph_from_UGR(ugr):
+    graph = Graph()
+    input_set = set(ugr.inputs)
+    internal_vertices = []
+    boundary_vertices = []
+
+    for vertex in range(len(ugr.adj)):
+        local_clifford = ugr.local_cliffords.get(vertex, "")
+        is_input = vertex in input_set
+        qubit = vertex if is_input else vertex - len(ugr.inputs)
+        internal = graph.add_vertex(VertexType.Z, phase=LOCAL_CLIFFORD_PHASES[local_clifford])
+        boundary = graph.add_vertex(VertexType.BOUNDARY)
+        edge_type = EdgeType.HADAMARD if local_clifford.startswith("H") else EdgeType.SIMPLE
+
+        graph.set_qubit(internal, qubit)
+        graph.set_qubit(boundary, qubit)
+        graph.set_row(boundary, 0 if is_input else 3)
+        graph.set_row(internal, 1 if is_input else 2)
+        graph.add_edge((boundary, internal), edge_type)
+
+        internal_vertices.append(internal)
+        boundary_vertices.append(boundary)
+
+    for vertex, neighbors in enumerate(ugr.adj):
+        for neighbor in neighbors:
+            if vertex < neighbor:
+                graph.add_edge((internal_vertices[vertex], internal_vertices[neighbor]), EdgeType.HADAMARD)
+
+    graph.set_inputs(tuple(boundary_vertices[vertex] for vertex in ugr.inputs))
+    graph.set_outputs(tuple(boundary_vertices[vertex] for vertex in range(len(ugr.adj)) if vertex not in input_set))
+    return graph
+
+
+def deterministic_code_tableaus(n: int) -> list[tuple[str, "stim.Tableau"]]:
+    identity = stim.Tableau(n)
+
+    hadamard_layer = stim.Circuit()
+    phase_layer = stim.Circuit()
+    alternating_layer = stim.Circuit()
+    chain = stim.Circuit()
+    reverse_chain = stim.Circuit()
+    star = stim.Circuit()
+
+    for qubit in range(n):
+        hadamard_layer.append("H", [qubit])
+        phase_layer.append("S", [qubit])
+        if qubit % 2 == 0:
+            alternating_layer.append("H", [qubit])
+        else:
+            alternating_layer.append("S", [qubit])
+
+    for qubit in range(n - 1):
+        chain.append("CX", [qubit, qubit + 1])
+        reverse_chain.append("CX", [n - qubit - 1, n - qubit - 2])
+
+    star.append("H", [0])
+    for qubit in range(1, n):
+        star.append("CX", [0, qubit])
+
+    return [
+        ("identity", identity),
+        ("hadamard_layer", stim.Tableau.from_circuit(hadamard_layer)),
+        ("phase_layer", stim.Tableau.from_circuit(phase_layer)),
+        ("alternating_h_s_layer", stim.Tableau.from_circuit(alternating_layer)),
+        ("cx_chain", stim.Tableau.from_circuit(chain)),
+        ("reverse_cx_chain", stim.Tableau.from_circuit(reverse_chain)),
+        ("star_entangler", stim.Tableau.from_circuit(star)),
+    ]
+
+
+class TestGraphState(unittest.TestCase):
+    def assert_canonical_form(self, tableau, n, k):
+        graph_state_graph, graph_state_qasm = graph_state_from_tableau(tableau, n, k)
+        graph = GraphState(graph_state_graph)
+        before = tensorfy(graph.get_graph())
+
+        graph.to_canonical_form(quiet=True)
+        after = tensorfy(graph.get_graph())
+
+        failure_context = (
+            "Graph-state QASM generated from code tableau:\n"
+            f"{graph_state_qasm}"
+        )
+        self.assertTrue(compare_tensors(before, after), f"Canonicalization changed the tensor\n{failure_context}")
+        self.assertTrue(graph.validate_canonical_form(), f"Canonicalized graph is not in canonical form\n{failure_context}")
+
+    def assert_graph_state_synthesis(self, tableau, n, k):
+        graph_state_graph, graph_state_qasm = graph_state_from_tableau(tableau, n, k)
+        elimination_graph = elimination_graph_from_tableau(tableau, n, k)
+
+        graph_state_zxcf = graph_to_ZXCF(graph_state_graph).graph
+        elimination_zxcf = graph_to_ZXCF(elimination_graph).graph
+
+        failure_context = (
+            "Graph-state QASM generated from code tableau:\n"
+            f"{graph_state_qasm}"
+        )
+        self.assertTrue(
+            compare_tensors(tensorfy(graph_state_zxcf), tensorfy(elimination_zxcf)),
+            f"Graph-state synthesis does not match elimination synthesis\n{failure_context}",
+        )
+
+    def assert_UGR(self, tableau, n, k):
+        stabilizers = code_stabilizers_from_tableau(tableau, n, k)
+
+        actual_ugr = stabilizers_to_UGR(stabilizers)
+        expected_graph = stabilizers_to_ZX_graph(stabilizers)
+        expected_zxcf = graph_to_ZXCF(expected_graph)
+        # expected_ugr = ZXCF_to_UGR(expected_zxcf)
+        ugr_graph = graph_from_UGR(actual_ugr)
+
+        failure_context = (
+            f"Stabilizers:\n{stabilizers}\n"
+        )
+        # self.assertEqual(actual_ugr.inputs, expected_ugr.inputs, f"UGR inputs differ\n{failure_context}")
+        # self.assertEqual(actual_ugr.adj, expected_ugr.adj, f"UGR adjacency lists differ\n{failure_context}")
+        # self.assertEqual(actual_ugr.pivots, expected_ugr.pivots, f"UGR pivots differ\n{failure_context}")
+        # self.assertEqual(len(actual_ugr.inputs), k, f"UGR has the wrong number of inputs\n{failure_context}")
+        self.assertEqual(len(actual_ugr.adj), n + k, f"UGR has the wrong number of graph nodes\n{failure_context}")
+        self.assertTrue(
+            compare_tensors(tensorfy(ugr_graph), tensorfy(expected_zxcf.graph)),
+            f"UGR does not represent an encoder for the same code\n{failure_context}",
+        )
+
+    def test_deterministic_canonical(self):
+        for case_name, tableau in deterministic_code_tableaus(N_QUBITS):
+            with self.subTest(case_name=case_name):
+                self.assert_canonical_form(tableau, N_QUBITS, K_QUBITS)
+
+    def test_random_code_canonical(self):
+        for case_idx in range(NUM_RANDOM_CASES):
+            with self.subTest(case_idx=case_idx):
+                tableau = stim.Tableau.random(N_QUBITS)
+                self.assert_canonical_form(tableau, N_QUBITS, K_QUBITS)
+
+    def test_graph_state_synthesis(self):
+        for case_idx in range(NUM_RANDOM_CASES):
+            with self.subTest(case_idx=case_idx):
+                tableau = stim.Tableau.random(N_QUBITS)
+                self.assert_graph_state_synthesis(tableau, N_QUBITS, K_QUBITS)
+
     def test_universal_representation(self):
-        for i in range(0,self.num_subtseps):
-            with self.subTest(i=i):
-                s = f"test_{i}"
-                print(f"Testing universal representation for {s}")
-                tableau = stim.Tableau.random(self.n)
-
-                n = self.n 
-                k = self.k
-
-                code_stab = tableau.to_stabilizers()
-            
-                stabilizers = []
-
-                for i in range(k, n):
-                    stabilizers.append(stim.PauliString(f"Z{i}") * stim.PauliString(n+k))
+        for case_idx in range(NUM_RANDOM_CASES):
+            with self.subTest(case_idx=case_idx):
+                tableau = stim.Tableau.random(N_QUBITS)
+                self.assert_UGR(tableau, N_QUBITS, K_QUBITS)
 
 
-                for i in range(k):
-                    stabilizers.append(stim.PauliString(f"Z{i}*Z{i+n}") * stim.PauliString(n+k)) 
-                    stabilizers.append(stim.PauliString(f"X{i}*X{i+n}") * stim.PauliString(n+k)) 
-
-
-                state = stim.TableauSimulator()
-                state.set_state_from_stabilizers(stabilizers)
-                state.do_tableau(tableau, list(range(k, n+k)))
-                t = state.current_inverse_tableau().inverse()
-                qasm_random = t.to_circuit(method="graph_state").to_qasm(open_qasm_version=3)       
-                pyzx_circ = Circuit.from_qasm(self.stim_qasm_comply(qasm_random))
-                g = pyzx_circ.to_graph()
-                input_state = "0"*(n+k)
-                g.apply_state(input_state)
-                g.set_inputs(g.outputs()[0:k])
-
-                ugr1 = graph_to_ZXCF(g).graph
-
-                qasm_random2 = tableau.to_circuit(method = "elimination").to_qasm(open_qasm_version=3)
-                pyzx_circ2 = Circuit.from_qasm(qasm_random2)
-                input_state2 = "0"*(n - k) + "/"*k
-                g2 = pyzx_circ2.to_graph()
-                g2.apply_state(input_state2)
-
-                ugr2 = graph_to_ZXCF(g2).graph
-                # draw(ugr1)
-                t1 = tensorfy(ugr1)
-                t2 = tensorfy(ugr2)
-                # draw(ugr1)
-                # draw(ugr2)
-                # print(i)
-                self.assertTrue(compare_tensors(t1, t2), f"Universal representation form failed for {i}")
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

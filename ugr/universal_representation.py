@@ -11,7 +11,6 @@ import itertools
 import pprint
 import re
 import pathlib
-from minizinc import Instance, Model, Solver
 
 import time
 from fractions import Fraction
@@ -65,6 +64,7 @@ class UGR():
         self.inputs = inputs
         self.adj = adj
         self.pivots = pivots
+        self.local_cliffords = local_cliffords 
 
 
 class ZXCF(Generic[VT, ET]):
@@ -469,7 +469,7 @@ def ZXCF_to_UGR(g: ZXCF[VT, ET], quiet : bool = True) -> UGR:
     for b in g.graph.outputs():
         v = get_node_from_boundary(g.graph, b)
         if g.graph.edge_type(g.graph.edge(v, b)) == EdgeType.HADAMARD:
-            local_cliffords[vertex_map[v]] = "H"
+            local_cliffords[vertex_map[v]] = "H" + local_cliffords[vertex_map[v]]
     
 
     new_inputs =[vertex_map[x] for x in  d["inputs"]]
@@ -749,6 +749,8 @@ def to_distance_mzn(inputs, adj) -> str:
 
 
 def compute_distance(inputs : List[int], adjacency_list : List[List[int]]) -> int:   
+        from minizinc import Instance, Model, Solver
+
         num_nodes = len(adjacency_list)
         I_nodes = {i + 1 for i in inputs}
         all_nodes = set(range(1, num_nodes + 1))

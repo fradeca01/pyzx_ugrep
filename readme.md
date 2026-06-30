@@ -6,8 +6,6 @@
 
 A web interface is available to interact with the library visually.
 
-The interface is available at the following link: [Hidden]
-
 To start it locally `docker` is required. It is sufficient to run the following command from the root of the repository:
 
 ```bash
@@ -23,8 +21,6 @@ frontend-1 | - Local: http://localhost:PORT
 which indicate the URL to access the web interface,
 
 
-
-
 ## Installation
 
 1. **Clone the repository**:
@@ -35,8 +31,8 @@ which indicate the URL to access the web interface,
 
 2. **Create virtual environment**
     ```bash
-    python -m venv venv-qsw26
-    source venv-qsw26/bin/activate
+    python -m venv venv-quancom26
+    source venv-quancom26/bin/activate
     ```
 
 2. **Install the package**
@@ -46,7 +42,7 @@ which indicate the URL to access the web interface,
 
 2. **Import the package**
     ```python
-    from ugr as *
+    from ugr import *
     ```
 
 ## Usage and examples
