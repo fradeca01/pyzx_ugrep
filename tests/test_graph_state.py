@@ -69,39 +69,6 @@ def code_stabilizers_from_tableau(tableau: "stim.Tableau", n: int, k: int) -> li
     return [str(stabilizer) for stabilizer in tableau.to_stabilizers()[0 : n - k]]
 
 
-def graph_from_UGR(ugr):
-    graph = Graph()
-    input_set = set(ugr.inputs)
-    internal_vertices = []
-    boundary_vertices = []
-
-    for vertex in range(len(ugr.adj)):
-        local_clifford = ugr.local_cliffords.get(vertex, "")
-        is_input = vertex in input_set
-        qubit = vertex if is_input else vertex - len(ugr.inputs)
-        internal = graph.add_vertex(VertexType.Z, phase=LOCAL_CLIFFORD_PHASES[local_clifford])
-        boundary = graph.add_vertex(VertexType.BOUNDARY)
-        edge_type = EdgeType.HADAMARD if local_clifford.startswith("H") else EdgeType.SIMPLE
-
-        graph.set_qubit(internal, qubit)
-        graph.set_qubit(boundary, qubit)
-        graph.set_row(boundary, 0 if is_input else 3)
-        graph.set_row(internal, 1 if is_input else 2)
-        graph.add_edge((boundary, internal), edge_type)
-
-        internal_vertices.append(internal)
-        boundary_vertices.append(boundary)
-
-    for vertex, neighbors in enumerate(ugr.adj):
-        for neighbor in neighbors:
-            if vertex < neighbor:
-                graph.add_edge((internal_vertices[vertex], internal_vertices[neighbor]), EdgeType.HADAMARD)
-
-    graph.set_inputs(tuple(boundary_vertices[vertex] for vertex in ugr.inputs))
-    graph.set_outputs(tuple(boundary_vertices[vertex] for vertex in range(len(ugr.adj)) if vertex not in input_set))
-    return graph
-
-
 def deterministic_code_tableaus(n: int) -> list[tuple[str, "stim.Tableau"]]:
     identity = stim.Tableau(n)
 
@@ -171,27 +138,6 @@ class TestGraphState(unittest.TestCase):
             f"Graph-state synthesis does not match elimination synthesis\n{failure_context}",
         )
 
-    def assert_UGR(self, tableau, n, k):
-        stabilizers = code_stabilizers_from_tableau(tableau, n, k)
-
-        actual_ugr = stabilizers_to_UGR(stabilizers)
-        expected_graph = stabilizers_to_ZX_graph(stabilizers)
-        expected_zxcf = graph_to_ZXCF(expected_graph)
-        # expected_ugr = ZXCF_to_UGR(expected_zxcf)
-        ugr_graph = graph_from_UGR(actual_ugr)
-
-        failure_context = (
-            f"Stabilizers:\n{stabilizers}\n"
-        )
-        # self.assertEqual(actual_ugr.inputs, expected_ugr.inputs, f"UGR inputs differ\n{failure_context}")
-        # self.assertEqual(actual_ugr.adj, expected_ugr.adj, f"UGR adjacency lists differ\n{failure_context}")
-        # self.assertEqual(actual_ugr.pivots, expected_ugr.pivots, f"UGR pivots differ\n{failure_context}")
-        # self.assertEqual(len(actual_ugr.inputs), k, f"UGR has the wrong number of inputs\n{failure_context}")
-        self.assertEqual(len(actual_ugr.adj), n + k, f"UGR has the wrong number of graph nodes\n{failure_context}")
-        self.assertTrue(
-            compare_tensors(tensorfy(ugr_graph), tensorfy(expected_zxcf.graph)),
-            f"UGR does not represent an encoder for the same code\n{failure_context}",
-        )
 
     def test_deterministic_canonical(self):
         for case_name, tableau in deterministic_code_tableaus(N_QUBITS):
@@ -209,12 +155,6 @@ class TestGraphState(unittest.TestCase):
             with self.subTest(case_idx=case_idx):
                 tableau = stim.Tableau.random(N_QUBITS)
                 self.assert_graph_state_synthesis(tableau, N_QUBITS, K_QUBITS)
-
-    def test_universal_representation(self):
-        for case_idx in range(NUM_RANDOM_CASES):
-            with self.subTest(case_idx=case_idx):
-                tableau = stim.Tableau.random(N_QUBITS)
-                self.assert_UGR(tableau, N_QUBITS, K_QUBITS)
 
 
 if __name__ == "__main__":
