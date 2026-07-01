@@ -346,6 +346,12 @@ class TestGraphState(unittest.TestCase):
                 tableau = stim.Tableau.random(N_QUBITS)
                 self.assert_graph_state_synthesis(tableau, N_QUBITS, K_QUBITS)
 
+    def test_universal_representation(self):
+        for case_idx in range(NUM_RANDOM_CASES):
+            with self.subTest(case_idx=case_idx):
+                tableau = stim.Tableau.random(N_QUBITS)
+                self.assert_UGR(tableau, N_QUBITS, K_QUBITS)
+
 
 if __name__ == "__main__":
     unittest.main()
