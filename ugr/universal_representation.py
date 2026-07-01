@@ -306,48 +306,6 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
                 go_on = True
                 break
 
-def pivot_operation(g : BaseGraph[VT, ET], x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
-    """
-    Perform a pivot operation between vertices x and y in the graph state.
-    
-    Args:
-        x: First vertex for pivot operation
-        y: Second vertex for pivot operation
-        
-    Raises:
-        ValueError: If the graph is not in a valid state for pivoting
-    """
-
-    if not quiet:
-        print(f"Step --- Pivoting between vertices {x} and {y}")
-
-    A = get_neighbors(g,x) + [x]
-    B = get_neighbors(g,y) + [y]
-
-    phase_x = g.phase(x)
-    phase_y = g.phase(y)
-    # type_x = self.bound_edge_type(x)
-    # type_y = self.bound_edge_type(y)
-
-    for v in A:
-        if v in B:
-            if v != x and v != y:
-                if not quiet:
-                    print(f"Step  --- Adding phase 1 to vertex {v} in intersection of A and B")
-                g.add_to_phase(v, 1)
-
-    # Add/remove edges between A and B sets
-    for i in range(len(A)):
-        for j in range(len(B)):
-            if A[i] == B[j]:
-                continue
-            elif not g.connected(A[i], B[j]):
-                g.add_edge((A[i], B[j]), edgetype=EdgeType.HADAMARD)
-            else:
-                g.remove_edge(g.edge(A[i], B[j]))
-
-
-
 def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = True) -> None:
     """
     Remove edges between pivot vertices.
@@ -389,9 +347,7 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
         add_input_row(y, x)
         add_input_row(x, y)
 
-    def phi(x: VT, y: VT) -> None:
-        # Eq. (101) is a pivot on an adjacent pair; the temporary input-input
-        # edge is an input-only unitary and is removed again below.
+    def pivot(x: VT, y: VT) -> None:
         if not g.connected(x, y):
             g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
 
@@ -409,8 +365,6 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
                     continue
                 toggle_edge(a, b)
 
-        g.add_to_phase(x, 1)
-        g.add_to_phase(y, 1)
         if g.connected(x, y):
             g.remove_edge(g.edge(x, y))
 
@@ -431,7 +385,7 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
         if not quiet:
             print(f"Step {9}:  --- Removing pivot-pivot edge ({x}, {y})")
 
-        phi(matching[x], matching[y])
+        pivot(matching[x], matching[y])
         swap_input_rows(matching[x], matching[y])
 
         after = sum(
