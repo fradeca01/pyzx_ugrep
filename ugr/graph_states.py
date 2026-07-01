@@ -196,7 +196,9 @@ class GraphState(Generic[VT, ET]):
             
         Raises:
             ValueError: If the input is not a valid Clifford ZX-diagram
-        """
+        """ 
+
+        graph = graph.clone()
 
         # Check if the diagram is Clifford before processing
         for v in graph.vertices():

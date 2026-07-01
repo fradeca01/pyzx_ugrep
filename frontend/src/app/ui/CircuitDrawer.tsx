@@ -12,9 +12,10 @@ interface Gate {
 interface ParsedCircuit {
     numQubits: number;
     columns: Gate[][];
+    initialStates: string[];
 }
 
-const parseQASM = (qasm: string): ParsedCircuit => {
+const parseQASM = (qasm: string, inputCount: number): ParsedCircuit => {
     const lines = qasm.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//') && !l.startsWith('OPENQASM') && !l.startsWith('include'));
 
     let numQubits = 0;
@@ -59,9 +60,36 @@ const parseQASM = (qasm: string): ParsedCircuit => {
         numQubits = Math.max(...gates.flatMap(g => [...g.qubits, ...(g.controls || [])])) + 1;
     }
 
-    const columns: Gate[][] = gates.map(g => [g]);
+    const initialStates: string[] = Array.from(
+        { length: numQubits },
+        (_, qubit) => qubit < inputCount ? "|in>" : "|0>"
+    );
+    const touched = Array(numQubits).fill(false);
+    const visualGates: Gate[] = [];
 
-    return { numQubits, columns };
+    gates.forEach(gate => {
+        const affectedQubits = [...gate.qubits, ...(gate.controls || [])];
+        const isInitialAncillaHadamard =
+            gate.type === "H" &&
+            !gate.controls &&
+            gate.qubits[0] >= inputCount &&
+            !touched[gate.qubits[0]];
+
+        if (isInitialAncillaHadamard) {
+            initialStates[gate.qubits[0]] = "|+>";
+            touched[gate.qubits[0]] = true;
+            return;
+        }
+
+        visualGates.push(gate);
+        affectedQubits.forEach(qubit => {
+            touched[qubit] = true;
+        });
+    });
+
+    const columns: Gate[][] = visualGates.map(g => [g]);
+
+    return { numQubits, columns, initialStates };
 };
 interface BackendGraphData {
     inputs: number[];
@@ -82,7 +110,7 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
     const circuit = useMemo(() => {
         if (!qasmData) return null;
         try {
-            return parseQASM(qasmData.qasmEncoder || "");
+            return parseQASM(qasmData.qasmEncoder || "", qasmData.inputs.length);
         } catch (e) {
             console.error("Parsing error", e);
             return null;
@@ -91,7 +119,7 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
 
     const ROW_H = 40;
     const COL_W = 40;
-    const START_X = 60;
+    const START_X = 95;
     const START_Y = 40;
 
 
@@ -181,7 +209,7 @@ export default function CircuitDrawer({ isOpen, onClose, qasmData }: CircuitDraw
                                         fontSize="14"
                                         fontFamily="monospace"
                                     >
-                                        q[{i}]
+                                        {`q[${i}] ${circuit.initialStates[i]}`}
                                     </text>
                                     <line
                                         x1={START_X}

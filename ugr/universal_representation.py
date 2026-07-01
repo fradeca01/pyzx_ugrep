@@ -277,17 +277,26 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
         go_on = False
         for v in pivots:
             if g.phase(v) != 0:
-                neighbors = get_neighbors(g, v)
                 inputs_states = get_inputs(g)
                 outputs_states = get_outputs(g)
 
-                vin = -1
+                vin = None
 
-                for x in neighbors:
+                for x in get_neighbors(g, v):
                     if x in inputs_states:
                         vin = x
+                        break
+
+                if vin is None:
+                    raise ValueError(f"Pivot vertex {v} is not connected to an input vertex")
 
                 neighborsin = [x for x in get_neighbors(g, vin) if x in outputs_states]
+
+                for x, y in itertools.combinations(neighborsin, 2):
+                    if g.connected(x, y):
+                        g.remove_edge(g.edge(x, y))
+                    else:
+                        g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
 
                 for x in neighborsin:
                     g.add_to_phase(x, Fraction(1, 2))
@@ -297,48 +306,6 @@ def remove_pivot_phases(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool =
                 go_on = True
                 break
 
-def pivot_operation(g : BaseGraph[VT, ET], x: VT, y: VT, quiet : bool = True, step : int = 0) -> None:
-    """
-    Perform a pivot operation between vertices x and y in the graph state.
-    
-    Args:
-        x: First vertex for pivot operation
-        y: Second vertex for pivot operation
-        
-    Raises:
-        ValueError: If the graph is not in a valid state for pivoting
-    """
-
-    if not quiet:
-        print(f"Step --- Pivoting between vertices {x} and {y}")
-
-    A = get_neighbors(g,x) + [x]
-    B = get_neighbors(g,y) + [y]
-
-    phase_x = g.phase(x)
-    phase_y = g.phase(y)
-    # type_x = self.bound_edge_type(x)
-    # type_y = self.bound_edge_type(y)
-
-    for v in A:
-        if v in B:
-            if v != x and v != y:
-                if not quiet:
-                    print(f"Step  --- Adding phase 1 to vertex {v} in intersection of A and B")
-                g.add_to_phase(v, 1)
-
-    # Add/remove edges between A and B sets
-    for i in range(len(A)):
-        for j in range(len(B)):
-            if A[i] == B[j]:
-                continue
-            elif not g.connected(A[i], B[j]):
-                g.add_edge((A[i], B[j]), edgetype=EdgeType.HADAMARD)
-            else:
-                g.remove_edge(g.edge(A[i], B[j]))
-
-
-
 def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = True) -> None:
     """
     Remove edges between pivot vertices.
@@ -347,13 +314,90 @@ def remove_pivot_edges(g : BaseGraph[VT, ET], pivots : List[VT], quiet : bool = 
         pivots: List of pivot vertices
     """
 
-    for x in pivots:
-        for y in pivots:
-            if x != y and g.connected(x, y):
-                if not quiet:
-                    print(f"Step {9}:  --- Removing pivot-pivot edges from pivots: {pivots}")
-                pivot_operation(g, x, y, quiet = quiet, step=9)
+    inputs = set(get_inputs(g))
+    outputs = set(get_outputs(g))
 
+    def toggle_edge(x: VT, y: VT) -> None:
+        if x == y:
+            g.add_to_phase(x, 1)
+        elif g.connected(x, y):
+            g.remove_edge(g.edge(x, y))
+        else:
+            g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
+
+    def pivot_to_input() -> Dict[VT, VT]:
+        matching: Dict[VT, VT] = {}
+        for pivot in pivots:
+            input_neighbors = [v for v in get_neighbors(g, pivot) if v in inputs]
+            if len(input_neighbors) != 1:
+                raise ValueError(
+                    f"Pivot vertex {pivot} should be connected to exactly one input, "
+                    f"got {input_neighbors}"
+                )
+            matching[pivot] = input_neighbors[0]
+        return matching
+
+    def add_input_row(source: VT, target: VT) -> None:
+        for output in list(get_neighbors(g, source)):
+            if output in outputs:
+                toggle_edge(target, output)
+
+    def swap_input_rows(x: VT, y: VT) -> None:
+        add_input_row(x, y)
+        add_input_row(y, x)
+        add_input_row(x, y)
+
+    def pivot(x: VT, y: VT) -> None:
+        if not g.connected(x, y):
+            g.add_edge((x, y), edgetype=EdgeType.HADAMARD)
+
+        nx = set(get_neighbors(g, x))
+        ny = set(get_neighbors(g, y))
+        nx.add(x)
+        ny.add(y)
+
+        for v in (nx & ny) - {x, y}:
+            g.add_to_phase(v, 1)
+
+        for a in nx:
+            for b in ny:
+                if a == b:
+                    continue
+                toggle_edge(a, b)
+
+        if g.connected(x, y):
+            g.remove_edge(g.edge(x, y))
+
+    while True:
+        pivot_edges = [
+            (x, y)
+            for x, y in itertools.combinations(pivots, 2)
+            if g.connected(x, y)
+        ]
+
+        if not pivot_edges:
+            return
+
+        before = len(pivot_edges)
+        matching = pivot_to_input()
+        x, y = pivot_edges[0]
+
+        if not quiet:
+            print(f"Step {9}:  --- Removing pivot-pivot edge ({x}, {y})")
+
+        pivot(matching[x], matching[y])
+        swap_input_rows(matching[x], matching[y])
+
+        after = sum(
+            1
+            for a, b in itertools.combinations(pivots, 2)
+            if g.connected(a, b)
+        )
+
+        if after >= before:
+            raise ValueError(
+                "Pivot-edge removal did not reduce the number of pivot-pivot edges"
+            )
 
 
 def stabilizers_to_UGR(code : List[str]) -> UGR:
@@ -389,6 +433,7 @@ def graph_state_to_ZXCF(g: GraphState[VT, ET], inputs : List[VT]) -> ZXCF:
     remove_pivot_phases(g2, pivots, quiet = True)
     remove_pivot_edges(g2, pivots, quiet = True)
     remove_unitaries_input(g2)
+    pivots = to_RRREF(g2, quiet = True)
 
     return ZXCF(g2, inputs, pivots)
 
@@ -602,59 +647,89 @@ def implement_encoder(d : UGR) -> Circuit:
     inputs = d.inputs
     adj = d.adj
     pivots = d.pivots
-
-    # pivots = {i : -1 for i in inputs}
-    out_to_in = {i : -1 for i in range(len(adj)) if i not in inputs}
-
-    
-    n = len(adj)
     k = len(inputs)
+    num_qubits = len(adj) - k
 
-    print(inputs)
-    print(pivots)
-    print(list(range(n)))
+    if len(pivots) != k:
+        raise ValueError(f"Expected one pivot per input, got {len(pivots)} pivots for {k} inputs")
 
-    # print(inputs)
+    input_set = set(inputs)
+    pivot_set = set(pivots)
+    output_set = set(range(len(adj))) - input_set
+    pivot_for_input = dict(zip(inputs, pivots))
+    input_qubit = {input_vertex: i for i, input_vertex in enumerate(inputs)}
+    pivot_qubit = {
+        pivot: input_qubit[input_vertex]
+        for input_vertex, pivot in pivot_for_input.items()
+    }
+    non_pivot_outputs = [
+        output for output in range(len(adj))
+        if output in output_set and output not in pivot_set
+    ]
+    output_qubit = {
+        output: k + i
+        for i, output in enumerate(non_pivot_outputs)
+    }
+    output_qubit.update(pivot_qubit)
 
-    c = Circuit(n-1)
+    if any(pivot in input_set for pivot in pivots):
+        raise ValueError("Pivots must be output vertices, not input vertices")
+
+    if any(pivot not in output_set for pivot in pivots):
+        raise ValueError("Pivots must be valid output vertices")
+
+    for input_vertex, pivot in pivot_for_input.items():
+        if pivot not in adj[input_vertex]:
+            raise ValueError("Input is not connected to its corresponding pivot")
+
+    c = Circuit(num_qubits)
 
     def to_qubit(x):
-        if x in inputs:
-            for v in adj[x]:
-                if v in pivots:
-                    return v - len(inputs)
-        else:
-            return x - len(inputs)
+        if x in input_set:
+            return input_qubit[x]
+        return output_qubit[x]
 
-    
-    for v in range(n):
-        if v not in pivots and v not in inputs:
-            # print(v)
-            # print(to_qubit(v))
+    def apply_local_clifford(v: int) -> None:
+        q = to_qubit(v)
+        local_clifford = d.local_cliffords.get(v, "")
+        has_hadamard_boundary = local_clifford.startswith("H")
+        phase_label = local_clifford[1:] if has_hadamard_boundary else local_clifford
+
+        if phase_label == "S":
+            c.add_gate("S", q)
+        elif phase_label == "Z":
+            c.add_gate("Z", q)
+        elif phase_label == "SZ":
+            c.add_gate("S", q)
+            c.add_gate("Z", q)
+        elif phase_label != "":
+            raise ValueError(f"Unsupported local Clifford label: {local_clifford}")
+
+        if has_hadamard_boundary:
+            c.add_gate("H", q)
+
+    for v in range(len(adj)):
+        if v not in pivot_set and v not in input_set:
             c.add_gate("H", to_qubit(v))
 
-    # c.add_gate("H", n-1)
-    # for i in range(n-2, k-1, -1):
-    #     c.add_gate("CNOT", n-1, i)
-    
     for i in inputs:
         for j in adj[i]:
-            if j not in pivots:
+            if j not in input_set and j not in pivot_set:
                 c.add_gate("CZ", to_qubit(i), to_qubit(j))
         
     for i in inputs:
         c.add_gate("H", to_qubit(i))
 
-    for v in range(n):
-        if v not in inputs:
+    for v in range(len(adj)):
+        if v not in input_set:
             for u in adj[v]:
-                if u not in inputs and u < v:
+                if u not in input_set and u < v:
                     c.add_gate("CZ", to_qubit(u), to_qubit(v))
 
-    # for v in range(n):
-
-    
-    # draw(c, labels=True)
+    for v in range(len(adj)):
+        if v in input_set:
+            continue
+        apply_local_clifford(v)
 
     return c
 
@@ -671,10 +746,6 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     pivots = d.pivots
     outputs_no_pivots = list(set(range(len(adj))) - set(pivots) - set(inputs))
 
-    # print(inputs)
-    # print(pivots)
-    # print(outputs_no_pivots)
-
     out_to_in = {i : set() for i in range(len(adj)) if i not in inputs}
 
 
@@ -687,23 +758,22 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     n = len(adj) - len(inputs)
     k = len(inputs)
-    # print(out_to_in, n, k)
+
+    pivot_for_input = dict(zip(inputs, pivots))
+
 
     stabilizers = [stim.PauliString("I"*n) for _ in range(n-k)]
 
-    # print(stabilizers)
     s = 0
     for i in outputs_no_pivots:
-        # print("HERE", f"X{i+2}")
         stabilizers[s] *= stim.PauliString(f"X{i - k}")
         for j in adj[i]:
             if j not in inputs:
                 stabilizers[s] *= stim.PauliString(f"Z{j-k}")
 
-        print(stabilizers[s])
         inp = out_to_in[i]
         for a in inp:
-            p = pivots[a]
+            p = pivot_for_input[a]
             stabilizers[s] *= stim.PauliString(f"X{p-k}")
 
             for q in adj[p]:
@@ -716,6 +786,64 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
     stabilizers = [str(x) for x in stabilizers]
 
+    def apply_gate_to_pauli(pauli: str, gate: str) -> tuple[int, str]:
+        if gate == "H":
+            if pauli == "X":
+                return 1, "Z"
+            if pauli == "Y":
+                return -1, "Y"
+            if pauli == "Z":
+                return 1, "X"
+        elif gate == "S":
+            if pauli == "X":
+                return 1, "Y"
+            if pauli == "Y":
+                return -1, "X"
+            if pauli == "Z":
+                return 1, "Z"
+        elif gate == "Z":
+            if pauli == "X":
+                return -1, "X"
+            if pauli == "Y":
+                return -1, "Y"
+            if pauli == "Z":
+                return 1, "Z"
+
+        return 1, pauli
+
+    def apply_local_clifford(stabilizer: str, qubit: int, local_clifford: str) -> str:
+        sign = 1 if stabilizer[0] == "+" else -1
+        paulis = list(stabilizer[1:])
+        has_hadamard_boundary = local_clifford.startswith("H")
+        phase_label = local_clifford[1:] if has_hadamard_boundary else local_clifford
+
+        gates = []
+        if phase_label == "S":
+            gates.append("S")
+        elif phase_label == "Z":
+            gates.append("Z")
+        elif phase_label == "SZ":
+            gates.extend(["S", "Z"])
+        elif phase_label != "":
+            raise ValueError(f"Unsupported local Clifford label: {local_clifford}")
+
+        if has_hadamard_boundary:
+            gates.append("H")
+
+        for gate in gates:
+            phase, paulis[qubit] = apply_gate_to_pauli(paulis[qubit], gate)
+            sign *= phase
+
+        return ("+" if sign == 1 else "-") + "".join(paulis)
+
+    for output in sorted(set(range(len(adj))) - set(inputs)):
+        local_clifford = d.local_cliffords.get(output, "")
+        if local_clifford == "":
+            continue
+        stabilizers = [
+            apply_local_clifford(stabilizer, output - k, local_clifford)
+            for stabilizer in stabilizers
+        ]
     return stabilizers
 
 def to_distance_mzn(inputs, adj) -> str:
