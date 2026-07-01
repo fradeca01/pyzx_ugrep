@@ -10,7 +10,7 @@ from queue import Empty
 from typing import Dict, Any, Optional, List
 import psutil
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 
 from ugr import *
@@ -36,7 +36,7 @@ class StabilizerInput(BaseModel):
     n: int 
     k: int 
     random: bool = False
-    stabilizers: Optional[List[str]] = []
+    stabilizers: List[str] = Field(default_factory=list)
 
 class DataResponse(BaseModel):
     success: bool
@@ -373,7 +373,7 @@ async def start_job(input_data: StabilizerInput):
     random = input_data.random
     selectedExample = input_data.selectedExample
     print(selectedExample)
-    stabilizers = []
+    stabilizers: List[str] = []
     n = 0
     k = 0
 
@@ -414,7 +414,7 @@ async def start_job(input_data: StabilizerInput):
             if validation_error:
                 return {"success": False, "error": validation_error}
         else:
-            if input_data.stabilizers != []:
+            if input_data.stabilizers:
                 stabilizers = input_data.stabilizers
             else:
                 raise HTTPException(status_code=400, detail="Stabilizers are required if no example is selected and random is false")
