@@ -2,19 +2,26 @@ import asyncio
 import time
 import uuid
 import json
+import os
 import stim
 from contextlib import asynccontextmanager
 from multiprocessing import Process, Queue
+from queue import Empty
 from typing import Dict, Any, Optional, List
 import psutil
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from minizinc import Instance, Model, Solver
 
 from ugr import *
 
-TIMEOUT_SECONDS = 15  
+TIMEOUT_SECONDS = int(os.getenv("UGR_JOB_IDLE_TIMEOUT_SECONDS", "15"))
+MAX_JOB_RUNTIME_SECONDS = int(os.getenv("UGR_MAX_JOB_RUNTIME_SECONDS", "60"))
+MAX_ACTIVE_JOBS = int(os.getenv("UGR_MAX_ACTIVE_JOBS", "2"))
+MAX_GENERATE_N = int(os.getenv("UGR_MAX_GENERATE_N", "40"))
+MAX_DOT_NODES = int(os.getenv("UGR_MAX_DOT_NODES", "40"))
+MAX_SOLVE_NODES = int(os.getenv("UGR_MAX_SOLVE_NODES", "24"))
+MAX_STABILIZERS = int(os.getenv("UGR_MAX_STABILIZERS", "64"))
 
 
 # success: True request completed correctly -> Workflow is running appropiately
@@ -66,11 +73,113 @@ class Job(BaseModel):
     status : str
     queue : Any
     last_heartbeat : float
+    started_at : float
     model_config = {
         "arbitrary_types_allowed": True
     }
 
 JOBS: Dict[str, Job] = {}
+
+
+def active_job_count() -> int:
+    return sum(1 for job in JOBS.values() if job.process.is_alive())
+
+
+def capacity_error() -> Optional[str]:
+    running_jobs = active_job_count()
+    if running_jobs >= MAX_ACTIVE_JOBS:
+        return (
+            f"Server is busy: {running_jobs} active jobs are already running. "
+            f"The limit is {MAX_ACTIVE_JOBS}."
+        )
+    return None
+
+
+def validate_code_parameters(n: int, k: int) -> Optional[str]:
+    if n <= 0:
+        return "Parameter 'n' must be positive"
+    if k < 0:
+        return "Parameter 'k' must be non-negative"
+    if k >= n:
+        return "Parameters must satisfy n > k"
+    if n > MAX_GENERATE_N:
+        return f"Parameter 'n' is too large. Maximum allowed value is {MAX_GENERATE_N}."
+    return None
+
+
+def validate_stabilizer_input(stabilizers: List[str], n: int, k: int) -> Optional[str]:
+    if len(stabilizers) != n - k:
+        return f"Expected {n - k} stabilizers, got {len(stabilizers)}."
+    if len(stabilizers) > MAX_STABILIZERS:
+        return f"Too many stabilizers. Maximum allowed value is {MAX_STABILIZERS}."
+    return None
+
+
+def validate_adjacency_list(inputs: List[int], adjacency_list: List[List[int]], max_nodes: int) -> Optional[str]:
+    node_count = len(adjacency_list)
+    if node_count <= 0:
+        return "Graph must contain at least one node"
+    if node_count > max_nodes:
+        return f"Graph is too large. Maximum allowed node count is {max_nodes}."
+
+    input_set = set(inputs)
+    if len(input_set) != len(inputs):
+        return "Input nodes must be distinct"
+    if any(input_vertex < 0 or input_vertex >= node_count for input_vertex in input_set):
+        return "Input nodes must be valid graph vertices"
+
+    for vertex, neighbors in enumerate(adjacency_list):
+        if len(neighbors) != len(set(neighbors)):
+            return f"Duplicate neighbors in adjacency list for vertex {vertex}"
+        for neighbor in neighbors:
+            if neighbor < 0 or neighbor >= node_count:
+                return f"Invalid neighbor {neighbor} in adjacency list for vertex {vertex}"
+            if vertex not in adjacency_list[neighbor]:
+                return f"Adjacency list is not symmetric for edge ({vertex}, {neighbor})"
+    return None
+
+
+def close_job_resources(job: Job) -> None:
+    try:
+        job.queue.close()
+        job.queue.cancel_join_thread()
+    except Exception:
+        pass
+
+
+def stop_job(job: Job) -> None:
+    process = job.process
+    if process.is_alive() and process.pid:
+        kill_process_tree(process.pid)
+    process.join(timeout=3)
+    close_job_resources(job)
+
+
+def start_limited_job(target, *args) -> tuple[Optional[str], Optional[str]]:
+    error = capacity_error()
+    if error:
+        return None, error
+
+    now = time.time()
+    job_id = str(uuid.uuid4())
+    queue = Queue()
+    process = Process(target=target, args=(*args, queue))
+    JOBS[job_id] = Job(
+        process=process,
+        status="processing",
+        last_heartbeat=now,
+        started_at=now,
+        queue=queue,
+    )
+
+    try:
+        process.start()
+    except Exception as exc:
+        job = JOBS.pop(job_id)
+        close_job_resources(job)
+        return None, f"Error spawning the process: {str(exc)}"
+
+    return job_id, None
 
 def kill_process_tree(pid: int):
     """
@@ -107,16 +216,13 @@ async def cleanup_stale_jobs():
         jobs_to_remove = []
         
         for job_id, job in JOBS.items():
-            if now - job.last_heartbeat > TIMEOUT_SECONDS:
-                print(f"Job {job_id} scaduto (timeout). Pulizia in corso...")
-                
-                process = job.process
-                if process.is_alive():
-                    if process.pid:
-                        kill_process_tree(process.pid)
-                    process.join()
-                    print(f"Processo {process.pid} terminato forzatamente.")
-                
+            idle_timeout = now - job.last_heartbeat > TIMEOUT_SECONDS
+            runtime_timeout = now - job.started_at > MAX_JOB_RUNTIME_SECONDS
+
+            if idle_timeout or runtime_timeout:
+                reason = "runtime limit" if runtime_timeout else "idle timeout"
+                print(f"Job {job_id} expired ({reason}). Cleaning up...")
+                stop_job(job)
                 jobs_to_remove.append(job_id)
         
         for job_id in jobs_to_remove:
@@ -198,6 +304,14 @@ async def from_dot(input_data : GraphInput):
         old_inputs = input_data.inputs
         old_adjacency_list = {item[0]: set(item[1]) for item in input_data.adjacencyList}
 
+        if len(old_inputs) != len(set(old_inputs)):
+            return {"success": False, "error": "Input nodes must be distinct"}
+        if len(old_adjacency_list) > MAX_DOT_NODES:
+            return {
+                "success": False,
+                "error": f"Graph is too large. Maximum allowed node count is {MAX_DOT_NODES}.",
+            }
+
         print("OLD INPUTS:", old_inputs)
         print("OLD ADJACENCY LIST:", old_adjacency_list)
 
@@ -205,19 +319,25 @@ async def from_dot(input_data : GraphInput):
         all_nodes_set = set(old_adjacency_list.keys())
         others_set = all_nodes_set - input_set
 
-        new_order = list(input_set) + list(others_set)
+        new_order = old_inputs + sorted(others_set)
 
         old_to_new_map = {node : i for i, node in enumerate(new_order)}
 
         inputs = [old_to_new_map[i] for i in old_inputs]
 
-        adjacency_list = [[] for _ in range(len(old_adjacency_list))]
+        adjacency_list = [[] for _ in range(len(new_order))]
 
         for old_node, old_neigh in old_adjacency_list.items():
             new_node = old_to_new_map[old_node]
             for neigh in old_neigh:
+                if neigh not in old_to_new_map:
+                    return {"success": False, "error": f"Unknown neighbor {neigh} in DOT graph"}
                 new_neigh = old_to_new_map[neigh]
                 adjacency_list[new_node].append(new_neigh)
+
+        validation_error = validate_adjacency_list(inputs, adjacency_list, MAX_DOT_NODES)
+        if validation_error:
+            return {"success": False, "error": validation_error}
 
         pivots = [-1 for _ in range(len(inputs))]
 
@@ -232,25 +352,14 @@ async def from_dot(input_data : GraphInput):
                 if ok:
                     pivots[i] = o
                     break
+
+        if any(pivot == -1 for pivot in pivots):
+            return {"success": False, "error": "Could not find a valid pivot for every input"}
         
         try:
-            job_id = str(uuid.uuid4())
-            queue = Queue() 
-            process = Process(target=run_from_graph, args=(inputs, adjacency_list, pivots, queue))
-            JOBS[job_id] = Job(
-                process = process,
-                status ="processing",
-                last_heartbeat = time.time(),
-                queue = queue
-            )
-            # print("Process created:", process)
-            print(JOBS)
-            result = process.start()
-            # print(result)
-
-            # print("Process started:", process)
-
-            
+            job_id, error = start_limited_job(run_from_graph, inputs, adjacency_list, pivots)
+            if error:
+                return {"success": False, "error": error}
             return {"success": True, "job_id": job_id}
         except Exception as e:
             return {"success": False, "error": f"Error spawning the process: {str(e)}"}
@@ -280,6 +389,10 @@ async def start_job(input_data: StabilizerInput):
                 k = int(input_data.k)
             else:
                 raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
+
+            validation_error = validate_code_parameters(n, k)
+            if validation_error:
+                return {"success": False, "error": validation_error}
             
             tableau = stim.Tableau.random(n)
 
@@ -293,6 +406,13 @@ async def start_job(input_data: StabilizerInput):
             n = example_data["n"]
             k = example_data["k"]
             stabilizers = example_data["stabilizers"]
+
+            validation_error = validate_code_parameters(n, k)
+            if validation_error:
+                return {"success": False, "error": validation_error}
+            validation_error = validate_stabilizer_input(stabilizers, n, k)
+            if validation_error:
+                return {"success": False, "error": validation_error}
         else:
             if input_data.stabilizers != []:
                 stabilizers = input_data.stabilizers
@@ -308,21 +428,21 @@ async def start_job(input_data: StabilizerInput):
                 k = int(input_data.k)
             else:
                 raise HTTPException(status_code=400, detail="Parameter 'k' is required for random generation")
+
+            validation_error = validate_code_parameters(n, k)
+            if validation_error:
+                return {"success": False, "error": validation_error}
+            validation_error = validate_stabilizer_input(stabilizers, n, k)
+            if validation_error:
+                return {"success": False, "error": validation_error}
             
     except Exception as e:
         return {"success" : False, "error" : f"Error processing input: {str(e)}"}
     try:
         estimated_time = round(0.005 * (n ** 3), 1) 
-        job_id = str(uuid.uuid4())
-        queue = Queue() 
-        process = Process(target=run_generate_graph, args=(stabilizers, n, k, queue))
-        JOBS[job_id] = Job(
-            process = process,
-            status ="processing",
-            last_heartbeat = time.time(),
-            queue = queue
-        )
-        result = process.start()
+        job_id, error = start_limited_job(run_generate_graph, stabilizers, n, k)
+        if error:
+            return {"success": False, "error": error}
 
         
         return {"success": True, "job_id": job_id, "estimated_time": estimated_time}
@@ -340,15 +460,30 @@ async def check_status(job_id: str):
             raise HTTPException(status_code=404, detail="Job not found or expired")
 
         job.last_heartbeat = time.time()
+        if job.last_heartbeat - job.started_at > MAX_JOB_RUNTIME_SECONDS:
+            stop_job(job)
+            del JOBS[job_id]
+            return {
+                "success": False,
+                "error": f"Job exceeded the maximum runtime of {MAX_JOB_RUNTIME_SECONDS} seconds",
+            }
+
         queue = job.queue
 
-        if not queue.empty():
+        try:
+            job_result = queue.get_nowait()
+        except Empty:
+            job_result = None
+
+        if job_result is not None:
             print("RESULT IN QUEUE")
-            job_result = queue.get()
             print("JOB RESULT:", job_result)
             succ = job_result.get("success")
             result = job_result.get("data", None) 
             error = job_result.get("error", None)
+            job.process.join(timeout=3)
+            close_job_resources(job)
+            del JOBS[job_id]
 
             if succ == True: 
                 return { "success" : True, "status" : "completed", "data" :  result } 
@@ -360,7 +495,10 @@ async def check_status(job_id: str):
         if process.is_alive():
             return {"success": True, "status": "processing", "data" : None}
         else:
-            return {"success": False, "error": "Process is dead and cannot retieve status"}
+            process.join(timeout=3)
+            close_job_resources(job)
+            del JOBS[job_id]
+            return {"success": False, "error": "Process is dead and cannot retrieve status"}
     except Exception as e:
         print(e)
         return {"success": False, "error": f"Error retrieving status: {str(e)}"}
@@ -372,11 +510,7 @@ async def cancel_job(job_id: str):
     if not job:
         return {"success": False, "status" : "failed" , "error": "Job not found"}
 
-    process = job.process
-    if process.is_alive():
-        if process.pid:
-            kill_process_tree(process.pid)
-        process.join()
+    stop_job(job)
     
     del JOBS[job_id]
     return {"success": True, "status": "cancelled"}
@@ -396,23 +530,26 @@ def run_minizinc_solver(inputs : List[int], adjacency_list : List[List[int]], re
 
 @app.post("/solve", response_model=JobResponse | ErrorResponse)
 async def solve_minizinc(input_data: SolveInput):
-    job_id = str(uuid.uuid4())
+    validation_error = validate_adjacency_list(
+        input_data.inputs,
+        input_data.adjacency_list,
+        MAX_SOLVE_NODES,
+    )
+    if validation_error:
+        return {"success": False, "error": validation_error}
     
     n = len(input_data.adjacency_list)
     estimated_time = round(0.005 * (2 ** n), 1) 
     if estimated_time < 1: estimated_time = 1
 
-    queue = Queue()
-    process = Process(target=run_minizinc_solver, args=(input_data.inputs, input_data.adjacency_list, queue))
     print("Starting MiniZinc solver1...")
-    process.start()
-
-    JOBS[job_id] = Job(
-        process = process,
-        status = "processing",
-        last_heartbeat = time.time(),
-        queue =  queue,
+    job_id, error = start_limited_job(
+        run_minizinc_solver,
+        input_data.inputs,
+        input_data.adjacency_list,
     )
+    if error:
+        return {"success": False, "error": error}
 
     return {
         "success": True, 

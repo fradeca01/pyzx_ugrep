@@ -655,12 +655,27 @@ def implement_encoder(d : UGR) -> Circuit:
 
     input_set = set(inputs)
     pivot_set = set(pivots)
+    output_set = set(range(len(adj))) - input_set
     pivot_for_input = dict(zip(inputs, pivots))
+    input_qubit = {input_vertex: i for i, input_vertex in enumerate(inputs)}
+    pivot_qubit = {
+        pivot: input_qubit[input_vertex]
+        for input_vertex, pivot in pivot_for_input.items()
+    }
+    non_pivot_outputs = [
+        output for output in range(len(adj))
+        if output in output_set and output not in pivot_set
+    ]
+    output_qubit = {
+        output: k + i
+        for i, output in enumerate(non_pivot_outputs)
+    }
+    output_qubit.update(pivot_qubit)
 
     if any(pivot in input_set for pivot in pivots):
         raise ValueError("Pivots must be output vertices, not input vertices")
 
-    if any(pivot < k or pivot >= len(adj) for pivot in pivots):
+    if any(pivot not in output_set for pivot in pivots):
         raise ValueError("Pivots must be valid output vertices")
 
     for input_vertex, pivot in pivot_for_input.items():
@@ -670,10 +685,9 @@ def implement_encoder(d : UGR) -> Circuit:
     c = Circuit(num_qubits)
 
     def to_qubit(x):
-        if x in inputs:
-            return pivot_for_input[x] - k
-        else:
-            return x - k
+        if x in input_set:
+            return input_qubit[x]
+        return output_qubit[x]
 
     def apply_local_clifford(v: int) -> None:
         q = to_qubit(v)
@@ -712,7 +726,9 @@ def implement_encoder(d : UGR) -> Circuit:
                 if u not in input_set and u < v:
                     c.add_gate("CZ", to_qubit(u), to_qubit(v))
 
-    for v in range(k, len(adj)):
+    for v in range(len(adj)):
+        if v in input_set:
+            continue
         apply_local_clifford(v)
 
     return c
@@ -755,7 +771,6 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
             if j not in inputs:
                 stabilizers[s] *= stim.PauliString(f"Z{j-k}")
 
-        # print(stabilizers[s])
         inp = out_to_in[i]
         for a in inp:
             p = pivot_for_input[a]
@@ -770,9 +785,6 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
 
 
     stabilizers = [str(x) for x in stabilizers]
-
-    print(1,stabilizers)
-    print(2,d.local_cliffords)
 
     def apply_gate_to_pauli(pauli: str, gate: str) -> tuple[int, str]:
         if gate == "H":
@@ -832,7 +844,6 @@ def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
             apply_local_clifford(stabilizer, output - k, local_clifford)
             for stabilizer in stabilizers
         ]
-    print(3,stabilizers)
     return stabilizers
 
 def to_distance_mzn(inputs, adj) -> str:
