@@ -10,7 +10,7 @@ non-pivot output vertices of a UGR.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, cast
 
 import gymnasium as gym
 import numpy as np
@@ -175,7 +175,9 @@ class QLODecodingEnv(gym.Env):
     ) -> None:
         super().__init__()
         self.graph = QLOGraph.from_ugr(ugr)
-        self.initial_syndrome = self._validate_syndrome(initial_syndrome)
+        self.initial_syndrome = (
+            None if initial_syndrome is None else self._validate_syndrome(initial_syndrome)
+        )
         self.max_steps = max_steps or max(1, 2 * self.graph.num_physical)
 
         self.success_reward = success_reward
@@ -184,17 +186,19 @@ class QLODecodingEnv(gym.Env):
         self.syndrome_weight_reward = syndrome_weight_reward
         self.failure_reward = failure_reward
 
+        # All possible syndromes (2^(n-k)).
         self.observation_space = spaces.MultiBinary(self.graph.num_syndromes)
-        self.action_space = spaces.Discrete(3 * self.graph.num_physical)
+
+        # All possible moves (X, Y, Z on each physical qubit -> 3n).
+        self.num_actions = 3 * self.graph.num_physical
+        self.action_space = spaces.Discrete(self.num_actions)
 
         self.syndrome = np.zeros(self.graph.num_syndromes, dtype=np.int8)
         self.recovery_x: Dict[int, bool] = {node: False for node in self.graph.physical_nodes}
         self.recovery_z: Dict[int, bool] = {node: False for node in self.graph.physical_nodes}
         self.steps = 0
 
-    def _validate_syndrome(self, syndrome: Optional[Sequence[int]]) -> Optional[np.ndarray]:
-        if syndrome is None:
-            return None
+    def _validate_syndrome(self, syndrome: Sequence[int]) -> np.ndarray:
         syndrome_array = np.asarray(syndrome, dtype=np.int8)
         expected_shape = (self.graph.num_syndromes,)
         if syndrome_array.shape != expected_shape:
@@ -203,27 +207,33 @@ class QLODecodingEnv(gym.Env):
             raise ValueError("Syndrome entries must be binary.")
         return syndrome_array.copy()
 
-        
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[np.ndarray, Dict[str, object]]:
         super().reset(seed=seed)
         options = options or {}
 
         if "syndrome" in options:
-            self.syndrome = self._validate_syndrome(options["syndrome"])
+            self.syndrome = self._validate_syndrome(cast(Sequence[int], options["syndrome"]))
         elif self.initial_syndrome is not None:
             self.syndrome = self.initial_syndrome.copy()
         else:
-            self.syndrome = self.observation_space.sample().astype(np.int8)
+            # Generate a random syndrome
+            self.syndrome = cast(np.ndarray, self.observation_space.sample()).astype(np.int8)
 
         for node in self.graph.physical_nodes:
             self.recovery_x[node] = False
             self.recovery_z[node] = False
         self.steps = 0
+
         return self.syndrome.copy(), self._info()
 
     def action_to_move(self, action: int) -> PauliMove:
         action = int(action)
-        if action < 0 or action >= self.action_space.n:
+        if action < 0 or action >= self.num_actions:
             raise ValueError(f"Action {action} is outside the action space.")
         node = self.graph.physical_nodes[action // 3]
         pauli = ("X", "Y", "Z")[action % 3]
@@ -234,7 +244,7 @@ class QLODecodingEnv(gym.Env):
         pauli_index = {"X": 0, "Y": 1, "Z": 2}[pauli.upper()]
         return 3 * node_index + pauli_index
 
-    def step(self, action: int):
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, object]]:
         node, pauli = self.action_to_move(action)
         previous_weight = int(self.syndrome.sum())
         previous_support = self.recovery_weight()
@@ -344,20 +354,21 @@ class TabularQLODecoder:
     def train(self, env: QLODecodingEnv, episodes: int = 1000, seed: Optional[int] = None) -> List[float]:
         rng = np.random.default_rng(seed)
         rewards: List[float] = []
+        action_count = env.num_actions
 
         for episode in range(episodes):
             state, _ = env.reset(seed=None if seed is None else seed + episode)
             episode_reward = 0.0
             while True:
-                values = self._values(state, env.action_space.n)
+                values = self._values(state, action_count)
                 if rng.random() < self.epsilon:
-                    action = int(env.action_space.sample())
+                    action = int(rng.integers(action_count))
                 else:
                     action = int(np.argmax(values))
 
                 next_state, reward, terminated, truncated, _ = env.step(action)
-                next_values = self._values(next_state, env.action_space.n)
-                target = reward
+                next_values = self._values(next_state, action_count)
+                target = float(reward)
                 if not (terminated or truncated):
                     target += self.discount_factor * float(np.max(next_values))
 
@@ -383,10 +394,10 @@ class TabularQLODecoder:
         for _ in range(max_steps or env.max_steps):
             if int(np.sum(state)) == 0:
                 return env.recovery(), moves, True
-            values = self._values(state, env.action_space.n)
+            values = self._values(state, env.num_actions)
             action = int(np.argmax(values))
             state, _, terminated, truncated, info = env.step(action)
-            moves.append(info["last_move"])
+            moves.append(cast(PauliMove, info["last_move"]))
             if terminated or truncated:
                 return env.recovery(), moves, terminated
         return env.recovery(), moves, False
