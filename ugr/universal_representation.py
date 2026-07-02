@@ -738,6 +738,13 @@ def implement_encoder(d : UGR) -> Circuit:
 
     return c
 
+def generate_random_UGR(n : int, k : int) -> UGR:
+    tableau = stim.Tableau.random(n)
+
+    stabs = [str(stabilizer) for stabilizer in tableau.to_stabilizers()[0 : n - k]]
+
+    return stabilizers_to_UGR(stabs)
+
 def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     """
     Convert a graph to a stabilizer tableau.
