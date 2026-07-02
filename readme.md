@@ -31,8 +31,8 @@ which indicate the URL to access the web interface,
 
 2. **Create virtual environment**
     ```bash
-    python -m venv venv-quancom26
-    source venv-quancom26/bin/activate
+    python -m venv venv-UGR
+    source venv-UGR/bin/activate
     ```
 
 2. **Install the package**
@@ -65,22 +65,3 @@ print("Adjacency List:", ugr.adj)
 print("Distance Upper Bound:", distance_upper_bound(ugr))
 ```
 
-## UGR QLO reinforcement-learning decoding
-
-The package also includes a Gymnasium environment for the decoding instance of
-the quantum-lights-out game on a universal graph representation.
-
-```python
-from ugr import QLODecodingEnv, TabularQLODecoder, stabilizers_to_UGR
-
-ugr = stabilizers_to_UGR(["XXI", "IZZ"])
-
-# Syndrome bits are ordered by env.graph.non_pivot_outputs.
-env = QLODecodingEnv(ugr, initial_syndrome=[1] * (len(ugr.adj) - 2 * len(ugr.inputs)))
-decoder = TabularQLODecoder()
-
-decoder.train(env, episodes=1000, seed=1)
-recovery, moves, success = decoder.decode(env, env.initial_syndrome)
-
-print(recovery, moves, success)
-```
