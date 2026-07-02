@@ -45,6 +45,7 @@ __all__ = [
     "UGR",
     "ZXCF",
     "to_distance_mzn",
+    "generate_random_UGR"
     "compute_distance",
     "to_stabilizer_tableau"
 ]
