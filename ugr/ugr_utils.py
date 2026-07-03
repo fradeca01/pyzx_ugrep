@@ -1,5 +1,5 @@
 import pathlib
-from typing import List
+from typing import Dict, List
 
 import stim
 from pyzx.circuit import Circuit
@@ -13,12 +13,51 @@ except Exception:
 
 __all__ = [
     "generate_random_UGR",
+    "known_code",
+    "known_code_stabilizers",
+    "shor_code",
+    "steane_code",
+    "five_qubit_code",
+    "five_wubit_code",
     "to_stabilizer_tableau",
     "to_distance_mzn",
     "compute_distance",
     "implement_encoder",
     "distance_upper_bound",
 ]
+
+_KNOWN_CODE_STABILIZERS: Dict[str, List[str]] = {
+    "steane": [
+        "IIIXXXX",
+        "IXXIIXX",
+        "XIXIXIX",
+        "IIIZZZZ",
+        "IZZIIZZ",
+        "ZIZIZIZ",
+    ],
+    "five_qubit": [
+        "XZZXI",
+        "IXZZX",
+        "XIXZZ",
+        "ZXIXZ",
+    ],
+    "5_qubit": [
+        "XZZXI",
+        "IXZZX",
+        "XIXZZ",
+        "ZXIXZ",
+    ],
+    "shor": [
+        "ZZIIIIIII",
+        "IZZIIIIII",
+        "IIIZZIIII",
+        "IIIIZZIII",
+        "IIIIIIZZI",
+        "IIIIIIIZZ",
+        "XXXXXXIII",
+        "IIIXXXXXX",
+    ],
+}
 
 
 def generate_random_UGR(n : int, k : int) -> UGR:
@@ -27,6 +66,36 @@ def generate_random_UGR(n : int, k : int) -> UGR:
     stabs = [str(stabilizer) for stabilizer in tableau.to_stabilizers()[0 : n - k]]
 
     return stabilizers_to_UGR(stabs)
+
+
+def known_code_stabilizers(name: str) -> List[str]:
+    key = name.lower().replace("-", "_").replace(" ", "_")
+    if key not in _KNOWN_CODE_STABILIZERS:
+        known = ", ".join(sorted(_KNOWN_CODE_STABILIZERS))
+        raise ValueError(f"Unknown code '{name}'. Known codes: {known}")
+    return list(_KNOWN_CODE_STABILIZERS[key])
+
+
+def known_code(name: str) -> UGR:
+    return stabilizers_to_UGR(known_code_stabilizers(name))
+
+
+def shor_code() -> UGR:
+    return known_code("shor")
+
+
+def steane_code() -> UGR:
+    return known_code("steane")
+
+
+def five_qubit_code() -> UGR:
+    return known_code("five_qubit")
+
+
+def five_wubit_code() -> UGR:
+    return five_qubit_code()
+
+
 
 def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
     """
