@@ -13,12 +13,8 @@ except Exception:
 
 __all__ = [
     "generate_random_UGR",
-    "known_code",
-    "known_code_stabilizers",
-    "shor_code",
-    "steane_code",
-    "five_qubit_code",
-    "five_wubit_code",
+    "example_code_stabilizers",
+    "example_code_UGR",
     "to_stabilizer_tableau",
     "to_distance_mzn",
     "compute_distance",
@@ -26,7 +22,7 @@ __all__ = [
     "distance_upper_bound",
 ]
 
-_KNOWN_CODE_STABILIZERS: Dict[str, List[str]] = {
+_EXAMPLE_CODE_STABILIZERS: Dict[str, List[str]] = {
     "steane": [
         "IIIXXXX",
         "IXXIIXX",
@@ -36,12 +32,6 @@ _KNOWN_CODE_STABILIZERS: Dict[str, List[str]] = {
         "ZIZIZIZ",
     ],
     "five_qubit": [
-        "XZZXI",
-        "IXZZX",
-        "XIXZZ",
-        "ZXIXZ",
-    ],
-    "5_qubit": [
         "XZZXI",
         "IXZZX",
         "XIXZZ",
@@ -57,6 +47,42 @@ _KNOWN_CODE_STABILIZERS: Dict[str, List[str]] = {
         "XXXXXXIII",
         "IIIXXXXXX",
     ],
+    "rotated3x3": [
+        "IZZIIIIII",
+        "ZZIZZIIII",
+        "IIIIIIZZI",
+        "IIIIZZIZZ",
+        "XIIXIIIII",
+        "IXXIXXIII",
+        "IIIXXIXXI",
+        "IIIIIXIIX"
+    ],
+    "toric2x2" : [
+        "XXIXIIIX",
+        "IIXIXXXI",
+        "IIIXXXIX",
+        "ZIZZZIII",
+        "IZZZIZII",
+        "ZIIIZIZZ"
+    ],
+    "toric3x3" : [
+        "XXIIXIIIIIIIIIIIXI",
+        "IXXIIXIIIIIIIIIIIX",
+        "IIIXIIXIXXIIIIIIII",
+        "IIIIXIXXIIXIIIIIII",
+        "IIIIIXIXXIIXIIIIII",
+        "IIIIIIIIIXIIXIXXII",
+        "IIIIIIIIIIXIXXIIXI",
+        "IIIIIIIIIIIXIXXIIX",
+        "IZIIZZIZIIIIIIIIII",
+        "IIZZIZIIZIIIIIIIII",
+        "IIIIIIZIIZZIZIIIII",
+        "IIIIIIIZIIZZIZIIII",
+        "IIIIIIIIZZIZIIZIII",
+        "ZIIIIIIIIIIIZIIZZI",
+        "IZIIIIIIIIIIIZIIZZ",
+        "IIZIIIIIIIIIIIZZIZ"
+    ]
 }
 
 
@@ -68,33 +94,16 @@ def generate_random_UGR(n : int, k : int) -> UGR:
     return stabilizers_to_UGR(stabs)
 
 
-def known_code_stabilizers(name: str) -> List[str]:
+def example_code_stabilizers(name: str) -> List[str]:
     key = name.lower().replace("-", "_").replace(" ", "_")
-    if key not in _KNOWN_CODE_STABILIZERS:
-        known = ", ".join(sorted(_KNOWN_CODE_STABILIZERS))
+    if key not in _EXAMPLE_CODE_STABILIZERS:
+        known = ", ".join(sorted(_EXAMPLE_CODE_STABILIZERS))
         raise ValueError(f"Unknown code '{name}'. Known codes: {known}")
-    return list(_KNOWN_CODE_STABILIZERS[key])
+    return list(_EXAMPLE_CODE_STABILIZERS[key])
 
 
-def known_code(name: str) -> UGR:
-    return stabilizers_to_UGR(known_code_stabilizers(name))
-
-
-def shor_code() -> UGR:
-    return known_code("shor")
-
-
-def steane_code() -> UGR:
-    return known_code("steane")
-
-
-def five_qubit_code() -> UGR:
-    return known_code("five_qubit")
-
-
-def five_wubit_code() -> UGR:
-    return five_qubit_code()
-
+def example_code_UGR(name: str) -> UGR:
+    return stabilizers_to_UGR(example_code_stabilizers(name))
 
 
 def to_stabilizer_tableau (d : UGR, quiet : bool = True) -> List[str]:
