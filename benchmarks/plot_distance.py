@@ -19,25 +19,32 @@ for x, t in zip(x_values, times):
         filtered_x.append(x)
         filtered_times.append(t)
 
-plt.figure(figsize=(8, 5)) # Set a good figure size
+plt.figure(figsize=(4, 2)) 
 
 plt.plot(filtered_x, filtered_times, 
-         marker='o',           
-         markersize=10,
+         marker='.',           
+         markersize=5,
          linestyle='-',        
-         linewidth=2,          
+         linewidth=1,          
          color='#ff8c42',     
          markeredgecolor='#ff8c42',
-         markerfacecolor="white",
+         markerfacecolor="#ff8c42",
          zorder=3)
-plt.xticks(target_ticks, fontsize=11)
-plt.yticks(fontsize=11)
+plt.xticks(target_ticks, fontsize=6)
+plt.yticks(fontsize=6)
 
 plt.xlim(left=20)
-plt.grid(True, linestyle='--', alpha=0.6, zorder=0) # Zorder 0 keeps the grid behind the points
-plt.xlabel("No. of qubits ($n$)", fontsize=12, fontweight='bold')
-plt.ylabel("Time (seconds)", fontsize=12, fontweight='bold')
-plt.title("Minizinc Execution Times", fontsize=14, fontweight='bold')
+plt.grid(True, linestyle='--', alpha=0.6, zorder=0) 
+plt.xlabel("No. of qubits ($n$)", fontsize=6)
+plt.ylabel("Time (seconds)", fontsize=6)
+plt.title("Minizinc Execution Times", fontsize=8)
 
-plt.tight_layout() # Ensures nothing gets cut off
-plt.savefig("distance_plot.png", dpi=300)
+plt.tight_layout(pad=0.2)
+plt.savefig(
+    "distance_plot.png",
+    dpi=1200,
+    bbox_inches="tight",
+    pad_inches=0.02,
+)
+
+plt.show()
