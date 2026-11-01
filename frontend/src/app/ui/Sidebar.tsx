@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
+import { BACKEND_URL } from "../config";
 
 interface BackendGraphData {
     inputs: number[];
@@ -289,7 +290,7 @@ export default function Sidebar({ isOpen, onClose, onGraphDataReceived, onOpen }
 
         if (currentJobId) {
             try {
-                await fetch(`http://localhost:8000/cancel/${currentJobId}`, {
+                await fetch(`${BACKEND_URL}/cancel/${currentJobId}`, {
                     method: "POST"
                 });
             } catch (e) {
@@ -355,14 +356,14 @@ export default function Sidebar({ isOpen, onClose, onGraphDataReceived, onOpen }
             let startResponse;
 
             if (uploadedDot) {
-                startResponse = await fetch("http://localhost:8000/from_dot", {
+                startResponse = await fetch(`${BACKEND_URL}/from_dot`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(dataToSend),
                 });
             } else {
 
-                startResponse = await fetch("http://localhost:8000/get_graph", {
+                startResponse = await fetch(`${BACKEND_URL}/get_graph`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(dataToSend),
@@ -382,7 +383,7 @@ export default function Sidebar({ isOpen, onClose, onGraphDataReceived, onOpen }
 
             pollingIntervalRef.current = setInterval(async () => {
                 try {
-                    const statusResponse = await fetch(`http://localhost:8000/status/${jobId}`);
+                    const statusResponse = await fetch(`${BACKEND_URL}/status/${jobId}`);
                     const statusResult = await statusResponse.json();
 
                     console.log("Job status:", statusResult);

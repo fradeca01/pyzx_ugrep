@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { BACKEND_URL } from "../config";
 
 interface BackendGraphData {
     inputs: number[];
@@ -99,7 +100,7 @@ export default function PropertyBar({ isOpen, onClose, onOpen, onOpenEncoder, ba
         setEstimatedTime(null);
 
         try {
-            const response = await fetch("http://localhost:8000/solve", {
+            const response = await fetch(`${BACKEND_URL}/solve`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -122,7 +123,7 @@ export default function PropertyBar({ isOpen, onClose, onOpen, onOpenEncoder, ba
 
             pollInterval.current = setInterval(async () => {
                 try {
-                    const statusRes = await fetch(`http://localhost:8000/status/${jobId}`);
+                    const statusRes = await fetch(`${BACKEND_URL}/status/${jobId}`);
                     const statusData = await statusRes.json();
 
                     console.log("Polling status:", statusData);
@@ -156,7 +157,7 @@ export default function PropertyBar({ isOpen, onClose, onOpen, onOpenEncoder, ba
 
         if (currentJobId) {
             try {
-                await fetch(`http://localhost:8000/cancel/${currentJobId}`, {
+                await fetch(`${BACKEND_URL}/cancel/${currentJobId}`, {
                     method: "POST"
                 });
                 console.log("Job cancellato lato server");
