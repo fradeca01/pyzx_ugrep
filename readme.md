@@ -4,7 +4,7 @@
 
 ## Web interface
 
-A web interface to interact with the library visually lives in a separate repository: [pyzx_ugrep_web](https://github.com/fradeca01/pyzx_ugrep_web).
+A web interface to interact with the library visually is available at [fradeca01.github.io/pyzx_ugrep_web](https://fradeca01.github.io/pyzx_ugrep_web/). Its code lives in a separate repository: [pyzx_ugrep_web](https://github.com/fradeca01/pyzx_ugrep_web).
 
 
 ## Installation
