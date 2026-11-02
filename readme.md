@@ -1,32 +1,18 @@
 # pyzx_ugrep: Universal Graph Representation for Stabilizer Codes
 
-`pyzx_ugrep` is a Python library and web tool designed to convert stabilizer codes into their Universal Graph Representation (UGR) using ZX-calculus. Built on top of `pyzx` and `stim`, this package allows for advanced diagrammatic reasoning, graph state manipulation, and distance computation.
+`pyzx_ugrep` is a Python library designed to convert stabilizer codes into their Universal Graph Representation (UGR) using ZX-calculus. Built on top of `pyzx` and `stim`, this package allows for advanced diagrammatic reasoning, graph state manipulation, and distance computation.
 
 ## Web interface
 
-A web interface is available to interact with the library visually.
-
-To start it locally `docker` is required. It is sufficient to run the following command from the root of the repository:
-
-```bash
-docker compose up
-```
-
-If everything worked, the following line should appear in the console:
-
-```bash
-frontend-1 | - Local: http://localhost:PORT
-```
-
-which indicate the URL to access the web interface,
+A web interface to interact with the library visually lives in a separate repository: [pyzx_ugrep_web](https://github.com/fradeca01/pyzx_ugrep_web).
 
 
 ## Installation
 
 1. **Clone the repository**:
     ```bash
-    git clone [this repo]
-    cd [repo folder]
+    git clone https://github.com/fradeca01/pyzx_ugrep.git
+    cd pyzx_ugrep
     ```
 
 2. **Create virtual environment**
@@ -35,12 +21,17 @@ which indicate the URL to access the web interface,
     source venv-UGR/bin/activate
     ```
 
-2. **Install the package**
+3. **Install the package**
     ```bash
     pip install -e .
     ```
 
-2. **Import the package**
+    To also run the notebook and the benchmarks, install the `dev` extras:
+    ```bash
+    pip install -e ".[dev]"
+    ```
+
+4. **Import the package**
     ```python
     from ugr import *
     ```
@@ -49,13 +40,13 @@ which indicate the URL to access the web interface,
 
 You can generate and visualize examples of universal graph representations in the included `notebook.ipynb` notebook.
 
-Just a quick example:
+Just a quick example, using the five-qubit code, the smallest code that can correct any single-qubit error. Its distance is 3, which is the bound this example finds:
 
 ```python
 from ugr import stabilizers_to_UGR, distance_upper_bound
 
-# Define your stabilizer code (example)
-code = ["XXI", "IZZ"]
+# Define your stabilizer code: the [[5,1,3]] five-qubit code
+code = ["XZZXI", "IXZZX", "XIXZZ", "ZXIXZ"]
 
 # Convert the code to a Universal Graph Representation
 ugr = stabilizers_to_UGR(code)
