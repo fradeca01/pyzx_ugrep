@@ -18,7 +18,7 @@ from ugr import *
 TIMEOUT_SECONDS = int(os.getenv("UGR_JOB_IDLE_TIMEOUT_SECONDS", "15"))
 MAX_JOB_RUNTIME_SECONDS = int(os.getenv("UGR_MAX_JOB_RUNTIME_SECONDS", "60"))
 MAX_ACTIVE_JOBS = int(os.getenv("UGR_MAX_ACTIVE_JOBS", "2"))
-MAX_GENERATE_N = int(os.getenv("UGR_MAX_GENERATE_N", "40"))
+MAX_GENERATE_N = int(os.getenv("UGR_MAX_GENERATE_N", "100"))
 MAX_DOT_NODES = int(os.getenv("UGR_MAX_DOT_NODES", "40"))
 MAX_SOLVE_NODES = int(os.getenv("UGR_MAX_SOLVE_NODES", "24"))
 MAX_STABILIZERS = int(os.getenv("UGR_MAX_STABILIZERS", "64"))
